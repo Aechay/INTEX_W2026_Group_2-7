@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: supabase/setup-cli@v2
+      - uses: supabase/setup-cli@v1
 
       - name: Link to Supabase project
         run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
