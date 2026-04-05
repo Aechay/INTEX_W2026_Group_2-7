@@ -39,35 +39,6 @@ jobs:
         with:
           name: .net-app
           path: ${{ env.DOTNET_ROOT }}/myapp
-          
-  migrate:
-    runs-on: windows-latest
-    needs: build
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.x'
-
-      - name: Restore
-        run: dotnet restore "${{ env.PROJECT_PATH }}"
-
-      - name: Install EF tool
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Create migration bundle
-        run: dotnet ef migrations bundle --configuration Release --output efbundle.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
-
-      - name: Run migrations
-        env:
-          ConnectionStrings__DefaultConnection: ${{ secrets.PROD_DB_CONNECTION_STRING }}
-        run: .\efbundle.exe
-
   deploy:
     runs-on: windows-latest
     needs: migrate
