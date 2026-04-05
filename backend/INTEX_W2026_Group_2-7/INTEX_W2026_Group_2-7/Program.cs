@@ -5,14 +5,33 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseCors(options =>
+{
+    options.WithOrigins("https://wintex.alijahwhitney.dev", "https://wonderful-ocean-0a5af5610.2.azurestaticapps.net/")
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+});
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseCors(options =>
+    {
+        options.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+    app.UseSwagger(); // Generates the JSON file (e.g., /swagger/v1/swagger.json)
+    app.UseSwaggerUI(); // Enables the interactive web UI (e.g., /swagger)
 }
+
 
 app.UseHttpsRedirection();
 
