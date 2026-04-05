@@ -41,7 +41,6 @@ jobs:
           path: ${{ env.DOTNET_ROOT }}/myapp
   deploy:
     runs-on: windows-latest
-    needs: migrate
     permissions:
       id-token: write
       contents: read
