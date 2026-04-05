@@ -39,7 +39,7 @@ jobs:
         with:
           name: .net-app
           path: ${{ env.DOTNET_ROOT }}/myapp
-
+          
   migrate:
     runs-on: windows-latest
     needs: build
@@ -53,6 +53,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
 
       - name: Install EF tool
         run: dotnet tool install --global dotnet-ef
