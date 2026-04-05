@@ -1,0 +1,6 @@
+@INTEX_W2026_Group_2_7_HostAddress = http://localhost:5112
+
+GET {{INTEX_W2026_Group_2_7_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
