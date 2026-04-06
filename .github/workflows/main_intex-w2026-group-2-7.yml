@@ -10,6 +10,7 @@ on:
 
 env:
   PROJECT_PATH: ./backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7.csproj
+  SOLUTION_PATH: ./backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7.sln
 
 jobs:
   build:
@@ -23,9 +24,11 @@ jobs:
         with:
           dotnet-version: '10.x'
       - name: Restore
-        run: dotnet restore "${{ env.PROJECT_PATH }}"
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
       - name: Build
-        run: dotnet build --configuration Release "${{ env.PROJECT_PATH }}" --no-restore
+        run: dotnet build --configuration Release "${{ env.SOLUTION_PATH }}" --no-restore
+      - name: Test
+        run: dotnet test --configuration Release "${{ env.SOLUTION_PATH }}" --no-build
       - name: Publish
         run: dotnet publish --configuration Release --output "${{ env.DOTNET_ROOT }}/myapp" "${{ env.PROJECT_PATH }}" --no-build
       - name: Upload artifact
@@ -49,10 +52,14 @@ jobs:
         run: dotnet restore "${{ env.PROJECT_PATH }}"
       - name: Install EF tool
         run: dotnet tool install --global dotnet-ef
-      - name: Create migration bundle
-        run: dotnet ef migrations bundle --configuration Release --output efbundle.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
-      - name: Run migrations
-        run: .\efbundle.exe --connection "${{ secrets.PROD_DB_MIGRATION_CONNECTION_STRING }}"
+      - name: Create operational migration bundle
+        run: dotnet ef migrations bundle --configuration Release --context OperationalDbContext --output efbundle-operational.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
+      - name: Run operational migrations
+        run: .\efbundle-operational.exe --connection "${{ secrets.PROD_DB_MIGRATION_CONNECTION_STRING }}"
+      - name: Create identity migration bundle
+        run: dotnet ef migrations bundle --configuration Release --context IdentityAppDbContext --output efbundle-identity.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
+      - name: Run identity migrations
+        run: .\efbundle-identity.exe --connection "${{ secrets.PROD_IDENTITY_DB_MIGRATION_CONNECTION_STRING }}"
 
   deploy:
     runs-on: windows-latest

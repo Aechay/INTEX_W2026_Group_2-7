@@ -1,4 +1,6 @@
+using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace INTEX_W2026_Group_2_7.Controllers;
@@ -7,8 +9,9 @@ namespace INTEX_W2026_Group_2_7.Controllers;
 [Route("[controller]")]
 public class WeatherForecastController : ControllerBase
 {
-    private AppDbContext _context;
-    public WeatherForecastController(AppDbContext temp)
+    private readonly OperationalDbContext _context;
+
+    public WeatherForecastController(OperationalDbContext temp)
     {
         _context = temp;
     }
@@ -19,6 +22,7 @@ public class WeatherForecastController : ControllerBase
     ];
 
     [HttpGet(Name = "GetWeatherForecast")]
+    [Authorize(Policy = AppPolicies.AuthenticatedUser)]
     public IEnumerable<WeatherForecast> Get()
     {
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -26,7 +30,7 @@ public class WeatherForecastController : ControllerBase
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                 TemperatureC = Random.Shared.Next(-20, 55),
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)],
-                DbConnected = _context != null
+                DbConnected = _context.Database != null
             })
             .ToArray();
     }

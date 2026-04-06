@@ -1,6 +1,34 @@
 @INTEX_W2026_Group_2_7_HostAddress = http://localhost:5112
+@accessToken = replace-me
+
+POST {{INTEX_W2026_Group_2_7_HostAddress}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "Student123!"
+}
+
+###
+
+POST {{INTEX_W2026_Group_2_7_HostAddress}}/auth/login?useCookies=false
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "Student123!"
+}
+
+###
+
+GET {{INTEX_W2026_Group_2_7_HostAddress}}/auth/me
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
 
 GET {{INTEX_W2026_Group_2_7_HostAddress}}/weatherforecast/
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
