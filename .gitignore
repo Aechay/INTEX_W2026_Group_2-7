@@ -528,5 +528,5 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
+!backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7.sln
 *.sw?
-
