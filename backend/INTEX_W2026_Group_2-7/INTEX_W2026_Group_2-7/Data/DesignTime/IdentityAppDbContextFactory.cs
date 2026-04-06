@@ -8,7 +8,9 @@ public class IdentityAppDbContextFactory : IDesignTimeDbContextFactory<IdentityA
     public IdentityAppDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<IdentityAppDbContext>();
-        optionsBuilder.UseSqlServer(DesignTimeConnectionStringResolver.Resolve("IdentityConnection"));
+        optionsBuilder.UseSqlServer(
+            DesignTimeConnectionStringResolver.Resolve("IdentityConnection"),
+            sqlOptions => sqlOptions.EnableRetryOnFailure());
 
         return new IdentityAppDbContext(optionsBuilder.Options);
     }

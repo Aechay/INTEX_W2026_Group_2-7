@@ -8,7 +8,9 @@ public class OperationalDbContextFactory : IDesignTimeDbContextFactory<Operation
     public OperationalDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OperationalDbContext>();
-        optionsBuilder.UseSqlServer(DesignTimeConnectionStringResolver.Resolve("DefaultConnection"));
+        optionsBuilder.UseSqlServer(
+            DesignTimeConnectionStringResolver.Resolve("DefaultConnection"),
+            sqlOptions => sqlOptions.EnableRetryOnFailure());
 
         return new OperationalDbContext(optionsBuilder.Options);
     }

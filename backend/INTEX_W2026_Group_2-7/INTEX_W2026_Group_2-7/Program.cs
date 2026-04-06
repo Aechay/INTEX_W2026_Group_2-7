@@ -19,9 +19,13 @@ builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
 
 builder.Services.AddDbContext<OperationalDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetRequiredConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetRequiredConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 builder.Services.AddDbContext<IdentityAppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetRequiredConnectionString("IdentityConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetRequiredConnectionString("IdentityConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 builder.Services
     .AddIdentityApiEndpoints<ApplicationUser>(options =>
