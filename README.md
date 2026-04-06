@@ -1,22 +1,59 @@
 # INTEX - Winter 2026 - Group 2-7
 
-For now, this is a very basic scaffold of a Full Stack web app with a React frontend and a .NET 10 Backend w/ a postgres database.
+For now, this is a very basic scaffold of a full stack web app with a React frontend and a .NET 10 backend.
 
 Changes on the main branch in the corresponding folder for each of the components will automatically deploy the changes to the azure resources. The frontend is hosted at [https://wintex.alijahwhitney.dev](https://wintex.alijahwhitney.dev).
 
-You'll need to create a `.env` file inside of the `backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7` folder with a connection string for the database. The .env file will end up looking like this.
+## Local backend configuration
 
-```dockerfile
-ConnectionStrings__DefaultConnection="YOUR_DB_CONNECTION_STRING"
+The backend now uses two SQL Server connection strings:
+
+- `ConnectionStrings__DefaultConnection` for operational data
+- `ConnectionStrings__IdentityConnection` for ASP.NET Core Identity data
+
+Use `dotnet user-secrets` or environment variables instead of a tracked `.env` file. From the backend project directory:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_OPERATIONAL_DB_CONNECTION_STRING"
+dotnet user-secrets set "ConnectionStrings:IdentityConnection" "YOUR_IDENTITY_DB_CONNECTION_STRING"
+dotnet user-secrets set "AuthBootstrap:AdminEmail" "admin@example.com"
+dotnet user-secrets set "AuthBootstrap:AdminPassword" "Admin123!"
+dotnet user-secrets set "Frontend:BaseUrl" "https://wintex.alijahwhitney.dev"
 ```
 
-That way we don't push a connection string up to github.
+The bootstrap admin settings are optional, but if you provide them the app will create or promote that account into the `Admin` role on startup.
+
+## Local migrations
+
+The backend keeps EF Core migrations separate by context:
+
+- Operational database migrations: `OperationalDbContext`
+- Identity database migrations: `IdentityAppDbContext`
+
+Apply them independently:
+
+```bash
+dotnet ef database update --context OperationalDbContext
+dotnet ef database update --context IdentityAppDbContext
+```
+
+If you add schema changes later, generate migrations against the correct context:
+
+```bash
+dotnet ef migrations add YourOperationalMigration --context OperationalDbContext --output-dir Migrations/Operational
+dotnet ef migrations add YourIdentityMigration --context IdentityAppDbContext --output-dir Migrations/Identity
+```
 
 # CI/CD
 
 I set up 2 different github actions workflows. One to deploy the backend, and one to deploy the frontend. Each workflow is triggered when there is a commit to the main branch with changes in the corresponding folder.
 
-The backend deploy workflow will also apply any migrations in the `backend/.../Migrations` folder to the production database. So try to use the `dotnet ef migrations` commands as you make any database changes in your branches so that the automatic deployment can easily mirror those schema changes to prod.
+The backend deploy workflow now applies migrations to both production databases before deployment:
+
+- `PROD_DB_MIGRATION_CONNECTION_STRING` for the operational database
+- `PROD_IDENTITY_DB_MIGRATION_CONNECTION_STRING` for the Identity database
+
+Use the context-specific `dotnet ef migrations` commands as you make database changes so the GitHub Actions migration bundles stay aligned with production.
 
 # Important links and things
 

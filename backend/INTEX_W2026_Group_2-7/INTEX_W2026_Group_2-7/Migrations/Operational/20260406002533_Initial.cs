@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace INTEX_W2026_Group_2_7.Migrations
+namespace INTEX_W2026_Group_2_7.Migrations.Operational
 {
     /// <inheritdoc />
     public partial class Initial : Migration

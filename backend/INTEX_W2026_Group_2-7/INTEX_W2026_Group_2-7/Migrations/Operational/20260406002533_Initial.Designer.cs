@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace INTEX_W2026_Group_2_7.Migrations
+namespace INTEX_W2026_Group_2_7.Migrations.Operational
 {
-    [DbContext(typeof(AppDbContext))]
+    [DbContext(typeof(OperationalDbContext))]
     [Migration("20260406002533_Initial")]
     partial class Initial
     {
