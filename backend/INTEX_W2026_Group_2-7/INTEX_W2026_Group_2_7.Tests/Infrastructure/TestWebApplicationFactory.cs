@@ -30,7 +30,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=OperationalTest;User Id=sa;Password=Password123!;TrustServerCertificate=True",
                 ["ConnectionStrings:IdentityConnection"] = "Server=localhost;Database=IdentityTest;User Id=sa;Password=Password123!;TrustServerCertificate=True",
                 ["AuthBootstrap:AdminEmail"] = "admin@test.local",
-                ["AuthBootstrap:AdminPassword"] = "Admin123!",
+                ["AuthBootstrap:AdminPassword"] = "AdminPassword123!",
                 ["Frontend:BaseUrl"] = "https://frontend.test.local"
             });
         });
