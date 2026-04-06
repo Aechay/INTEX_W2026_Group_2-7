@@ -7,6 +7,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+const string ApiContentSecurityPolicy =
+    "default-src 'none'; " +
+    "base-uri 'none'; " +
+    "frame-ancestors 'none'; " +
+    "form-action 'none'; " +
+    "object-src 'none'";
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -17,6 +23,15 @@ builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 14;
+    options.Password.RequiredUniqueChars = 1;
+});
 
 builder.Services.AddDbContext<OperationalDbContext>(options =>
     options.UseSqlServer(
@@ -79,6 +94,24 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    var isDocumentationRequest = app.Environment.IsDevelopment()
+        && (context.Request.Path.StartsWithSegments("/swagger")
+            || context.Request.Path.StartsWithSegments("/openapi"));
+
+    if (!isDocumentationRequest)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Content-Security-Policy"] = ApiContentSecurityPolicy;
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
