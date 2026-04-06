@@ -84,7 +84,7 @@ public class AuthApiTests
         var anonymousResponse = await anonymousClient.GetAsync("/weatherforecast");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
 
-        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student3@test.local", "Student123!");
+        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student3@test.local", "StudentPassword123!");
         var authorizedResponse = await authenticatedClient.GetAsync("/weatherforecast");
 
         Assert.Equal(HttpStatusCode.OK, authorizedResponse.StatusCode);
@@ -102,7 +102,7 @@ public class AuthApiTests
             password = "StudentPassword123!"
         });
 
-        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student4@test.local", "Student123!");
+        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student4@test.local", "StudentPassword123!");
         var response = await authenticatedClient.GetAsync("/auth/me");
 
         response.EnsureSuccessStatusCode();
@@ -126,7 +126,7 @@ public class AuthApiTests
             password = "StudentPassword123!"
         });
 
-        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student5@test.local", "Student123!");
+        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student5@test.local", "StudentPassword123!");
         var response = await authenticatedClient.GetAsync("/auth/admin/ping");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -136,7 +136,7 @@ public class AuthApiTests
     public async Task BootstrapAdmin_CanReachAdminEndpoint_AndHasAdminRole()
     {
         await using var factory = new TestWebApplicationFactory();
-        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("admin@test.local", "Admin123!");
+        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("admin@test.local", "AdminPassword123!");
 
         var response = await authenticatedClient.GetAsync("/auth/admin/ping");
         response.EnsureSuccessStatusCode();
