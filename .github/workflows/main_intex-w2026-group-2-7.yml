@@ -11,6 +11,8 @@ on:
 env:
   PROJECT_PATH: ./backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7.csproj
   SOLUTION_PATH: ./backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7.sln
+  MIGRATION_RETRY_COUNT: 5
+  MIGRATION_RETRY_DELAY_SECONDS: 30
 
 jobs:
   build:
@@ -54,12 +56,54 @@ jobs:
         run: dotnet tool install --global dotnet-ef
       - name: Create operational migration bundle
         run: dotnet ef migrations bundle --configuration Release --context OperationalDbContext --output efbundle-operational.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
-      - name: Run operational migrations
-        run: .\efbundle-operational.exe --connection "${{ secrets.PROD_DB_MIGRATION_CONNECTION_STRING }}"
       - name: Create identity migration bundle
         run: dotnet ef migrations bundle --configuration Release --context IdentityAppDbContext --output efbundle-identity.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
-      - name: Run identity migrations
-        run: .\efbundle-identity.exe --connection "${{ secrets.PROD_IDENTITY_DB_MIGRATION_CONNECTION_STRING }}"
+      - name: Run migrations with retry
+        shell: pwsh
+        run: |
+          function Invoke-WithRetry {
+            param(
+              [scriptblock]$Action,
+              [string]$Description,
+              [int]$MaxAttempts,
+              [int]$DelaySeconds
+            )
+
+            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+              try {
+                Write-Host "Starting $Description (attempt $attempt of $MaxAttempts)..."
+                & $Action
+
+                if ($LASTEXITCODE -eq 0) {
+                  Write-Host "$Description succeeded."
+                  return
+                }
+
+                throw "$Description exited with code $LASTEXITCODE."
+              }
+              catch {
+                if ($attempt -eq $MaxAttempts) {
+                  throw
+                }
+
+                Write-Warning "$Description failed: $($_.Exception.Message)"
+                Write-Host "Retrying in $DelaySeconds seconds..."
+                Start-Sleep -Seconds $DelaySeconds
+              }
+            }
+          }
+
+          Invoke-WithRetry `
+            -Description "operational migrations" `
+            -MaxAttempts ${{ env.MIGRATION_RETRY_COUNT }} `
+            -DelaySeconds ${{ env.MIGRATION_RETRY_DELAY_SECONDS }} `
+            -Action { .\efbundle-operational.exe --connection "${{ secrets.PROD_DB_MIGRATION_CONNECTION_STRING }}" }
+
+          Invoke-WithRetry `
+            -Description "identity migrations" `
+            -MaxAttempts ${{ env.MIGRATION_RETRY_COUNT }} `
+            -DelaySeconds ${{ env.MIGRATION_RETRY_DELAY_SECONDS }} `
+            -Action { .\efbundle-identity.exe --connection "${{ secrets.PROD_IDENTITY_DB_MIGRATION_CONNECTION_STRING }}" }
 
   deploy:
     runs-on: windows-latest
