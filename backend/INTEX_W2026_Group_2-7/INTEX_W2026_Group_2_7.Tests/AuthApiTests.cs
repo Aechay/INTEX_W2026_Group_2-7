@@ -19,7 +19,7 @@ public class AuthApiTests
         var response = await client.PostAsJsonAsync("/auth/register", new
         {
             email = "student1@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -49,13 +49,13 @@ public class AuthApiTests
         await client.PostAsJsonAsync("/auth/register", new
         {
             email = "student2@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         var response = await client.PostAsJsonAsync("/auth/login?useCookies=false", new
         {
             email = "student2@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         response.EnsureSuccessStatusCode();
@@ -78,7 +78,7 @@ public class AuthApiTests
         await anonymousClient.PostAsJsonAsync("/auth/register", new
         {
             email = "student3@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         var anonymousResponse = await anonymousClient.GetAsync("/weatherforecast");
@@ -99,7 +99,7 @@ public class AuthApiTests
         await client.PostAsJsonAsync("/auth/register", new
         {
             email = "student4@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student4@test.local", "Student123!");
@@ -123,7 +123,7 @@ public class AuthApiTests
         await client.PostAsJsonAsync("/auth/register", new
         {
             email = "student5@test.local",
-            password = "Student123!"
+            password = "StudentPassword123!"
         });
 
         using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student5@test.local", "Student123!");
