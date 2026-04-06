@@ -60,3 +60,8 @@ Use the context-specific `dotnet ef migrations` commands as you make database ch
 The frontend is deployed on azure and has a custom domain on it. The azure domain for it is: [https://wonderful-ocean-0a5af5610.2.azurestaticapps.net](https://wonderful-ocean-0a5af5610.2.azurestaticapps.net) and the custom domain for it is: [https://wintex.alijahwhitney.dev](https://wintex.alijahwhitney.dev). The way it's set up, it will redirect any requests to the azure domain to the custom domain, so just plan around the domain being the `alijahwhitney.dev` one.
 
 The backend is also deployed on azure and has the domain: [https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net](https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net)
+
+# Auth docs
+
+- [Authorization playbook](docs/auth/authorization-playbook.md)
+- [React + Vite auth integration guide](docs/auth/react-vite-auth-integration.md)
