@@ -17,7 +17,7 @@ Use `dotnet user-secrets` or environment variables instead of a tracked `.env` f
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_OPERATIONAL_DB_CONNECTION_STRING"
 dotnet user-secrets set "ConnectionStrings:IdentityConnection" "YOUR_IDENTITY_DB_CONNECTION_STRING"
 dotnet user-secrets set "AuthBootstrap:AdminEmail" "admin@example.com"
-dotnet user-secrets set "AuthBootstrap:AdminPassword" "Admin123!"
+dotnet user-secrets set "AuthBootstrap:AdminPassword" "AdminPassword123!"
 dotnet user-secrets set "Frontend:BaseUrl" "https://wintex.alijahwhitney.dev"
 ```
 
