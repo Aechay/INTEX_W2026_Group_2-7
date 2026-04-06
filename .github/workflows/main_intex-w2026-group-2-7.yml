@@ -16,48 +16,61 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
-
       - name: Restore
         run: dotnet restore "${{ env.PROJECT_PATH }}"
-
       - name: Build
         run: dotnet build --configuration Release "${{ env.PROJECT_PATH }}" --no-restore
-
       - name: Publish
         run: dotnet publish --configuration Release --output "${{ env.DOTNET_ROOT }}/myapp" "${{ env.PROJECT_PATH }}" --no-build
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
           path: ${{ env.DOTNET_ROOT }}/myapp
+
+  migrate:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Restore
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
+      - name: Install EF tool
+        run: dotnet tool install --global dotnet-ef
+      - name: Create migration bundle
+        run: dotnet ef migrations bundle --configuration Release --output efbundle.exe --project "${{ env.PROJECT_PATH }}" --startup-project "${{ env.PROJECT_PATH }}"
+      - name: Run migrations
+        run: .\efbundle.exe --connection "${{ secrets.PROD_DB_MIGRATION_CONNECTION_STRING }}"
+
   deploy:
     runs-on: windows-latest
+    needs: migrate
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F87576B863A34943B1F748D65747E82F }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_59606C6CC3104F068B1FF04C2CD04059 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_68D2392684AB4E16B15324FC4E36BA6A }}
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
