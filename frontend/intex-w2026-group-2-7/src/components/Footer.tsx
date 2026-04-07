@@ -7,12 +7,12 @@ const Footer = () => {
   const { t } = useTranslation("common");
 
   return (
-    <footer className="bg-foreground text-background">
+    <footer className="bg-muted dark:bg-card">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-lg font-bold mb-4 text-accent">{t("brand.name")}</h3>
-            <p className="text-background/70 text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {t("footer.description")}
             </p>
           </div>
@@ -24,19 +24,19 @@ const Footer = () => {
             <div className="space-y-2">
               <Link
                 to="/"
-                className="block text-sm text-background/70 hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("nav.home")}
               </Link>
               <Link
                 to="/get-help"
-                className="block text-sm text-background/70 hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("nav.getHelp")}
               </Link>
               <Link
                 to="/login"
-                className="block text-sm text-background/70 hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("footer.staffLogin")}
               </Link>
@@ -45,7 +45,7 @@ const Footer = () => {
 
           <div>
             <h3 className="text-lg font-bold mb-4 text-accent">{t("footer.contact")}</h3>
-            <div className="space-y-2 text-sm text-background/70">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-secondary" />
                 <span>+1 (809) 555-HOPE</span>
@@ -62,8 +62,8 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-background/20 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-background/50">
+        <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}
           </p>
           <Button

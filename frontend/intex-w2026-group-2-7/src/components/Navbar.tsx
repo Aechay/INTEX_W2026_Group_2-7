@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTheme } from "@/contexts/ThemeProvider";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { t } = useTranslation("common");
+  const { isDark, toggleTheme } = useTheme();
 
   const links = [
     { to: "/", label: t("nav.home") },
@@ -43,6 +45,14 @@ const Navbar = () => {
             </Link>
           ))}
           <LanguageSwitcher />
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            title={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-input bg-background/80 text-muted-foreground transition-all hover:border-2 hover:border-input"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <Button
             asChild
             className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
@@ -82,6 +92,14 @@ const Navbar = () => {
             </Link>
           ))}
           <LanguageSwitcher triggerClassName="w-full bg-background" />
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            className="w-full h-9 flex items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground transition-all hover:border-2"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? t("nav.lightMode") : t("nav.darkMode")}
+          </button>
           <Button
             asChild
             className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"

@@ -12,6 +12,8 @@ export const resources = {
         donate: "Donate",
         openMenu: "Open navigation menu",
         closeMenu: "Close navigation menu",
+        darkMode: "Switch to dark mode",
+        lightMode: "Switch to light mode",
       },
       language: {
         label: "Language",
@@ -208,6 +210,8 @@ export const resources = {
         donate: "Donar",
         openMenu: "Abrir menú de navegación",
         closeMenu: "Cerrar menú de navegación",
+        darkMode: "Cambiar a modo oscuro",
+        lightMode: "Cambiar a modo claro",
       },
       language: {
         label: "Idioma",
