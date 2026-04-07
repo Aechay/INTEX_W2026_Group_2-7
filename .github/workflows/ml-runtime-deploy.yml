@@ -76,10 +76,12 @@ jobs:
           ACR_LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
         run: |
           IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
+          RUNTIME_DIR="${GITHUB_WORKSPACE}/ml-pipelines/runtime"
           docker build \
+            --file "${RUNTIME_DIR}/Dockerfile" \
             -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}" \
             -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest" \
-            ./ml-pipelines/runtime
+            "${RUNTIME_DIR}"
           docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}"
           docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest"
 
