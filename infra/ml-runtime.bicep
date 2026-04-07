@@ -36,11 +36,13 @@ var suffix = toLower(uniqueString(resourceGroup().id, namePrefix))
 var storageAccountName = take('${normalizedPrefix}${suffix}sa', 24)
 var functionHostStorageName = take('${normalizedPrefix}${suffix}fs', 24)
 var containerRegistryName = take('${normalizedPrefix}${suffix}cr', 50)
+var containerRegistryLoginServer = '${containerRegistryName}.azurecr.io'
 var keyVaultName = take('${normalizedPrefix}-${suffix}-kv', 24)
 var logAnalyticsName = '${namePrefix}-ml-logs'
 var appInsightsName = '${namePrefix}-ml-ai'
 var containerAppsEnvironmentName = '${namePrefix}-ml-env'
 var trainingJobName = '${namePrefix}-training'
+var trainingIdentityName = '${namePrefix}-training-id'
 var functionPlanName = '${namePrefix}-func-plan'
 var functionAppName = '${namePrefix}-social-func'
 
@@ -259,17 +261,52 @@ resource socialMediaFunction 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
+resource trainingIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: trainingIdentityName
+  location: location
+  tags: tags
+}
+
+resource trainingBlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, trainingIdentity.id, 'storage-blob-data-contributor')
+  scope: storageAccount
+  properties: {
+    principalId: trainingIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: storageBlobDataContributorRoleDefinitionId
+  }
+}
+
+resource trainingAcrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerRegistry.id, trainingIdentity.id, 'acr-pull')
+  scope: containerRegistry
+  properties: {
+    principalId: trainingIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: acrPullRoleDefinitionId
+  }
+}
+
 resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
   name: trainingJobName
   location: location
   tags: tags
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${trainingIdentity.id}': {}
+    }
   }
+  dependsOn: [
+    trainingBlobRoleAssignment
+    trainingAcrPullRoleAssignment
+  ]
   properties: {
     environmentId: containerAppsEnvironment.id
     configuration: {
       triggerType: 'Schedule'
+      replicaTimeout: 7200
+      replicaRetryLimit: 0
       scheduleTriggerConfig: {
         cronExpression: trainingScheduleCron
         parallelism: 1
@@ -277,8 +314,8 @@ resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
       }
       registries: [
         {
-          server: containerRegistry.properties.loginServer
-          identity: 'system'
+          server: containerRegistryLoginServer
+          identity: trainingIdentity.id
         }
       ]
     }
@@ -286,7 +323,7 @@ resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
       containers: [
         {
           name: 'trainer'
-          image: '${containerRegistry.properties.loginServer}/${trainingImageName}:${trainingImageTag}'
+          image: '${containerRegistryLoginServer}/${trainingImageName}:${trainingImageTag}'
           env: [
             {
               name: 'ML_INPUT_MODE'
@@ -307,6 +344,10 @@ resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
             {
               name: 'ML_STORAGE_CONTAINER_NAME'
               value: 'ml-model-artifacts'
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: trainingIdentity.properties.clientId
             }
           ]
           resources: {
@@ -339,26 +380,6 @@ resource functionKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments
   }
 }
 
-resource trainingBlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, trainingJob.name, 'storage-blob-data-contributor')
-  scope: storageAccount
-  properties: {
-    principalId: trainingJob.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: storageBlobDataContributorRoleDefinitionId
-  }
-}
-
-resource trainingAcrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerRegistry.id, trainingJob.name, 'acr-pull')
-  scope: containerRegistry
-  properties: {
-    principalId: trainingJob.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: acrPullRoleDefinitionId
-  }
-}
-
 resource backendKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(backendPrincipalId)) {
   name: guid(keyVault.id, backendPrincipalId, 'backend-key-vault-secrets-user')
   scope: keyVault
@@ -373,6 +394,6 @@ output functionAppName string = socialMediaFunction.name
 output functionAppUrl string = 'https://${socialMediaFunction.properties.defaultHostName}'
 output functionSharedSecretSecretUri string = mlFunctionSharedSecretValue.properties.secretUriWithVersion
 output trainingJobName string = trainingJob.name
-output containerRegistryLoginServer string = containerRegistry.properties.loginServer
+output containerRegistryLoginServer string = containerRegistryLoginServer
 output storageAccountUrl string = 'https://${storageAccount.name}.blob.${environment().suffixes.storage}'
 output keyVaultName string = keyVault.name

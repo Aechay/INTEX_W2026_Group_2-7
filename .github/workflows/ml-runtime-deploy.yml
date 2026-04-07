@@ -57,18 +57,6 @@ jobs:
           package: ./ml-pipelines/runtime
           respect-funcignore: true
 
-      - name: Build and push training image
-        env:
-          AZURE_ML_ACR_NAME: ${{ vars.AZURE_ML_ACR_NAME }}
-          TRAINING_IMAGE_NAME: ${{ vars.AZURE_ML_TRAINING_IMAGE_NAME }}
-        run: |
-          IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
-          az acr build \
-            --registry "$AZURE_ML_ACR_NAME" \
-            --image "${IMAGE_NAME}:${GITHUB_SHA}" \
-            --image "${IMAGE_NAME}:latest" \
-            ./ml-pipelines/runtime
-
       - name: Resolve ACR login server
         id: acr
         env:
@@ -76,6 +64,24 @@ jobs:
         run: |
           LOGIN_SERVER=$(az acr show --name "$AZURE_ML_ACR_NAME" --query loginServer --output tsv)
           echo "login_server=$LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+
+      - name: Login Docker to ACR
+        env:
+          AZURE_ML_ACR_NAME: ${{ vars.AZURE_ML_ACR_NAME }}
+        run: az acr login --name "$AZURE_ML_ACR_NAME"
+
+      - name: Build and push training image
+        env:
+          TRAINING_IMAGE_NAME: ${{ vars.AZURE_ML_TRAINING_IMAGE_NAME }}
+          ACR_LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
+        run: |
+          IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
+          docker build \
+            -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}" \
+            -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest" \
+            ./ml-pipelines/runtime
+          docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest"
 
       - name: Update training job image
         env:

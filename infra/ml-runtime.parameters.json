@@ -23,9 +23,6 @@
     "trainingImageTag": {
       "value": "latest"
     },
-    "backendPrincipalId": {
-      "value": "<optional-existing-backend-managed-identity-principal-id>"
-    },
     "mlFunctionSharedSecret": {
       "value": "<replace-before-deploying>"
     }
