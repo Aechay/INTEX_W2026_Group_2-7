@@ -5,7 +5,6 @@ using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Google;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,7 +38,7 @@ if (builder.Environment.IsDevelopment())
     }
 }
 
-const string ApiContentSecurityPolicy =
+const string apiContentSecurityPolicy =
     "default-src 'none'; " +
     "base-uri 'none'; " +
     "frame-ancestors 'none'; " +
@@ -56,6 +55,8 @@ builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<SmtpEmailOptions>(
+    builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = false;
@@ -99,7 +100,7 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
     });
 }
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, LoggingIdentityEmailSender>();
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, SmtpIdentityEmailSender>();
 builder.Services.AddSingleton<IExternalAuthCodeStore, ExternalAuthCodeStore>();
 
 builder.Services.AddAuthorizationBuilder()
@@ -148,7 +149,7 @@ app.Use(async (context, next) =>
     {
         context.Response.OnStarting(() =>
         {
-            context.Response.Headers["Content-Security-Policy"] = ApiContentSecurityPolicy;
+            context.Response.Headers["Content-Security-Policy"] = apiContentSecurityPolicy;
             return Task.CompletedTask;
         });
     }
