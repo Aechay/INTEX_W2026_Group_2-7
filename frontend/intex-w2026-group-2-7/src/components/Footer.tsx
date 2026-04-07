@@ -1,30 +1,50 @@
 import { Link } from "react-router-dom";
 import { Heart, Mail, Phone, MapPin } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 const Footer = () => {
+  const { t } = useTranslation("common");
+
   return (
     <footer className="bg-foreground text-background">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">Hope Shelter</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">{t("brand.name")}</h3>
             <p className="text-background/70 text-sm leading-relaxed">
-              Providing safety, hope, and healing for at-risk girls in the Dominican Republic.
+              {t("footer.description")}
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">Quick Links</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">
+              {t("footer.quickLinks")}
+            </h3>
             <div className="space-y-2">
-              <Link to="/" className="block text-sm text-background/70 hover:text-accent transition-colors">Home</Link>
-              <Link to="/get-help" className="block text-sm text-background/70 hover:text-accent transition-colors">Get Help</Link>
-              <Link to="/login" className="block text-sm text-background/70 hover:text-accent transition-colors">Staff Login</Link>
+              <Link
+                to="/"
+                className="block text-sm text-background/70 hover:text-accent transition-colors"
+              >
+                {t("nav.home")}
+              </Link>
+              <Link
+                to="/get-help"
+                className="block text-sm text-background/70 hover:text-accent transition-colors"
+              >
+                {t("nav.getHelp")}
+              </Link>
+              <Link
+                to="/login"
+                className="block text-sm text-background/70 hover:text-accent transition-colors"
+              >
+                {t("footer.staffLogin")}
+              </Link>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">Contact</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">{t("footer.contact")}</h3>
             <div className="space-y-2 text-sm text-background/70">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-secondary" />
@@ -36,7 +56,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-secondary" />
-                <span>Santo Domingo, Dominican Republic</span>
+                <span>{t("footer.location")}</span>
               </div>
             </div>
           </div>
@@ -44,11 +64,18 @@ const Footer = () => {
 
         <div className="border-t border-background/20 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-background/50">
-            © {new Date().getFullYear()} Hope Shelter. All rights reserved.
+            © {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}
           </p>
-          <Button asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-            <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
-              <Heart className="h-4 w-4 mr-1" /> Donate Now
+          <Button
+            asChild
+            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+          >
+            <a
+              href="https://donate.hopeshelter.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Heart className="h-4 w-4 mr-1" /> {t("footer.donateNow")}
             </a>
           </Button>
         </div>
