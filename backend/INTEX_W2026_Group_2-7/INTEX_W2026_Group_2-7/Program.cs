@@ -5,8 +5,40 @@ using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Google;
+
 
 var builder = WebApplication.CreateBuilder(args);
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var allowedFrontendOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+if (Uri.TryCreate(builder.Configuration["Frontend:BaseUrl"], UriKind.Absolute, out var configuredFrontendUri))
+{
+    allowedFrontendOrigins.Add(configuredFrontendUri.GetLeftPart(UriPartial.Authority));
+}
+
+allowedFrontendOrigins.Add("https://wintex.alijahwhitney.dev");
+allowedFrontendOrigins.Add("https://wonderful-ocean-0a5af5610.2.azurestaticapps.net");
+
+if (builder.Environment.IsDevelopment())
+{
+    foreach (var origin in new[]
+             {
+                 "http://localhost:5173",
+                 "https://localhost:5173",
+                 "http://127.0.0.1:5173",
+                 "https://127.0.0.1:5173",
+                 "http://localhost:4173",
+                 "https://localhost:4173",
+                 "http://127.0.0.1:4173",
+                 "https://127.0.0.1:4173"
+             })
+    {
+        allowedFrontendOrigins.Add(origin);
+    }
+}
+
 const string ApiContentSecurityPolicy =
     "default-src 'none'; " +
     "base-uri 'none'; " +
@@ -18,6 +50,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
@@ -55,7 +88,19 @@ builder.Services
     .AddUserManager<ApplicationUserManager>()
     .AddEntityFrameworkStores<IdentityAppDbContext>();
 
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication().AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = googleClientId;
+        googleOptions.ClientSecret = googleClientSecret;
+        googleOptions.SignInScheme = IdentityConstants.ExternalScheme;
+        googleOptions.CallbackPath = "/signin-google";
+    });
+}
+
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, LoggingIdentityEmailSender>();
+builder.Services.AddSingleton<IExternalAuthCodeStore, ExternalAuthCodeStore>();
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
@@ -65,7 +110,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        if (builder.Environment.IsDevelopment())
+        if (allowedFrontendOrigins.Count == 0)
         {
             policy.AllowAnyOrigin()
                 .AllowAnyMethod()
@@ -73,9 +118,7 @@ builder.Services.AddCors(options =>
             return;
         }
 
-        policy.WithOrigins(
-                "https://wintex.alijahwhitney.dev",
-                "https://wonderful-ocean-0a5af5610.2.azurestaticapps.net")
+        policy.WithOrigins(allowedFrontendOrigins.ToArray())
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
