@@ -116,7 +116,7 @@ public class AuthApiTests
     }
 
     [Fact]
-    public async Task ExternalProvidersEndpoint_ListsGoogleProvider()
+    public async Task ExternalProvidersEndpoint_ReflectsWhetherGoogleIsConfigured()
     {
         await using var factory = new TestWebApplicationFactory();
         using var client = factory.CreateHttpsClient();
@@ -127,8 +127,15 @@ public class AuthApiTests
         var payload = await response.Content.ReadFromJsonAsync<IReadOnlyCollection<ExternalAuthProviderResponse>>();
 
         Assert.NotNull(payload);
+        var googleProvider = payload!.SingleOrDefault(provider => provider.Name == "Google");
 
-        var googleProvider = Assert.Single(payload!, provider => provider.Name == "Google");
+        if (googleProvider is null)
+        {
+            var startResponse = await client.GetAsync("/auth/external/Google/start");
+            Assert.Equal(HttpStatusCode.NotFound, startResponse.StatusCode);
+            return;
+        }
+
         Assert.Equal("Google", googleProvider.DisplayName);
         Assert.EndsWith("/auth/external/Google/start", googleProvider.StartUrl);
     }

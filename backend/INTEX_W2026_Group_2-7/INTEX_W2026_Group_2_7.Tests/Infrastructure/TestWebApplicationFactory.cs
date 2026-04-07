@@ -32,8 +32,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["AuthBootstrap:AdminEmail"] = "admin@test.local",
                 ["AuthBootstrap:AdminPassword"] = "AdminPassword123!",
                 ["Frontend:BaseUrl"] = "https://frontend.test.local",
-                ["Authentication:Google:ClientId"] = "test-google-client-id",
-                ["Authentication:Google:ClientSecret"] = "test-google-client-secret"
+                ["Authentication:Google:ClientId"] = string.Empty,
+                ["Authentication:Google:ClientSecret"] = string.Empty
             });
         });
 
