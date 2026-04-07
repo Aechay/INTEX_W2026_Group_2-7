@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,9 +24,9 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
           <img
-            src="/HopeShelter.png"
+            src={logo}
             alt={t("brand.logoAlt")}
-            className="h-10 w-10"
+            className="h-[35px] w-auto"
           />
           <span className="text-xl font-bold text-primary">{t("brand.name")}</span>
         </Link>

@@ -3,6 +3,7 @@ import { Shield, Users, Heart, HandHeart, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import LandingPage from "@/components/LandingPage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-beach.jpg";
@@ -12,10 +13,10 @@ const Index = () => {
   const { t } = useTranslation("home");
 
   const stats = [
-    { label: t("stats.childrenHelped"), value: "150+", icon: Users },
-    { label: t("stats.yearsOfService"), value: "8", icon: Shield },
-    { label: t("stats.activeDonors"), value: "300+", icon: Heart },
-    { label: t("stats.staffAndVolunteers"), value: "45", icon: HandHeart },
+    { label: t("stats.childrenHelped"), value: "", icon: Users },
+    { label: t("stats.yearsOfService"), value: "", icon: Shield },
+    { label: t("stats.activeDonors"), value: "", icon: Heart },
+    { label: t("stats.staffAndVolunteers"), value: "", icon: HandHeart },
   ];
 
   const services = [
@@ -38,6 +39,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <LandingPage />
       <Navbar />
 
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
