@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 import { useTheme } from "@/contexts/ThemeProvider";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const { isDark, toggleTheme } = useTheme();
 
   const links = [
@@ -18,13 +19,15 @@ const Navbar = () => {
     { to: "/get-help", label: t("nav.getHelp") },
     { to: "/dashboard", label: t("nav.dashboard") },
   ];
+  const localizedPath = (path: string) => withPathLanguage(path, i18n.resolvedLanguage);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname === localizedPath(path);
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b shadow-sm">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to={localizedPath("/")} className="flex items-center gap-2">
           <img
             src={logo}
             alt={t("brand.logoAlt")}
@@ -37,7 +40,7 @@ const Navbar = () => {
           {links.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={localizedPath(link.to)}
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActive(link.to) ? "text-primary" : "text-muted-foreground"
               }`}
@@ -83,7 +86,7 @@ const Navbar = () => {
           {links.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={localizedPath(link.to)}
               onClick={() => setIsOpen(false)}
               className={`block text-sm font-medium py-2 ${
                 isActive(link.to) ? "text-primary" : "text-muted-foreground"

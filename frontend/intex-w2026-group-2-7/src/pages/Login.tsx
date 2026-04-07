@@ -13,16 +13,17 @@ import {
 } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation("login");
+  const { t, i18n } = useTranslation("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    navigate(withPathLanguage("/dashboard", i18n.resolvedLanguage));
   };
 
   return (
