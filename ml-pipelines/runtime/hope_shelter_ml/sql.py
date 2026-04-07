@@ -36,7 +36,7 @@ class SqlDatabase:
             f"Database={self._settings.database};"
             "Encrypt=yes;"
             "TrustServerCertificate=no;"
-            "Connection Timeout=30;"
+            f"Connection Timeout={self._settings.connection_timeout_seconds};"
         )
 
     def connect(self) -> pyodbc.Connection:

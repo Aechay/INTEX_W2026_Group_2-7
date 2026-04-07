@@ -338,6 +338,10 @@ resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
               value: sqlDatabaseName
             }
             {
+              name: 'ML_SQL_CONNECTION_TIMEOUT'
+              value: '120'
+            }
+            {
               name: 'ML_STORAGE_ACCOUNT_URL'
               value: 'https://${storageAccount.name}.blob.${environment().suffixes.storage}'
             }

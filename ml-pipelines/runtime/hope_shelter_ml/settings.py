@@ -18,6 +18,7 @@ class SqlSettings:
     server: str | None = None
     database: str | None = None
     driver: str = "ODBC Driver 18 for SQL Server"
+    connection_timeout_seconds: int = 120
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ def load_runtime_settings() -> RuntimeSettings:
             server=os.getenv("ML_SQL_SERVER"),
             database=os.getenv("ML_SQL_DATABASE"),
             driver=os.getenv("ML_SQL_DRIVER", "ODBC Driver 18 for SQL Server"),
+            connection_timeout_seconds=int(os.getenv("ML_SQL_CONNECTION_TIMEOUT", "120")),
         ),
         function_shared_secret=os.getenv("ML_FUNCTION_SHARED_SECRET"),
         function_route=os.getenv("ML_FUNCTION_ROUTE", "/api/social-media/predict"),
