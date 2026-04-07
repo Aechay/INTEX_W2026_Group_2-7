@@ -47,16 +47,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Azure Container Apps extension
-        run: az extension add --name containerapp --upgrade
-
-      - name: Deploy Function App package
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ vars.AZURE_ML_FUNCTION_APP_NAME }}
-          package: ./ml-pipelines/runtime
-          respect-funcignore: true
-
       - name: Resolve ACR login server
         id: acr
         env:
@@ -71,19 +61,32 @@ jobs:
         run: az acr login --name "$AZURE_ML_ACR_NAME"
 
       - name: Build and push training image
+        working-directory: ./ml-pipelines/runtime
         env:
           TRAINING_IMAGE_NAME: ${{ vars.AZURE_ML_TRAINING_IMAGE_NAME }}
           ACR_LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
         run: |
           IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
-          RUNTIME_DIR="${GITHUB_WORKSPACE}/ml-pipelines/runtime"
+          pwd
+          ls -la
+          test -f Dockerfile
           docker build \
-            --file "${RUNTIME_DIR}/Dockerfile" \
+            --file Dockerfile \
             -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}" \
             -t "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest" \
-            "${RUNTIME_DIR}"
+            .
           docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}"
           docker push "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest"
+
+      - name: Install Azure Container Apps extension
+        run: az extension add --name containerapp --upgrade
+
+      - name: Deploy Function App package
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_ML_FUNCTION_APP_NAME }}
+          package: ./ml-pipelines/runtime
+          respect-funcignore: true
 
       - name: Update training job image
         env:
