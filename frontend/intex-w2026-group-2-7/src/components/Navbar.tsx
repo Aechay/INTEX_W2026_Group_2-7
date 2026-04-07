@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { t } = useTranslation("common");
 
   const links = [
-    { to: "/", label: "Home" },
-    { to: "/get-help", label: "Get Help" },
-    { to: "/dashboard", label: "Dashboard" },
+    { to: "/", label: t("nav.home") },
+    { to: "/get-help", label: t("nav.getHelp") },
+    { to: "/dashboard", label: t("nav.dashboard") },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -19,12 +22,15 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b shadow-sm">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/HopeShelter.png" alt="Hope Shelter" className="h-10 w-10" />
-          <span className="text-xl font-bold text-primary">Hope Shelter</span>
+          <img
+            src="/HopeShelter.png"
+            alt={t("brand.logoAlt")}
+            className="h-10 w-10"
+          />
+          <span className="text-xl font-bold text-primary">{t("brand.name")}</span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-4">
           {links.map((link) => (
             <Link
               key={link.to}
@@ -36,20 +42,31 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
-          <Button asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-            <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
-              Donate
+          <LanguageSwitcher />
+          <Button
+            asChild
+            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+          >
+            <a
+              href="https://donate.hopeshelter.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("nav.donate")}
             </a>
           </Button>
         </div>
 
-        {/* Mobile toggle */}
-        <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
+        <button
+          aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+          className="md:hidden p-2"
+          onClick={() => setIsOpen(!isOpen)}
+          type="button"
+        >
           {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden border-t bg-card px-4 py-4 space-y-3">
           {links.map((link) => (
@@ -64,9 +81,17 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
-          <Button asChild className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-            <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
-              Donate
+          <LanguageSwitcher triggerClassName="w-full bg-background" />
+          <Button
+            asChild
+            className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+          >
+            <a
+              href="https://donate.hopeshelter.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("nav.donate")}
             </a>
           </Button>
         </div>
