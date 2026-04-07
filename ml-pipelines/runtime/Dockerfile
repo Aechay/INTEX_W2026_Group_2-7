@@ -20,4 +20,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "-m", "hope_shelter_ml.cli", "train-all", "--publish-to-blob"]
+CMD ["python", "-m", "hope_shelter_ml.cli", "--publish-to-blob", "train-all"]
