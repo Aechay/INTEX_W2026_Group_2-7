@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { Heart, Mail, Phone, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Footer = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const localizedPath = (path: string) => withPathLanguage(path, i18n.resolvedLanguage);
 
   return (
     <footer className="bg-muted dark:bg-card">
@@ -23,19 +25,19 @@ const Footer = () => {
             </h3>
             <div className="space-y-2">
               <Link
-                to="/"
+                to={localizedPath("/")}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("nav.home")}
               </Link>
               <Link
-                to="/get-help"
+                to={localizedPath("/get-help")}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("nav.getHelp")}
               </Link>
               <Link
-                to="/login"
+                to={localizedPath("/login")}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("footer.staffLogin")}

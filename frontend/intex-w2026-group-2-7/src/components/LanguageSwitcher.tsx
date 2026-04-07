@@ -1,5 +1,6 @@
 import { Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
   type Language,
   isSupportedLanguage,
 } from "@/i18n/languages";
+import { withPathLanguage } from "@/i18n/routing";
 
 type LanguageSwitcherProps = {
   triggerClassName?: string;
@@ -20,6 +22,8 @@ type LanguageSwitcherProps = {
 
 const LanguageSwitcher = ({ triggerClassName }: LanguageSwitcherProps) => {
   const { t, i18n } = useTranslation("common");
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const currentLanguage = isSupportedLanguage(i18n.resolvedLanguage)
     ? i18n.resolvedLanguage
@@ -30,6 +34,10 @@ const LanguageSwitcher = ({ triggerClassName }: LanguageSwitcherProps) => {
       return;
     }
 
+    navigate(
+      `${withPathLanguage(location.pathname, language)}${location.search}${location.hash}`,
+      { replace: true },
+    );
     void i18n.changeLanguage(language as Language);
   };
 

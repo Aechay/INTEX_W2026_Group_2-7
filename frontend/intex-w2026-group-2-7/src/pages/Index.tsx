@@ -8,9 +8,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-beach.jpg";
 import missionImage from "@/assets/mission-beach.jpg";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Index = () => {
-  const { t } = useTranslation("home");
+  const { t, i18n } = useTranslation("home");
 
   const stats = [
     { label: t("stats.childrenHelped"), value: "", icon: Users },
@@ -64,7 +65,7 @@ const Index = () => {
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8"
             >
-              <Link to="/get-help">
+              <Link to={withPathLanguage("/get-help", i18n.resolvedLanguage)}>
                 {t("hero.primaryAction")} <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
