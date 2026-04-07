@@ -31,14 +31,16 @@ public class AuthApiTests
             return await identityDbContext.Users.SingleOrDefaultAsync(u => u.Email == "student1@test.local");
         });
 
-        var operationalEntityCount = await factory.WithScopeAsync(services =>
+        var operationalSnapshotCount = await factory.WithScopeAsync(async services =>
         {
             var operationalDbContext = services.GetRequiredService<OperationalDbContext>();
-            return Task.FromResult(operationalDbContext.Model.GetEntityTypes().Count());
+            return await operationalDbContext.MlModelRuns.CountAsync()
+                   + await operationalDbContext.DonorChurnPredictions.CountAsync()
+                   + await operationalDbContext.ResidentRiskPredictions.CountAsync();
         });
 
         Assert.NotNull(user);
-        Assert.Equal(0, operationalEntityCount);
+        Assert.Equal(0, operationalSnapshotCount);
     }
 
     [Fact]

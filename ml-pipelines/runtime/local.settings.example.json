@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "ML_INPUT_MODE": "csv",
+    "ML_DATA_DIR": "../lighthouse_csv_v7",
+    "ML_STORAGE_ACCOUNT_URL": "https://<storage-account>.blob.core.windows.net",
+    "ML_STORAGE_CONTAINER_NAME": "ml-model-artifacts",
+    "ML_SOCIAL_MEDIA_LATEST_BLOB": "models/social-media/latest.json",
+    "ML_FUNCTION_SHARED_SECRET": "<shared-secret>"
+  }
+}

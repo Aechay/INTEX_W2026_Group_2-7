@@ -5,6 +5,13 @@
 
 # dotenv files
 .env
+.env.*
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+frontend/**/dist/
+frontend/**/.vite/
 
 #rider specific files
 *.iml

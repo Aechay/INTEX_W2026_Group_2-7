@@ -1,8 +1,10 @@
 using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Configuration;
+using INTEX_W2026_Group_2_7.Configuration.Ml;
 using INTEX_W2026_Group_2_7.Data;
 using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
+using INTEX_W2026_Group_2_7.Services.Ml;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,6 +57,8 @@ builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<SocialMediaInferenceOptions>(
+    builder.Configuration.GetSection(SocialMediaInferenceOptions.SectionName));
 builder.Services.Configure<SmtpEmailOptions>(
     builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
 builder.Services.Configure<IdentityOptions>(options =>
@@ -102,6 +106,8 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, SmtpIdentityEmailSender>();
 builder.Services.AddSingleton<IExternalAuthCodeStore, ExternalAuthCodeStore>();
+builder.Services.AddHttpClient(SocialMediaInferenceClient.HttpClientName);
+builder.Services.AddScoped<ISocialMediaInferenceClient, SocialMediaInferenceClient>();
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
@@ -165,6 +171,7 @@ authGroup.MapIdentityApi<ApplicationUser>();
 authGroup.MapCustomAuthEndpoints();
 
 app.MapControllers();
+app.MapMlEndpoints();
 
 await app.SeedIdentityDataAsync();
 

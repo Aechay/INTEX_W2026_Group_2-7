@@ -61,6 +61,43 @@ The frontend is deployed on azure and has a custom domain on it. The azure domai
 
 The backend is also deployed on azure and has the domain: [https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net](https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net)
 
+# ML runtime
+
+The ML deployment scaffold now lives under [`ml-pipelines/runtime`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/runtime). It contains:
+
+- a reusable Python runtime for training and batch scoring
+- a Python Azure Function entrypoint for live social-media inference
+- a Dockerfile for the nightly Container Apps training job
+
+The Azure infrastructure for these resources is defined in [`infra/ml-runtime.bicep`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/infra/ml-runtime.bicep), and the manual GitHub trigger for retraining is in [`.github/workflows/ml-retrain-manual.yml`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/.github/workflows/ml-retrain-manual.yml).
+
+The ML runtime deployment workflow is in [`.github/workflows/ml-runtime-deploy.yml`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/.github/workflows/ml-runtime-deploy.yml). It deploys the Python Function App package, builds and pushes the nightly training image to ACR, and updates the Container Apps Job image to the latest commit SHA.
+
+The backend exposes these admin ML routes:
+
+- `POST /api/admin/ml/social-media/predict`
+- `GET /api/admin/ml/donor-churn/current`
+- `GET /api/admin/ml/resident-risk/current`
+
+The React frontend now has a real bearer-token login flow and an admin dashboard that:
+
+- calls `/auth/login?useCookies=false`
+- calls `/auth/me` to determine the user and roles
+- loads current donor/resident batch predictions
+- runs live social-media predictions through the backend proxy
+
+For local frontend development, copy [`frontend/intex-w2026-group-2-7/.env.example`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/frontend/intex-w2026-group-2-7/.env.example) into a local `.env.local` and set `VITE_API_BASE_URL` if you are not using the default local backend URL.
+
+The operational schema now includes EF migrations for model runs and prediction snapshots/views. Those migrations are checked in only; they are **not** applied by anything in this branch unless you later run them yourself or merge to `main` and let the existing backend deployment workflow execute.
+
+The SQL view contract that feeds nightly training lives in [`ml-pipelines/runtime/SQL_VIEW_CONTRACT.md`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/runtime/SQL_VIEW_CONTRACT.md). You still need to create those views in the operational database once you decide how the live tables map to the notebook feature sets.
+
+## Operational dataset seed
+
+The operational EF Core migration [`20260407211640_CreateOperationalDataset.cs`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7/Migrations/Operational/20260407211640_CreateOperationalDataset.cs) creates the case-management, fundraising, social media, and ML snapshot tables and then seeds them from the CSV files in [`ml-pipelines/lighthouse_csv_v7`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/lighthouse_csv_v7).
+
+That means the migration bundle expects the CSV directory to exist in the repository checkout when migrations run in GitHub Actions. If those files are removed or renamed, the operational migration will fail.
+
 # Auth docs
 
 - [Authorization playbook](docs/auth/authorization-playbook.md)
