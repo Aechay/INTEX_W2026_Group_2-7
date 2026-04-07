@@ -3,19 +3,21 @@ import { Shield, Users, Heart, HandHeart, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import LandingPage from "@/components/LandingPage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-beach.jpg";
 import missionImage from "@/assets/mission-beach.jpg";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Index = () => {
-  const { t } = useTranslation("home");
+  const { t, i18n } = useTranslation("home");
 
   const stats = [
-    { label: t("stats.childrenHelped"), value: "150+", icon: Users },
-    { label: t("stats.yearsOfService"), value: "8", icon: Shield },
-    { label: t("stats.activeDonors"), value: "300+", icon: Heart },
-    { label: t("stats.staffAndVolunteers"), value: "45", icon: HandHeart },
+    { label: t("stats.childrenHelped"), value: "", icon: Users },
+    { label: t("stats.yearsOfService"), value: "", icon: Shield },
+    { label: t("stats.activeDonors"), value: "", icon: Heart },
+    { label: t("stats.staffAndVolunteers"), value: "", icon: HandHeart },
   ];
 
   const services = [
@@ -38,6 +40,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <LandingPage />
       <Navbar />
 
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
@@ -48,7 +51,7 @@ const Index = () => {
           width={1920}
           height={1080}
         />
-        <div className="absolute inset-0 bg-foreground/50" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
             {t("hero.titlePrefix")} <span className="text-accent">{t("hero.titleAccent")}</span>
@@ -62,7 +65,7 @@ const Index = () => {
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8"
             >
-              <Link to="/get-help">
+              <Link to={withPathLanguage("/get-help", i18n.resolvedLanguage)}>
                 {t("hero.primaryAction")} <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

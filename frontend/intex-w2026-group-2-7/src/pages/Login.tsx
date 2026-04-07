@@ -15,13 +15,11 @@ import {
 } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { withPathLanguage } from "@/i18n/routing";
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { t } = useTranslation("login");
-  const auth = useAuth();
-
+  const { t, i18n } = useTranslation("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,6 +52,9 @@ const Login = () => {
     } finally {
       setIsSubmitting(false);
     }
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(withPathLanguage("/dashboard", i18n.resolvedLanguage));
   };
 
   return (
