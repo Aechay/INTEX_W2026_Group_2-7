@@ -200,8 +200,8 @@ export const resources = {
   es: {
     common: {
       brand: {
-        name: "Hope Shelter",
-        logoAlt: "Logotipo de Hope Shelter",
+        name: "Refugio de Esperanza",
+        logoAlt: "Logotipo de Refugio de Esperanza",
       },
       nav: {
         home: "Inicio",
@@ -244,7 +244,7 @@ export const resources = {
       mission: {
         title: "Nuestra misión",
         paragraph1:
-          "Hope Shelter brinda al personal y a los miembros de la junta una plataforma segura y centralizada para gestionar el progreso de las niñas y las relaciones con donantes, mientras ofrece a niñas en riesgo en la República Dominicana acceso confiable a recursos de seguridad y apoyo.",
+          "Refugio de Esperanza brinda al personal y a los miembros de la junta una plataforma segura y centralizada para gestionar el progreso de las niñas y las relaciones con donantes, mientras ofrece a niñas en riesgo en la República Dominicana acceso confiable a recursos de seguridad y apoyo.",
         paragraph2:
           "Creemos que cada niña merece seguridad, amor y la oportunidad de prosperar. A través de una gestión de casos dedicada, alianzas comunitarias y el generoso apoyo de donantes, creamos caminos que llevan de la vulnerabilidad al empoderamiento.",
         imageAlt: "Costa tropical tranquila con palmeras",
@@ -314,7 +314,7 @@ export const resources = {
       },
       directContact: {
         title: "Contáctanos directamente",
-        hotlineLabel: "Línea de ayuda de Hope Shelter",
+        hotlineLabel: "Línea de ayuda de Refugio de Esperanza",
         visitUs: "Visítanos",
         location: "Santo Domingo, República Dominicana",
       },
@@ -340,7 +340,7 @@ export const resources = {
     },
     dashboard: {
       title: "Panel",
-      subtitle: "Bienvenida de nuevo. Aquí tienes un resumen de Hope Shelter.",
+      subtitle: "Bienvenida de nuevo. Aquí tienes un resumen de Refugio de Esperanza.",
       overview: {
         totalChildren: {
           title: "Total de niñas",
@@ -385,9 +385,9 @@ export const resources = {
     },
     login: {
       title: "Ingreso del personal",
-      description: "Accede al panel administrativo de Hope Shelter",
+      description: "Accede al panel administrativo de Refugio de Esperanza",
       emailLabel: "Correo electrónico",
-      emailPlaceholder: "tu@hopeshelter.org",
+      emailPlaceholder: "tu@RefugiodeEsperanza.org",
       passwordLabel: "Contraseña",
       passwordPlaceholder: "••••••••",
       submit: "Iniciar sesión",
