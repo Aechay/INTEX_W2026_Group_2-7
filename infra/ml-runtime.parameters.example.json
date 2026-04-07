@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "hope-ml"
+    },
+    "location": {
+      "value": "centralus"
+    },
+    "sqlServerFqdn": {
+      "value": "<your-sql-server>.database.windows.net"
+    },
+    "sqlDatabaseName": {
+      "value": "<your-sql-database>"
+    },
+    "trainingScheduleCron": {
+      "value": "0 8 * * *"
+    },
+    "trainingImageName": {
+      "value": "ml-runtime"
+    },
+    "trainingImageTag": {
+      "value": "latest"
+    },
+    "backendPrincipalId": {
+      "value": "<optional-existing-backend-managed-identity-principal-id>"
+    },
+    "mlFunctionSharedSecret": {
+      "value": "<replace-before-deploying>"
+    }
+  }
+}

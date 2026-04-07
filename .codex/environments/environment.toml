@@ -9,6 +9,7 @@ script = ""
 name = "Run"
 icon = "run"
 command = '''
+cd ./frontend/intex-w2026-group-2-7
 npm i
 npm run dev
 '''

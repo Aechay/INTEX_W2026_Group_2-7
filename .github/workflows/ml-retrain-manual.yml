@@ -1,0 +1,43 @@
+name: Start ML Retraining Job
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why are you starting the retraining job?
+        required: false
+        type: string
+
+jobs:
+  start-job:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log input reason
+        run: echo "Retraining reason: ${{ github.event.inputs.reason }}"
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F87576B863A34943B1F748D65747E82F }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_59606C6CC3104F068B1FF04C2CD04059 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_68D2392684AB4E16B15324FC4E36BA6A }}
+
+      - name: Install Azure Container Apps extension
+        run: az extension add --name containerapp --upgrade
+
+      - name: Start the retraining job
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_ML_TRAINING_JOB_NAME: ${{ vars.AZURE_ML_TRAINING_JOB_NAME }}
+        run: |
+          test -n "$AZURE_RESOURCE_GROUP"
+          test -n "$AZURE_ML_TRAINING_JOB_NAME"
+          az containerapp job start \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_ML_TRAINING_JOB_NAME"

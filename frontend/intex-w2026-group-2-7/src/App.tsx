@@ -1,4 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "@/auth/AuthProvider";
+import RequireAdmin from "@/auth/RequireAdmin";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";

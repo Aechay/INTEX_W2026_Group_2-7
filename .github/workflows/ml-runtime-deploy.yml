@@ -1,0 +1,91 @@
+name: Deploy ML Runtime
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ml-pipelines/runtime/**"
+      - "infra/ml-runtime.bicep"
+      - ".github/workflows/ml-runtime-deploy.yml"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required configuration
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_ML_FUNCTION_APP_NAME: ${{ vars.AZURE_ML_FUNCTION_APP_NAME }}
+          AZURE_ML_ACR_NAME: ${{ vars.AZURE_ML_ACR_NAME }}
+          AZURE_ML_TRAINING_JOB_NAME: ${{ vars.AZURE_ML_TRAINING_JOB_NAME }}
+        run: |
+          test -n "$AZURE_RESOURCE_GROUP"
+          test -n "$AZURE_ML_FUNCTION_APP_NAME"
+          test -n "$AZURE_ML_ACR_NAME"
+          test -n "$AZURE_ML_TRAINING_JOB_NAME"
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F87576B863A34943B1F748D65747E82F }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_59606C6CC3104F068B1FF04C2CD04059 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_68D2392684AB4E16B15324FC4E36BA6A }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Azure Container Apps extension
+        run: az extension add --name containerapp --upgrade
+
+      - name: Deploy Function App package
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_ML_FUNCTION_APP_NAME }}
+          package: ./ml-pipelines/runtime
+          respect-funcignore: true
+
+      - name: Build and push training image
+        env:
+          AZURE_ML_ACR_NAME: ${{ vars.AZURE_ML_ACR_NAME }}
+          TRAINING_IMAGE_NAME: ${{ vars.AZURE_ML_TRAINING_IMAGE_NAME }}
+        run: |
+          IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
+          az acr build \
+            --registry "$AZURE_ML_ACR_NAME" \
+            --image "${IMAGE_NAME}:${GITHUB_SHA}" \
+            --image "${IMAGE_NAME}:latest" \
+            ./ml-pipelines/runtime
+
+      - name: Resolve ACR login server
+        id: acr
+        env:
+          AZURE_ML_ACR_NAME: ${{ vars.AZURE_ML_ACR_NAME }}
+        run: |
+          LOGIN_SERVER=$(az acr show --name "$AZURE_ML_ACR_NAME" --query loginServer --output tsv)
+          echo "login_server=$LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+
+      - name: Update training job image
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_ML_TRAINING_JOB_NAME: ${{ vars.AZURE_ML_TRAINING_JOB_NAME }}
+          TRAINING_IMAGE_NAME: ${{ vars.AZURE_ML_TRAINING_IMAGE_NAME }}
+          ACR_LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
+        run: |
+          IMAGE_NAME="${TRAINING_IMAGE_NAME:-ml-runtime}"
+          az containerapp job update \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_ML_TRAINING_JOB_NAME" \
+            --image "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${GITHUB_SHA}"
