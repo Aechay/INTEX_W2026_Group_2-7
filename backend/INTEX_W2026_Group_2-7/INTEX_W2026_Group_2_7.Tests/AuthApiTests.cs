@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using INTEX_W2026_Group_2_7.Data;
+using INTEX_W2026_Group_2_7.Services;
 using INTEX_W2026_Group_2_7.Tests.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,75 @@ public class AuthApiTests
     }
 
     [Fact]
+    public async Task ExternalProvidersEndpoint_ListsGoogleProvider()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+
+        var response = await client.GetAsync("/auth/external/providers");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadFromJsonAsync<IReadOnlyCollection<ExternalAuthProviderResponse>>();
+
+        Assert.NotNull(payload);
+
+        var googleProvider = Assert.Single(payload!, provider => provider.Name == "Google");
+        Assert.Equal("Google", googleProvider.DisplayName);
+        Assert.EndsWith("/auth/external/Google/start", googleProvider.StartUrl);
+    }
+
+    [Fact]
+    public async Task ExternalCodeExchange_ReturnsOpaqueTokens_AndConsumesCode()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+
+        var code = await factory.WithScopeAsync(async services =>
+        {
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var externalAuthCodeStore = services.GetRequiredService<IExternalAuthCodeStore>();
+            var user = new ApplicationUser
+            {
+                UserName = "student-google@test.local",
+                Email = "student-google@test.local",
+                EmailConfirmed = true
+            };
+
+            var createResult = await userManager.CreateAsync(user);
+            Assert.True(
+                createResult.Succeeded,
+                string.Join(", ", createResult.Errors.Select(error => error.Description)));
+
+            return externalAuthCodeStore.Issue(user.Id, "Google");
+        });
+
+        var firstResponse = await client.PostAsJsonAsync("/auth/external/exchange", new { code });
+        firstResponse.EnsureSuccessStatusCode();
+
+        var payload = await firstResponse.Content.ReadFromJsonAsync<TestWebApplicationFactory.AccessTokenResponse>();
+
+        Assert.NotNull(payload);
+        Assert.Equal("Bearer", payload!.TokenType);
+        Assert.False(string.IsNullOrWhiteSpace(payload.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(payload.RefreshToken));
+        Assert.True(payload.ExpiresIn > 0);
+
+        var secondResponse = await client.PostAsJsonAsync("/auth/external/exchange", new { code });
+        Assert.Equal(HttpStatusCode.Unauthorized, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExternalCodeExchange_Returns401ForUnknownCode()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+
+        var response = await client.PostAsJsonAsync("/auth/external/exchange", new { code = "missing-code" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task NormalUser_IsForbiddenFromAdminPing()
     {
         await using var factory = new TestWebApplicationFactory();
@@ -153,4 +223,6 @@ public class AuthApiTests
     }
 
     private sealed record CurrentUserResponse(string UserId, string Email, IReadOnlyCollection<string> Roles);
+
+    private sealed record ExternalAuthProviderResponse(string Name, string DisplayName, string StartUrl);
 }

@@ -377,10 +377,39 @@ When MFA is enabled later, the frontend login flow can become:
 
 ### External login
 
-When Google or another provider is added later, the frontend will likely gain:
+Google external login is now exposed from the backend in a way that keeps the frontend small.
 
-- a "Continue with Google" button
-- a redirect/callback route
-- a backend endpoint or challenge flow to start external auth
+Backend routes:
 
-That will be an additive change. It does not require replacing the current auth provider pattern.
+- `GET /auth/external/providers`
+- `GET /auth/external/Google/start`
+- `POST /auth/external/exchange`
+
+Frontend route to add:
+
+- `/auth/external/callback`
+
+Recommended frontend flow:
+
+1. Call `GET /auth/external/providers` during auth bootstrap or on the login page.
+2. If `Google` is present, render a "Continue with Google" button.
+3. On click, navigate the browser to the provider's `startUrl`.
+4. After Google login, the backend redirects the browser to the frontend callback route:
+   - success: `/auth/external/callback?provider=Google&code=...`
+   - failure: `/auth/external/callback?provider=Google&error=...`
+5. In the callback page, if `code` exists, call `POST /auth/external/exchange` with:
+
+```json
+{
+  "code": "..."
+}
+```
+
+6. Treat the response exactly like `POST /auth/login?useCookies=false`:
+   - save `accessToken`
+   - save `refreshToken`
+   - call `/auth/me`
+   - store the returned user
+   - redirect based on role
+
+This is additive. It does not replace the existing email/password auth provider pattern.

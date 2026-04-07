@@ -31,7 +31,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:IdentityConnection"] = "Server=localhost;Database=IdentityTest;User Id=sa;Password=Password123!;TrustServerCertificate=True",
                 ["AuthBootstrap:AdminEmail"] = "admin@test.local",
                 ["AuthBootstrap:AdminPassword"] = "AdminPassword123!",
-                ["Frontend:BaseUrl"] = "https://frontend.test.local"
+                ["Frontend:BaseUrl"] = "https://frontend.test.local",
+                ["Authentication:Google:ClientId"] = "test-google-client-id",
+                ["Authentication:Google:ClientSecret"] = "test-google-client-secret"
             });
         });
 
