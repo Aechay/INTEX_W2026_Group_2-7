@@ -1,39 +1,41 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { LogIn, ShieldCheck } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { getErrorMessage } from "@/auth/auth-api";
-import useAuth from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { LogIn, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '@/auth/auth-api';
+import useAuth from '@/auth/useAuth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { withPathLanguage } from "@/i18n/routing";
+} from '@/components/ui/card';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { withPathLanguage } from '@/i18n/routing';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const location = useLocation();
+  const { t, i18n } = useTranslation('login');
+  const auth = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!auth.isBootstrapping && auth.isAuthenticated) {
       const target =
-        typeof location.state === "object" &&
+        typeof location.state === 'object' &&
         location.state !== null &&
-        "from" in location.state &&
-        typeof location.state.from === "string"
+        'from' in location.state &&
+        typeof location.state.from === 'string'
           ? location.state.from
-          : "/dashboard";
+          : '/dashboard';
 
       navigate(target, { replace: true });
     }
@@ -46,15 +48,14 @@ const Login = () => {
 
     try {
       await auth.login(email, password);
-      navigate("/dashboard", { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, "Sign in failed. Check your email and password."));
+      setErrorMessage(
+        getErrorMessage(error, 'Sign in failed. Check your email and password.')
+      );
     } finally {
       setIsSubmitting(false);
     }
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(withPathLanguage("/dashboard", i18n.resolvedLanguage));
   };
 
   return (
@@ -71,22 +72,23 @@ const Login = () => {
               Model operations, nightly scoring, and live prediction demos.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-              Sign in with a backend account to inspect the latest donor churn and resident risk
-              snapshots, then run the social-media regression model in real time through the API.
+              Sign in with a backend account to inspect the latest donor churn
+              and resident risk snapshots, then run the social-media regression
+              model in real time through the API.
             </p>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
               {[
                 {
-                  label: "Nightly batch scoring",
-                  value: "Donor churn and resident risk",
+                  label: 'Nightly batch scoring',
+                  value: 'Donor churn and resident risk',
                 },
                 {
-                  label: "Live inference",
-                  value: "Social media donation estimate",
+                  label: 'Live inference',
+                  value: 'Social media donation estimate',
                 },
                 {
-                  label: "Auth model",
-                  value: "ASP.NET Core Identity bearer tokens",
+                  label: 'Auth model',
+                  value: 'ASP.NET Core Identity bearer tokens',
                 },
               ].map((item) => (
                 <div
@@ -96,7 +98,9 @@ const Login = () => {
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     {item.label}
                   </p>
-                  <p className="mt-2 text-sm font-medium text-foreground">{item.value}</p>
+                  <p className="mt-2 text-sm font-medium text-foreground">
+                    {item.value}
+                  </p>
                 </div>
               ))}
             </div>
@@ -104,18 +108,20 @@ const Login = () => {
 
           <Card className="border-primary/10 shadow-xl">
             <CardHeader className="space-y-3">
-              <CardTitle className="text-2xl text-foreground">{t("title")}</CardTitle>
-              <CardDescription>{t("description")}</CardDescription>
+              <CardTitle className="text-2xl text-foreground">
+                {t('title')}
+              </CardTitle>
+              <CardDescription>{t('description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">
-                    {t("emailLabel")}
+                    {t('emailLabel')}
                   </label>
                   <Input
                     type="email"
-                    placeholder={t("emailPlaceholder")}
+                    placeholder={t('emailPlaceholder')}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
@@ -124,11 +130,11 @@ const Login = () => {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">
-                    {t("passwordLabel")}
+                    {t('passwordLabel')}
                   </label>
                   <Input
                     type="password"
-                    placeholder={t("passwordPlaceholder")}
+                    placeholder={t('passwordPlaceholder')}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="current-password"
@@ -148,7 +154,7 @@ const Login = () => {
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <LogIn className="mr-2 h-4 w-4" />
-                  {isSubmitting ? "Signing in..." : t("submit")}
+                  {isSubmitting ? 'Signing in...' : t('submit')}
                 </Button>
               </form>
             </CardContent>
