@@ -129,7 +129,6 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   }
   properties: {
     adminUserEnabled: false
-    anonymousPullEnabled: false
     dataEndpointEnabled: false
     encryption: {
       status: 'disabled'
@@ -311,7 +310,7 @@ resource trainingJob 'Microsoft.App/jobs@2024-03-01' = {
             }
           ]
           resources: {
-            cpu: 1.0
+            cpu: any('1.0')
             memory: '2Gi'
           }
         }
