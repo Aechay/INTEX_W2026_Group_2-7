@@ -420,7 +420,6 @@ export const resources = {
         welcomeBackWithName: "Welcome back, {{name}}",
         subtitle: "Thank you for your continued support of Hope Shelter.",
       },
-      signOut: "Sign out",
       stats: {
         totalDonated: "Total donated",
         donationsMade: "Donations made",
@@ -509,11 +508,13 @@ export const resources = {
       },
       fields: {
         residentCode: "Resident name/code",
+        internalCode: "Internal code",
         firstName: "First Name",
         lastName: "Last Name",
         caseControlNo: "Case Control No.",
         caseStatus: "Case Status",
         caseCategory: "Case Category",
+        caseCategoryPlaceholder: "Select a category",
         safehouse: "Safehouse",
         assignedSocialWorker: "Assigned Social Worker",
         dateOfBirth: "Date of Birth",
@@ -984,7 +985,6 @@ export const resources = {
         welcomeBackWithName: "Bienvenido de nuevo, {{name}}",
         subtitle: "Gracias por tu apoyo continuo a Refugio de Esperanza.",
       },
-      signOut: "Cerrar sesión",
       stats: {
         totalDonated: "Total donado",
         donationsMade: "Donaciones realizadas",
@@ -1073,11 +1073,13 @@ export const resources = {
       },
       fields: {
         residentCode: "Nombre/codigo de residente",
+        internalCode: "Código interno",
         firstName: "Nombre",
         lastName: "Apellido",
         caseControlNo: "No. de control del caso",
         caseStatus: "Estado del caso",
         caseCategory: "Categoria del caso",
+        caseCategoryPlaceholder: "Elige una categoria",
         safehouse: "Casa segura",
         assignedSocialWorker: "Trabajadora social asignada",
         dateOfBirth: "Fecha de nacimiento",

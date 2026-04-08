@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Heart, Landmark, LogOut } from 'lucide-react';
+import { Heart, Landmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAuth from '@/auth/useAuth';
 import Navbar from '@/components/Navbar';
@@ -150,22 +150,11 @@ const DonorPortal = () => {
       <Navbar />
 
       <main className="flex-1 container mx-auto px-4 py-10 max-w-4xl space-y-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {donorName ? t('header.welcomeBackWithName', { name: donorName }) : t('header.welcomeBack')}
-            </h1>
-            <p className="mt-1 text-muted-foreground">{t('header.subtitle')}</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void auth.logout()}
-            className="shrink-0"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            {t('signOut')}
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            {donorName ? t('header.welcomeBackWithName', { name: donorName }) : t('header.welcomeBack')}
+          </h1>
+          <p className="mt-1 text-muted-foreground">{t('header.subtitle')}</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

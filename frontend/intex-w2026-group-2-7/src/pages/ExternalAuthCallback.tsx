@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { consumePendingAuthRedirect } from "@/auth/auth-redirect";
+import { consumePendingAuthRedirect, resolvePostAuthRedirect } from "@/auth/auth-redirect";
 import { getErrorMessage } from "@/auth/auth-api";
 import useAuth from "@/auth/useAuth";
 import AuthPageLayout from "@/components/auth/AuthPageLayout";
@@ -22,20 +22,6 @@ const ExternalAuthCallback = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(
     remoteError ? t("externalCallbackFailed", { provider }) : null,
   );
-
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      return;
-    }
-
-    const redirectTo = consumePendingAuthRedirect();
-    const fallbackPath = withPathLanguage(
-      auth.isAdmin ? "/dashboard" : "/donor-portal",
-      i18n.resolvedLanguage,
-    );
-
-    navigate(redirectTo ?? fallbackPath, { replace: true });
-  }, [auth.isAdmin, auth.isAuthenticated, i18n.resolvedLanguage, navigate]);
 
   useEffect(() => {
     if (remoteError) {
@@ -62,13 +48,16 @@ const ExternalAuthCallback = () => {
           return;
         }
 
-        const redirectTo = consumePendingAuthRedirect();
-        const fallbackPath = withPathLanguage(
-          user.roles.includes("Admin") ? "/dashboard" : "/donor-portal",
-          i18n.resolvedLanguage,
-        );
+        const pendingPath = consumePendingAuthRedirect();
+        const isAdmin = user.roles.includes("Admin");
+        const target = resolvePostAuthRedirect({
+          pendingPath,
+          isAdmin,
+          localizedDashboard: withPathLanguage("/dashboard", i18n.resolvedLanguage),
+          localizedDonorPortal: withPathLanguage("/donor-portal", i18n.resolvedLanguage),
+        });
 
-        navigate(redirectTo ?? fallbackPath, { replace: true });
+        navigate(target, { replace: true });
       } catch (error) {
         attemptedExchangeCodes.delete(code);
         consumePendingAuthRedirect();
