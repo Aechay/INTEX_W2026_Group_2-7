@@ -3,6 +3,7 @@ import pandas as pd
 from hope_shelter_ml.donor_churn import build_donor_feature_table
 from hope_shelter_ml.resident_risk import build_resident_feature_table
 from hope_shelter_ml.social_media import prepare_social_media_training_frame
+from hope_shelter_ml.social_media_inference import normalize_social_media_request
 
 
 def test_build_donor_feature_table_creates_lapse_target_and_rates():
@@ -216,3 +217,45 @@ def test_prepare_social_media_training_frame_adds_engineered_columns():
         frame.columns
     )
     assert frame.iloc[0]["time_bucket"] == "Morning"
+
+
+def test_normalize_social_media_request_accepts_camel_case_payload():
+    frame = normalize_social_media_request(
+        {
+            "platform": "Facebook",
+            "postType": "ImpactStory",
+            "mediaType": "Photo",
+            "contentTopic": "DonorImpact",
+            "sentimentTone": "Hopeful",
+            "timeBucket": "Morning",
+            "captionLength": 120,
+            "numHashtags": 3,
+            "mentionsCount": 1,
+            "isCta": 1,
+            "isStory": 1,
+            "isBoostedFlag": 0,
+            "followerCountAtPost": 5000,
+            "isWeekend": 0,
+            "postHour": 10,
+        }
+    )
+
+    assert list(frame.columns) == [
+        "caption_length",
+        "num_hashtags",
+        "mentions_count",
+        "is_cta",
+        "is_story",
+        "is_boosted_flag",
+        "follower_count_at_post",
+        "is_weekend",
+        "post_hour",
+        "platform",
+        "post_type",
+        "media_type",
+        "content_topic",
+        "sentiment_tone",
+        "time_bucket",
+    ]
+    assert frame.iloc[0]["post_type"] == "ImpactStory"
+    assert frame.iloc[0]["follower_count_at_post"] == 5000

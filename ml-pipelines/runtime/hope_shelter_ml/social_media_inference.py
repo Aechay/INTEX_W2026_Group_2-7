@@ -26,10 +26,43 @@ CATEGORICAL_FEATURES = [
     "time_bucket",
 ]
 SOCIAL_REQUEST_FIELDS = [*NUMERIC_FEATURES, *CATEGORICAL_FEATURES]
+FIELD_ALIASES = {
+    "platform": ("platform", "Platform"),
+    "post_type": ("post_type", "postType", "PostType"),
+    "media_type": ("media_type", "mediaType", "MediaType"),
+    "content_topic": ("content_topic", "contentTopic", "ContentTopic"),
+    "sentiment_tone": ("sentiment_tone", "sentimentTone", "SentimentTone"),
+    "time_bucket": ("time_bucket", "timeBucket", "TimeBucket"),
+    "caption_length": ("caption_length", "captionLength", "CaptionLength"),
+    "num_hashtags": ("num_hashtags", "numHashtags", "NumHashtags"),
+    "mentions_count": ("mentions_count", "mentionsCount", "MentionsCount"),
+    "is_cta": ("is_cta", "isCta", "IsCta"),
+    "is_story": ("is_story", "isStory", "IsStory"),
+    "is_boosted_flag": ("is_boosted_flag", "isBoostedFlag", "IsBoostedFlag"),
+    "follower_count_at_post": (
+        "follower_count_at_post",
+        "followerCountAtPost",
+        "FollowerCountAtPost",
+    ),
+    "is_weekend": ("is_weekend", "isWeekend", "IsWeekend"),
+    "post_hour": ("post_hour", "postHour", "PostHour"),
+}
+
+
+def canonicalize_social_media_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    canonical_payload: dict[str, Any] = {}
+
+    for canonical_field, aliases in FIELD_ALIASES.items():
+        canonical_payload[canonical_field] = next(
+            (payload[alias] for alias in aliases if alias in payload),
+            None,
+        )
+
+    return canonical_payload
 
 
 def normalize_social_media_request(payload: dict[str, Any]) -> pd.DataFrame:
-    row = {field: payload.get(field) for field in SOCIAL_REQUEST_FIELDS}
+    row = canonicalize_social_media_payload(payload)
 
     if row.get("time_bucket") in (None, "") and row.get("post_hour") is not None:
         post_hour = int(row["post_hour"])

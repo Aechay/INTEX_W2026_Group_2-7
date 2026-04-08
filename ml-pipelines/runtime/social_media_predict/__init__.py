@@ -51,6 +51,7 @@ def _load_social_media_model() -> tuple[Any, str]:
 def main(request: func.HttpRequest) -> func.HttpResponse:
     from hope_shelter_ml.social_media_inference import (
         SOCIAL_REQUEST_FIELDS,
+        canonicalize_social_media_payload,
         predict_social_media_value,
     )
 
@@ -62,7 +63,9 @@ def main(request: func.HttpRequest) -> func.HttpResponse:
     except ValueError:
         return func.HttpResponse("Invalid JSON payload.", status_code=400)
 
-    missing_fields = [field for field in SOCIAL_REQUEST_FIELDS if field not in payload]
+    payload = canonicalize_social_media_payload(payload)
+
+    missing_fields = [field for field in SOCIAL_REQUEST_FIELDS if payload.get(field) is None]
     if missing_fields:
         return func.HttpResponse(
             f"Missing required fields: {', '.join(missing_fields)}",
