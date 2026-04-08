@@ -84,11 +84,11 @@ public class AuthApiTests
             password = "StudentPassword123!"
         });
 
-        var anonymousResponse = await anonymousClient.GetAsync("/weatherforecast");
+        var anonymousResponse = await anonymousClient.GetAsync("/auth/me");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
 
         using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student3@test.local", "StudentPassword123!");
-        var authorizedResponse = await authenticatedClient.GetAsync("/weatherforecast");
+        var authorizedResponse = await authenticatedClient.GetAsync("/auth/me");
 
         Assert.Equal(HttpStatusCode.OK, authorizedResponse.StatusCode);
     }
