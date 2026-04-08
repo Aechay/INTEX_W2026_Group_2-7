@@ -15,6 +15,7 @@ import CookieConsentBanner from '@/components/CookieConsentBanner';
 import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
+import Caseload from './pages/Caseload';
 import DonorPortal from './pages/DonorPortal';
 import Impact from './pages/Impact';
 import Donate from './pages/Donate';
@@ -84,6 +85,8 @@ const App = () => (
               <Route element={<RequireAdmin />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/:lang/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/caseload" element={<Caseload />} />
+                <Route path="/:lang/dashboard/caseload" element={<Caseload />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
