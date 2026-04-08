@@ -19,9 +19,8 @@ if (Uri.TryCreate(builder.Configuration["Frontend:BaseUrl"], UriKind.Absolute, o
     allowedFrontendOrigins.Add(configuredFrontendUri.GetLeftPart(UriPartial.Authority));
 }
 
-allowedFrontendOrigins.Add("https://wintex.alijahwhitney.dev");
 allowedFrontendOrigins.Add("https://wonderful-ocean-0a5af5610.2.azurestaticapps.net");
-allowedFrontendOrigins.Add("https://hope.alijahwhitney.dev");
+allowedFrontendOrigins.Add("https://hopeshelter.alijahwhitney.dev");
 
 if (builder.Environment.IsDevelopment())
 {
