@@ -1,61 +1,66 @@
-import { Link } from "react-router-dom";
-import { Heart, Mail, Moon, Phone, Sun, MapPin } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { withPathLanguage } from "@/i18n/routing";
-import { useTheme } from "@/contexts/ThemeProvider";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Link } from 'react-router-dom';
+import { Heart, Mail, Moon, Phone, Sun, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { withPathLanguage } from '@/i18n/routing';
+import { useTheme } from '@/contexts/ThemeProvider';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const Footer = () => {
-  const { t, i18n } = useTranslation("common");
+  const { t, i18n } = useTranslation('common');
   const { isDark, toggleTheme } = useTheme();
-  const localizedPath = (path: string) => withPathLanguage(path, i18n.resolvedLanguage);
+  const localizedPath = (path: string) =>
+    withPathLanguage(path, i18n.resolvedLanguage);
 
   return (
     <footer className="bg-muted dark:bg-card">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 pt-12 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">{t("brand.name")}</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">
+              {t('brand.name')}
+            </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {t("footer.description")}
+              {t('footer.description')}
             </p>
           </div>
 
           <div>
             <h3 className="text-lg font-bold mb-4 text-accent">
-              {t("footer.quickLinks")}
+              {t('footer.quickLinks')}
             </h3>
             <div className="space-y-2">
               <Link
-                to={localizedPath("/")}
+                to={localizedPath('/')}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
-                {t("nav.home")}
+                {t('nav.home')}
               </Link>
               <Link
-                to={localizedPath("/get-help")}
+                to={localizedPath('/get-help')}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
-                {t("nav.getHelp")}
+                {t('nav.getHelp')}
               </Link>
               <Link
-                to={localizedPath("/login") + "?tab=staff"}
+                to={localizedPath('/login') + '?tab=staff'}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
-                {t("footer.staffLogin")}
+                {t('footer.staffLogin')}
               </Link>
               <Link
-                to={localizedPath("/privacy-policy")}
+                to={localizedPath('/privacy-policy')}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
-                {t("footer.privacyPolicy")}
+                {t('footer.privacyPolicy')}
               </Link>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">{t("footer.contact")}</h3>
+            <h3 className="text-lg font-bold mb-4 text-accent">
+              {t('footer.contact')}
+            </h3>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-secondary" />
@@ -67,7 +72,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-secondary" />
-                <span>{t("footer.location")}</span>
+                <span>{t('footer.location')}</span>
               </div>
             </div>
           </div>
@@ -75,24 +80,28 @@ const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}
+            © {new Date().getFullYear()} {t('brand.name')}. {t('footer.rights')}
           </p>
           <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
-              title={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+              aria-label={isDark ? t('nav.lightMode') : t('nav.darkMode')}
+              title={isDark ? t('nav.lightMode') : t('nav.darkMode')}
               className="h-9 w-9 flex items-center justify-center rounded-md border border-input bg-background/80 text-muted-foreground transition-all hover:border-2 hover:border-input"
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
             <LanguageSwitcher triggerClassName="h-9 w-[100px] bg-background/80" />
             <Button
               asChild
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             >
-              <Link to={localizedPath("/donate")}>
-                <Heart className="h-4 w-4 mr-1" /> {t("footer.donateNow")}
+              <Link to={localizedPath('/donate')}>
+                <Heart className="h-4 w-4 mr-1" /> {t('footer.donateNow')}
               </Link>
             </Button>
           </div>
