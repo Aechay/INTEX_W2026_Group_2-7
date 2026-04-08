@@ -414,6 +414,43 @@ export const resources = {
         description: "Every donation helps girls access safety, healing, and hope.",
       },
     },
+    donorPortal: {
+      header: {
+        welcomeBack: "Welcome back",
+        welcomeBackWithName: "Welcome back, {{name}}",
+        subtitle: "Thank you for your continued support of Hope Shelter.",
+      },
+      signOut: "Sign out",
+      stats: {
+        totalDonated: "Total donated",
+        donationsMade: "Donations made",
+        yearsSupporting: "Years supporting",
+      },
+      allocation: {
+        title: "Your impact",
+        totalAllocated: "Total allocated: {{amount}}",
+        noAllocations: "No allocation records yet.",
+        supporting: "Supporting: {{list}}",
+        table: {
+          programArea: "Program area",
+          amount: "Amount allocated",
+        },
+      },
+      history: {
+        title: "Donation history",
+        description: "Donations link automatically to your account email ({{email}}).",
+        loading: "Loading your donation history…",
+        emptyTitle: "No donations found for this email yet",
+        emptyDescription:
+          "If you donated using a different email, sign in with that address to see your giving history.",
+        makeDonation: "Make a donation",
+        via: "{{type}} via {{channel}}",
+        toSafehouse: "{{program}}: {{amount}} to {{safehouse}} ({{city}}, {{country}})",
+      },
+      errors: {
+        loadFailed: "Unable to load your donation history right now.",
+      },
+    },
     caseload: {
       sidebar: {
         dashboard: "Dashboard",
@@ -939,6 +976,43 @@ export const resources = {
       toast: {
         title: "Gracias por tu generosidad",
         description: "Cada donacion ayuda a las ninas a acceder a seguridad, sanacion y esperanza.",
+      },
+    },
+    donorPortal: {
+      header: {
+        welcomeBack: "Bienvenido de nuevo",
+        welcomeBackWithName: "Bienvenido de nuevo, {{name}}",
+        subtitle: "Gracias por tu apoyo continuo a Refugio de Esperanza.",
+      },
+      signOut: "Cerrar sesión",
+      stats: {
+        totalDonated: "Total donado",
+        donationsMade: "Donaciones realizadas",
+        yearsSupporting: "Años de apoyo",
+      },
+      allocation: {
+        title: "Tu impacto",
+        totalAllocated: "Total asignado: {{amount}}",
+        noAllocations: "Aún no hay registros de asignación.",
+        supporting: "Apoyando: {{list}}",
+        table: {
+          programArea: "Área del programa",
+          amount: "Monto asignado",
+        },
+      },
+      history: {
+        title: "Historial de donaciones",
+        description: "Las donaciones se vinculan automáticamente con el correo de tu cuenta ({{email}}).",
+        loading: "Cargando tu historial de donaciones…",
+        emptyTitle: "Aún no hay donaciones para este correo",
+        emptyDescription:
+          "Si donaste con otro correo electrónico, inicia sesión con esa dirección para ver tu historial de donaciones.",
+        makeDonation: "Hacer una donación",
+        via: "{{type}} a través de {{channel}}",
+        toSafehouse: "{{program}}: {{amount}} a {{safehouse}} ({{city}}, {{country}})",
+      },
+      errors: {
+        loadFailed: "No pudimos cargar tu historial de donaciones en este momento.",
       },
     },
     caseload: {

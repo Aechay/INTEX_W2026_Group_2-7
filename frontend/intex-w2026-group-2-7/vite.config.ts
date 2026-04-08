@@ -24,6 +24,12 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
       },
+      // Minimal APIs (e.g. /donor/donations) — must match backend route prefixes
+      '/donor': {
+        target: LOCAL_API_BASE_URL,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   plugins: [react(), mode === 'development' && componentTagger()].filter(
