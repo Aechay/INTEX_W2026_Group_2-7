@@ -47,11 +47,11 @@ const LanguageSwitcher = ({ triggerClassName }: LanguageSwitcherProps) => {
       <Select onValueChange={handleChange} value={currentLanguage}>
         <SelectTrigger
           aria-label={t("language.label")}
-          className={triggerClassName ?? "h-9 w-[140px] bg-background/80"}
+          className={triggerClassName ?? "h-9 w-[100px] bg-background/80"}
         >
           <SelectValue placeholder={t("language.label")} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="w-[100px] min-w-0">
           {SUPPORTED_LANGUAGES.map((language) => (
             <SelectItem key={language} value={language}>
               {t(`language.options.${language}`)}

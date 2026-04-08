@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 import { withPathLanguage } from "@/i18n/routing";
+import useAuth from "@/auth/useAuth";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,7 +16,11 @@ const Navbar = () => {
   const links = [
     { to: "/", label: t("nav.home") },
     { to: "/get-help", label: t("nav.getHelp") },
-    { to: "/dashboard", label: t("nav.dashboard") },
+    ...(auth.isAdmin
+      ? [{ to: "/dashboard", label: t("nav.dashboard") }]
+      : auth.isAuthenticated
+      ? [{ to: "/donor-portal", label: t("nav.myDonations") }]
+      : []),
   ];
   const localizedPath = (path: string) => withPathLanguage(path, i18n.resolvedLanguage);
 
@@ -34,21 +39,48 @@ const Navbar = () => {
           <span className="text-xl font-bold text-primary">{t("brand.name")}</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-4">
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={localizedPath(link.to)}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive(link.to) ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-6 mr-4">
+            {links.map((link) => (
+              <Link
+                key={link.to}
+                to={localizedPath(link.to)}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(link.to) ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
           <LanguageSwitcher />
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            title={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-input bg-background/80 text-muted-foreground transition-all hover:border-2 hover:border-input"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          {auth.isAuthenticated ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void auth.logout()}
+              className="border-input text-muted-foreground hover:text-foreground"
+            >
+              {t("nav.signOut")}
+            </Button>
+          ) : (
+            <Link to={localizedPath("/login")}>
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                {t("nav.signIn")}
+              </Button>
+            </Link>
+          )}
           <Button
             asChild
+            size="sm"
             className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
           >
             <a
@@ -86,6 +118,29 @@ const Navbar = () => {
             </Link>
           ))}
           <LanguageSwitcher triggerClassName="w-full bg-background" />
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+            className="w-full h-9 flex items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground transition-all hover:border-2"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? t("nav.lightMode") : t("nav.darkMode")}
+          </button>
+          {auth.isAuthenticated ? (
+            <Button
+              variant="outline"
+              className="w-full border-input text-muted-foreground"
+              onClick={() => { void auth.logout(); setIsOpen(false); }}
+            >
+              {t("nav.signOut")}
+            </Button>
+          ) : (
+            <Link to={localizedPath("/login")} onClick={() => setIsOpen(false)}>
+              <Button variant="outline" className="w-full border-input text-muted-foreground">
+                {t("nav.signIn")}
+              </Button>
+            </Link>
+          )}
           <Button
             asChild
             className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"

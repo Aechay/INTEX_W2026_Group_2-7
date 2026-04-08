@@ -125,6 +125,12 @@ export async function requestJson<T>(
   return parsedBody as T;
 }
 
+export const registerRequest = (apiBaseUrl: string, email: string, password: string) =>
+  requestJson<void>(apiBaseUrl, "/auth/register", {
+    method: "POST",
+    body: { email, password },
+  });
+
 export const loginRequest = (apiBaseUrl: string, email: string, password: string) =>
   requestJson<AuthTokens>(apiBaseUrl, "/auth/login?useCookies=false", {
     method: "POST",
