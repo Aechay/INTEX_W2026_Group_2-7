@@ -9,7 +9,10 @@ import azure.functions as func
 
 from hope_shelter_ml.blob_store import BlobArtifactStore
 from hope_shelter_ml.settings import load_runtime_settings
-from hope_shelter_ml.social_media import SOCIAL_REQUEST_FIELDS, predict_social_media_value
+from hope_shelter_ml.social_media_inference import (
+    SOCIAL_REQUEST_FIELDS,
+    predict_social_media_value,
+)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
