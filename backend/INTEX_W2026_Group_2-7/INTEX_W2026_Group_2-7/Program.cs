@@ -177,6 +177,7 @@ authGroup.MapCustomAuthEndpoints();
 app.MapControllers();
 app.MapAdminDashboardEndpoints();
 app.MapAdminCaseloadEndpoints();
+app.MapDonorEndpoints();
 app.MapMlEndpoints();
 
 await app.SeedIdentityDataAsync();
