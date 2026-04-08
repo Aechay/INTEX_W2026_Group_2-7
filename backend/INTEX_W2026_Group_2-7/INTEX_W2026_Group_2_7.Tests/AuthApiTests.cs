@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Data;
 using INTEX_W2026_Group_2_7.Services;
 using INTEX_W2026_Group_2_7.Tests.Infrastructure;
@@ -73,6 +75,38 @@ public class AuthApiTests
     }
 
     [Fact]
+    public async Task PasswordResetToken_IsEightDigitNumericCode_AndCanResetPassword()
+    {
+        await using var factory = new TestWebApplicationFactory();
+
+        var result = await factory.WithScopeAsync(async services =>
+        {
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = new ApplicationUser
+            {
+                UserName = "student-reset@test.local",
+                Email = "student-reset@test.local",
+                EmailConfirmed = true
+            };
+
+            var createResult = await userManager.CreateAsync(user, "StudentPassword123!");
+            Assert.True(
+                createResult.Succeeded,
+                string.Join(", ", createResult.Errors.Select(error => error.Description)));
+
+            var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+            var resetPasswordResult = await userManager.ResetPasswordAsync(user, resetToken, "UpdatedPassword123!");
+
+            return new { resetToken, resetPasswordResult };
+        });
+
+        Assert.Matches(@"^\d{8}$", result.resetToken);
+        Assert.True(
+            result.resetPasswordResult.Succeeded,
+            string.Join(", ", result.resetPasswordResult.Errors.Select(error => error.Description)));
+    }
+
+    [Fact]
     public async Task ProtectedEndpoint_Returns401WithoutToken_And200WithToken()
     {
         await using var factory = new TestWebApplicationFactory();
@@ -97,12 +131,23 @@ public class AuthApiTests
     public async Task CurrentUserEndpoint_ReturnsIdentitySnapshot()
     {
         await using var factory = new TestWebApplicationFactory();
-        using var client = factory.CreateHttpsClient();
-
-        await client.PostAsJsonAsync("/auth/register", new
+        await factory.WithScopeAsync(async services =>
         {
-            email = "student4@test.local",
-            password = "StudentPassword123!"
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = new ApplicationUser
+            {
+                UserName = "student4@test.local",
+                Email = "student4@test.local",
+                DisplayName = "Mia",
+                EmailConfirmed = true
+            };
+
+            var createResult = await userManager.CreateAsync(user, "StudentPassword123!");
+            Assert.True(
+                createResult.Succeeded,
+                string.Join(", ", createResult.Errors.Select(error => error.Description)));
+
+            return 0;
         });
 
         using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student4@test.local", "StudentPassword123!");
@@ -114,7 +159,60 @@ public class AuthApiTests
 
         Assert.NotNull(payload);
         Assert.Equal("student4@test.local", payload!.Email);
+        Assert.Equal("Mia", payload.DisplayName);
         Assert.Contains("User", payload.Roles);
+    }
+
+    [Fact]
+    public async Task AuthenticatedUser_CanUpdateOwnDisplayName()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+
+        await client.PostAsJsonAsync("/auth/register", new
+        {
+            email = "student-display@test.local",
+            password = "StudentPassword123!"
+        });
+
+        using var authenticatedClient = await factory.CreateAuthenticatedClientAsync("student-display@test.local", "StudentPassword123!");
+        var updateResponse = await authenticatedClient.PutAsJsonAsync("/auth/profile/display-name", new
+        {
+            displayName = "Sofia"
+        });
+
+        updateResponse.EnsureSuccessStatusCode();
+
+        var payload = await updateResponse.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal("Sofia", payload!.DisplayName);
+
+        var persistedDisplayName = await factory.WithScopeAsync(async services =>
+        {
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByEmailAsync("student-display@test.local");
+            return user?.DisplayName;
+        });
+
+        Assert.Equal("Sofia", persistedDisplayName);
+    }
+
+    [Fact]
+    public void ExternalDisplayNameResolver_PrefersGivenName_ThenFallsBackToName()
+    {
+        var principalWithGivenName = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim("name", "Google Full Name"),
+            new Claim("given_name", "Preferred"),
+        }, "Google"));
+
+        var principalWithNameOnly = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim("name", "Google Full Name"),
+        }, "Google"));
+
+        Assert.Equal("Preferred", ExternalDisplayNameResolver.Resolve(principalWithGivenName));
+        Assert.Equal("Google Full Name", ExternalDisplayNameResolver.Resolve(principalWithNameOnly));
     }
 
     [Fact]
@@ -231,7 +329,11 @@ public class AuthApiTests
         Assert.Contains("User", adminRoles);
     }
 
-    private sealed record CurrentUserResponse(string UserId, string Email, IReadOnlyCollection<string> Roles);
+    private sealed record CurrentUserResponse(
+        string UserId,
+        string Email,
+        string? DisplayName,
+        IReadOnlyCollection<string> Roles);
 
     private sealed record ExternalAuthProviderResponse(string Name, string DisplayName, string StartUrl);
 }

@@ -8,6 +8,7 @@ export type AuthTokens = {
 export type CurrentUser = {
   userId: string;
   email: string;
+  displayName: string | null;
   roles: string[];
 };
 

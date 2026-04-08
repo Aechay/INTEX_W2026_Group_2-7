@@ -70,6 +70,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequiredLength = 14;
     options.Password.RequiredUniqueChars = 1;
+    options.Tokens.PasswordResetTokenProvider = CustomTokenProviderNames.EightDigitPasswordReset;
 });
 
 builder.Services.AddDbContext<OperationalDbContext>(options =>
@@ -92,7 +93,9 @@ builder.Services
     })
     .AddRoles<IdentityRole>()
     .AddUserManager<ApplicationUserManager>()
-    .AddEntityFrameworkStores<IdentityAppDbContext>();
+    .AddEntityFrameworkStores<IdentityAppDbContext>()
+    .AddTokenProvider<EightDigitPasswordResetTokenProvider<ApplicationUser>>(
+        CustomTokenProviderNames.EightDigitPasswordReset);
 
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
 {

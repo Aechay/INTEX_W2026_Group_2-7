@@ -1,107 +1,182 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Heart, LogIn, Shield, UserPlus, Users } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { getErrorMessage, registerRequest, resolveApiBaseUrl } from '@/auth/auth-api';
-import useAuth from '@/auth/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { getAuthRedirectFromState, storePendingAuthRedirect } from "@/auth/auth-redirect";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import logo from '@/assets/logo.png';
+  forgotPasswordRequest,
+  getErrorMessage,
+  getExternalAuthProvidersRequest,
+  registerRequest,
+  resetPasswordRequest,
+  type ExternalAuthProvider,
+} from "@/auth/auth-api";
+import useAuth from "@/auth/useAuth";
+import AuthPageLayout from "@/components/auth/AuthPageLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { withPathLanguage } from "@/i18n/routing";
 
-type LoginTab = 'staff' | 'donor';
-type Mode = 'signin' | 'register';
+type Mode = "signin" | "register" | "forgot-password" | "reset-password";
 
-const STAFF_DEMO_EMAIL = 'admin@hopeshelter.org';
-const STAFF_DEMO_PASSWORD = 'HopeShelter2026!';
-const DONOR_DEMO_EMAIL = 'donor@hopeshelter.org';
-const DONOR_DEMO_PASSWORD = 'DonorDemo2026!';
+type PasswordFieldProps = {
+  autoComplete: string;
+  label: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  showPassword: boolean;
+  togglePassword: () => void;
+  value: string;
+};
 
-const staffFeatures = [
-  { icon: Users, label: 'Resident Management', description: 'Monitor safety scores and resident progress in real time.' },
-  { icon: Heart, label: 'Donor Relations', description: 'Track churn risk and keep donors engaged.' },
-  { icon: Shield, label: 'Secure & Role-Based', description: 'Admin and staff roles with scoped access controls.' },
-];
+const PasswordField = ({
+  autoComplete,
+  label,
+  onChange,
+  placeholder,
+  showPassword,
+  togglePassword,
+  value,
+}: PasswordFieldProps) => {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-foreground">{label}</label>
+      <div className="relative">
+        <Input
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          required
+          className="h-11 pr-11"
+        />
+        <button
+          type="button"
+          onClick={togglePassword}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
-const donorSignInFeatures = [
-  { icon: Heart, label: 'Donation History', description: "View every contribution you've made over time." },
-  { icon: Users, label: 'Your Impact', description: 'See how your generosity has helped at-risk girls.' },
-  { icon: Shield, label: 'Secure Account', description: 'Your data is protected and private.' },
-];
+const resolveMode = (value: string | null): Mode => {
+  if (
+    value === "register" ||
+    value === "forgot-password" ||
+    value === "reset-password"
+  ) {
+    return value;
+  }
 
-const donorRegisterFeatures = [
-  { icon: Heart, label: 'Track Your Giving', description: 'Every donation you make, in one place.' },
-  { icon: Users, label: 'See Your Impact', description: 'Understand how your gifts change lives.' },
-  { icon: Shield, label: 'Free & Secure', description: 'Creating an account is free and your data stays private.' },
-];
+  return "signin";
+};
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const { t } = useTranslation('login');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { t, i18n } = useTranslation("login");
   const auth = useAuth();
+  const mode = resolveMode(searchParams.get("mode"));
 
-  const initialTab = searchParams.get('tab') === 'staff' ? 'staff' : 'donor';
-  const [tab, setTab] = useState<LoginTab>(initialTab);
-  const [mode, setMode] = useState<Mode>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetCode, setResetCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [externalProviders, setExternalProviders] = useState<ExternalAuthProvider[]>([]);
 
   useEffect(() => {
-    if (!auth.isBootstrapping && auth.isAuthenticated) {
-      const from =
-        typeof location.state === 'object' &&
-        location.state !== null &&
-        'from' in location.state &&
-        typeof location.state.from === 'string'
-          ? location.state.from
-          : null;
-
-      navigate(from ?? (auth.isAdmin ? '/dashboard' : '/donor-portal'), { replace: true });
+    if (isSubmitting) {
+      return;
     }
-  }, [auth.isAuthenticated, auth.isBootstrapping, auth.isAdmin, location.state, navigate]);
 
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
+    if (!auth.isBootstrapping && auth.isAuthenticated) {
+      const redirectTo = getAuthRedirectFromState(location.state);
+      const fallbackPath = withPathLanguage(
+        auth.isAdmin ? "/dashboard" : "/donor-portal",
+        i18n.resolvedLanguage,
+      );
+
+      navigate(redirectTo ?? fallbackPath, { replace: true });
+    }
+  }, [
+    auth.isAdmin,
+    auth.isAuthenticated,
+    auth.isBootstrapping,
+    isSubmitting,
+    i18n.resolvedLanguage,
+    location.state,
+    navigate,
+  ]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadExternalProviders = async () => {
+      try {
+        const providers = await getExternalAuthProvidersRequest(auth.apiBaseUrl);
+        if (!isCancelled) {
+          setExternalProviders(providers);
+        }
+      } catch {
+        if (!isCancelled) {
+          setExternalProviders([]);
+        }
+      }
+    };
+
+    void loadExternalProviders();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [auth.apiBaseUrl]);
+
+  const changeMode = (nextMode: Mode, preserveSuccessMessage = false) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (nextMode === "signin") {
+      nextSearchParams.delete("mode");
+    } else {
+      nextSearchParams.set("mode", nextMode);
+    }
+
+    setSearchParams(nextSearchParams, { replace: true });
     setErrorMessage(null);
+
+    if (!preserveSuccessMessage) {
+      setSuccessMessage(null);
+    }
+
+    setName("");
+    setPassword("");
+    setConfirmPassword("");
+    setResetCode("");
     setShowPassword(false);
-    setShowConfirm(false);
-  };
-
-  const handleTabChange = (value: string) => {
-    setTab(value as LoginTab);
-    setMode('signin');
-    resetForm();
-  };
-
-  const handleModeChange = (next: Mode) => {
-    setMode(next);
-    resetForm();
+    setShowConfirmPassword(false);
   };
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
     setIsSubmitting(true);
+
     try {
-      await auth.login(email, password);
+      await auth.login(username, password);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Sign in failed. Check your email and password.'));
+      setErrorMessage(getErrorMessage(error, t("loginFailed")));
     } finally {
       setIsSubmitting(false);
     }
@@ -111,331 +186,328 @@ const Login = () => {
     event.preventDefault();
     setErrorMessage(null);
 
+    if (!name.trim()) {
+      setErrorMessage(t("nameRequired"));
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setErrorMessage(t("passwordMismatch"));
       return;
     }
 
     setIsSubmitting(true);
+
     try {
-      await registerRequest(resolveApiBaseUrl(), email, password);
-      // Auto-login after successful registration
-      await auth.login(email, password);
+      await registerRequest(auth.apiBaseUrl, username, password);
+      await auth.login(username, password);
+      await auth.updateDisplayName(name);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Registration failed. Please try again.'));
+      setErrorMessage(getErrorMessage(error, t("registerFailed")));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const fillDemo = () => {
-    setEmail(tab === 'staff' ? STAFF_DEMO_EMAIL : DONOR_DEMO_EMAIL);
-    setPassword(tab === 'staff' ? STAFF_DEMO_PASSWORD : DONOR_DEMO_PASSWORD);
+  const handleForgotPassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await forgotPasswordRequest(auth.apiBaseUrl, username);
+      changeMode("reset-password", true);
+      setSuccessMessage(t("passwordResetCodeSent"));
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, t("forgotPasswordFailed")));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const isRegister = tab === 'donor' && mode === 'register';
+  const handleResetPassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
 
-  const features = tab === 'staff'
-    ? staffFeatures
-    : mode === 'register'
-    ? donorRegisterFeatures
-    : donorSignInFeatures;
+    if (resetCode.trim().length !== 8) {
+      setErrorMessage(t("resetCodeInvalidLength"));
+      return;
+    }
 
-  const panelHeading = tab === 'staff'
-    ? 'Empowering staff to protect and serve at-risk girls.'
-    : mode === 'register'
-    ? 'Join our community of supporters.'
-    : 'Thank you for making a difference.';
+    if (password !== confirmPassword) {
+      setErrorMessage(t("passwordMismatch"));
+      return;
+    }
 
-  const panelSub = tab === 'staff'
-    ? 'Manage residents, track donor relationships, and access real-time safety insights — all from one secure dashboard.'
-    : mode === 'register'
-    ? 'Create a free account to track your donations, see your impact, and stay connected with Hope Shelter.'
-    : 'Sign in to view your full donation history, track your impact, and manage your giving to Hope Shelter.';
+    setIsSubmitting(true);
 
-  const badgeLabel = tab === 'staff' ? 'Staff & Admin Portal' : mode === 'register' ? 'Create Donor Account' : 'Donor Portal';
+    try {
+      await resetPasswordRequest(auth.apiBaseUrl, username, resetCode.trim(), password);
+      changeMode("signin", true);
+      setSuccessMessage(t("passwordResetSuccess"));
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, t("resetPasswordFailed")));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleExternalProviderClick = (provider: ExternalAuthProvider) => {
+    setErrorMessage(null);
+    storePendingAuthRedirect(getAuthRedirectFromState(location.state));
+    window.location.assign(provider.startUrl);
+  };
+
+  const titleByMode: Record<Mode, string> = {
+    signin: t("title"),
+    register: t("registerTitle"),
+    "forgot-password": t("forgotPasswordTitle"),
+    "reset-password": t("resetPasswordTitle"),
+  };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col lg:flex-row">
-      {/* ── Left brand panel ── */}
-      <div className="relative hidden lg:flex lg:w-[52%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[hsl(174,72%,28%)] via-[hsl(174,72%,35%)] to-[hsl(200,75%,38%)] p-12 text-white">
-        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-white/5" />
-        <div className="absolute top-1/3 -right-32 h-[28rem] w-[28rem] rounded-full bg-white/5" />
-        <div className="absolute -bottom-20 left-1/4 h-72 w-72 rounded-full bg-white/5" />
+    <AuthPageLayout>
+      <Card className="w-full max-w-md border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl text-foreground">{titleByMode[mode]}</CardTitle>
+        </CardHeader>
 
-        <div className="relative z-10 flex items-center gap-3">
-          <img src={logo} alt="Hope Shelter logo" className="h-10 w-auto object-contain" />
-          <span className="text-xl font-semibold tracking-tight">Hope Shelter</span>
-        </div>
+        <CardContent className="space-y-4">
+          {successMessage ? (
+            <div className="rounded-md border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-foreground">
+              {successMessage}
+            </div>
+          ) : null}
 
-        <div className="relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
-            <Shield className="h-3.5 w-3.5" />
-            {badgeLabel}
-          </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight">{panelHeading}</h1>
-          <p className="max-w-md text-base leading-7 text-white/75">{panelSub}</p>
+          {errorMessage ? (
+            <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {errorMessage}
+            </div>
+          ) : null}
 
-          <div className="grid gap-4 pt-2">
-            {features.map(({ icon: Icon, label, description }) => (
-              <div key={label} className="flex items-start gap-4">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-                  <Icon className="h-4 w-4" />
+          {mode === "signin" ? (
+            <>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
+                  <Input
+                    type="email"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    autoComplete="username"
+                    placeholder={t("usernamePlaceholder")}
+                    required
+                    className="h-11"
+                  />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">{label}</p>
-                  <p className="text-sm text-white/65">{description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="relative z-10 border-t border-white/20 pt-6">
-          <p className="text-sm italic text-white/60">
-            "Safety &amp; Hope for At-Risk Children in the Dominican Republic"
-          </p>
-        </div>
-      </div>
+                <PasswordField
+                  autoComplete="current-password"
+                  label={t("passwordLabel")}
+                  onChange={setPassword}
+                  placeholder={t("passwordPlaceholder")}
+                  showPassword={showPassword}
+                  togglePassword={() => setShowPassword((currentValue) => !currentValue)}
+                  value={password}
+                />
 
-      {/* ── Right panel ── */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-10">
-        {/* Mobile logo */}
-        <div className="mb-6 flex items-center gap-3 lg:hidden">
-          <img src={logo} alt="Hope Shelter logo" className="h-10 w-auto object-contain" />
-          <span className="text-xl font-semibold text-foreground">Hope Shelter</span>
-        </div>
+                <Button type="submit" className="w-full" disabled={isSubmitting || auth.isBootstrapping}>
+                  {isSubmitting ? t("signingIn") : t("submit")}
+                </Button>
+              </form>
 
-        <div className="w-full max-w-md space-y-4">
-          {/* Tab switcher */}
-          <Tabs value={tab} onValueChange={handleTabChange}>
-            <TabsList className="w-full">
-              <TabsTrigger value="donor" className="flex-1">Donor</TabsTrigger>
-              <TabsTrigger value="staff" className="flex-1">Staff / Admin</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <Card className="border-border/60 shadow-lg">
-            <CardHeader className="space-y-1 pb-3">
-              <CardTitle className="text-2xl font-bold text-foreground">
-                {isRegister ? t('registerTitle') : tab === 'staff' ? t('title') : t('donorTitle')}
-              </CardTitle>
-              <CardDescription>
-                {isRegister ? t('registerDescription') : tab === 'staff' ? t('description') : t('donorDescription')}
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Sign in form */}
-              {!isRegister && (
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">{t('emailLabel')}</label>
-                    <Input
-                      type="email"
-                      placeholder={t('emailPlaceholder')}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      autoComplete="email"
-                      required
-                      className="h-10"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">{t('passwordLabel')}</label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder={t('passwordPlaceholder')}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="current-password"
-                        required
-                        className="h-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {errorMessage && (
-                    <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
-                      {errorMessage}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || auth.isBootstrapping}
-                    className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    {isSubmitting ? t('signingIn') : t('submit')}
-                  </Button>
-                </form>
-              )}
-
-              {/* Register form — donor tab only */}
-              {isRegister && (
-                <form onSubmit={handleRegister} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">{t('emailLabel')}</label>
-                    <Input
-                      type="email"
-                      placeholder={t('emailPlaceholder')}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      autoComplete="email"
-                      required
-                      className="h-10"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">{t('passwordLabel')}</label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder={t('passwordPlaceholder')}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="new-password"
-                        required
-                        className="h-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-foreground">{t('confirmPasswordLabel')}</label>
-                    <div className="relative">
-                      <Input
-                        type={showConfirm ? 'text' : 'password'}
-                        placeholder={t('confirmPasswordPlaceholder')}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        autoComplete="new-password"
-                        required
-                        className="h-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                      >
-                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {errorMessage && (
-                    <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
-                      {errorMessage}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                  >
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    {isSubmitting ? t('registering') : t('registerSubmit')}
-                  </Button>
-                </form>
-              )}
-
-              {/* Demo credentials — sign in only */}
-              {!isRegister && (
-                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-primary">Demo Access</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={fillDemo}
-                      className="h-7 border-primary/30 px-3 text-xs text-primary hover:bg-primary/10 hover:text-primary"
-                    >
-                      Use demo account
-                    </Button>
-                  </div>
-                  <div className="space-y-1 font-mono text-xs text-muted-foreground">
-                    <div className="flex gap-2">
-                      <span className="w-16 text-foreground/50">Email</span>
-                      <span className="text-foreground">{tab === 'staff' ? STAFF_DEMO_EMAIL : DONOR_DEMO_EMAIL}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="w-16 text-foreground/50">Password</span>
-                      <span className="text-foreground">{tab === 'staff' ? STAFF_DEMO_PASSWORD : DONOR_DEMO_PASSWORD}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Sign in / Register toggle — donor tab only */}
-              {tab === 'donor' && mode === 'signin' && (
+              {externalProviders.length > 0 ? (
                 <>
-                  <div className="relative flex items-center gap-3">
-                    <div className="flex-1 border-t border-border" />
-                    <span className="text-xs text-muted-foreground">or</span>
-                    <div className="flex-1 border-t border-border" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t("externalSignInLabel")}
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-10"
-                    onClick={() => handleModeChange('register')}
-                  >
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create an Account
-                  </Button>
+
+                  <div className="space-y-2">
+                    {externalProviders.map((provider) => (
+                      <Button
+                        key={provider.name}
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleExternalProviderClick(provider)}
+                      >
+                        {t("signInWithProvider", { provider: provider.displayName })}
+                      </Button>
+                    ))}
+                  </div>
                 </>
-              )}
+              ) : null}
 
-              {tab === 'donor' && mode === 'register' && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => handleModeChange('signin')}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </p>
-              )}
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <Button type="button" variant="link" className="h-auto px-0" onClick={() => changeMode("register")}>
+                  {t("createAccountLink")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto px-0"
+                  onClick={() => changeMode("forgot-password")}
+                >
+                  {t("forgotPasswordLink")}
+                </Button>
+              </div>
+            </>
+          ) : null}
 
-              {tab === 'staff' && (
-                <p className="text-center text-xs text-muted-foreground">
-                  Need access?{' '}
-                  <a href="mailto:info@hopeshelter.org" className="text-primary underline-offset-4 hover:underline">
-                    Contact your administrator
-                  </a>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+          {mode === "register" ? (
+            <>
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("nameLabel")}</label>
+                  <Input
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="name"
+                    placeholder={t("namePlaceholder")}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
+                  <Input
+                    type="email"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    autoComplete="email"
+                    placeholder={t("usernamePlaceholder")}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                <PasswordField
+                  autoComplete="new-password"
+                  label={t("passwordLabel")}
+                  onChange={setPassword}
+                  placeholder={t("passwordPlaceholder")}
+                  showPassword={showPassword}
+                  togglePassword={() => setShowPassword((currentValue) => !currentValue)}
+                  value={password}
+                />
+
+                <PasswordField
+                  autoComplete="new-password"
+                  label={t("confirmPasswordLabel")}
+                  onChange={setConfirmPassword}
+                  placeholder={t("confirmPasswordPlaceholder")}
+                  showPassword={showConfirmPassword}
+                  togglePassword={() => setShowConfirmPassword((currentValue) => !currentValue)}
+                  value={confirmPassword}
+                />
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? t("registering") : t("registerSubmit")}
+                </Button>
+              </form>
+
+              <Button type="button" variant="link" className="h-auto px-0" onClick={() => changeMode("signin")}>
+                {t("backToLoginLink")}
+              </Button>
+            </>
+          ) : null}
+
+          {mode === "forgot-password" ? (
+            <>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
+                  <Input
+                    type="email"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    autoComplete="email"
+                    placeholder={t("usernamePlaceholder")}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? t("sendingResetCode") : t("forgotPasswordSubmit")}
+                </Button>
+              </form>
+
+              <Button type="button" variant="link" className="h-auto px-0" onClick={() => changeMode("signin")}>
+                {t("backToLoginLink")}
+              </Button>
+            </>
+          ) : null}
+
+          {mode === "reset-password" ? (
+            <>
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
+                  <Input
+                    type="email"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    autoComplete="email"
+                    placeholder={t("usernamePlaceholder")}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("resetCodeLabel")}</label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={resetCode}
+                    onChange={(event) => setResetCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                    autoComplete="one-time-code"
+                    placeholder={t("resetCodePlaceholder")}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                <PasswordField
+                  autoComplete="new-password"
+                  label={t("newPasswordLabel")}
+                  onChange={setPassword}
+                  placeholder={t("passwordPlaceholder")}
+                  showPassword={showPassword}
+                  togglePassword={() => setShowPassword((currentValue) => !currentValue)}
+                  value={password}
+                />
+
+                <PasswordField
+                  autoComplete="new-password"
+                  label={t("confirmPasswordLabel")}
+                  onChange={setConfirmPassword}
+                  placeholder={t("confirmPasswordPlaceholder")}
+                  showPassword={showConfirmPassword}
+                  togglePassword={() => setShowConfirmPassword((currentValue) => !currentValue)}
+                  value={confirmPassword}
+                />
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? t("resettingPassword") : t("resetPasswordSubmit")}
+                </Button>
+              </form>
+
+              <Button type="button" variant="link" className="h-auto px-0" onClick={() => changeMode("signin")}>
+                {t("backToLoginLink")}
+              </Button>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
+    </AuthPageLayout>
   );
 };
 

@@ -11,6 +11,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { DEFAULT_LANGUAGE, isSupportedLanguage } from '@/i18n/languages';
 import { getPathLanguage } from '@/i18n/routing';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
@@ -18,8 +19,10 @@ import DonorPortal from './pages/DonorPortal';
 import Impact from './pages/Impact';
 import Donate from './pages/Donate';
 import Login from './pages/Login';
+import ExternalAuthCallback from './pages/ExternalAuthCallback';
 import NotFound from './pages/NotFound';
 import Resources from './pages/Resources';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const queryClient = new QueryClient();
 
@@ -62,10 +65,14 @@ const App = () => (
               <Route path="/:lang/impact" element={<Impact />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/:lang/resources" element={<Resources />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/:lang/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/donate" element={<Donate />} />
               <Route path="/:lang/donate" element={<Donate />} />
               <Route path="/login" element={<Login />} />
               <Route path="/:lang/login" element={<Login />} />
+              <Route path="/external-auth/callback" element={<ExternalAuthCallback />} />
+              <Route path="/:lang/external-auth/callback" element={<ExternalAuthCallback />} />
 
               {/* Protected: any authenticated user */}
               <Route element={<RequireAuth />}>
@@ -81,6 +88,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <CookieConsentBanner />
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
