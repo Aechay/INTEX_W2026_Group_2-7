@@ -52,8 +52,8 @@ public static class AdminCaseloadEndpointExtensions
         {
             var term = search.Trim().ToLower();
             residentQuery = residentQuery.Where(r =>
-                (r.resident.FirstName ?? "").ToLower().Contains(term) ||
-                (r.resident.LastName ?? "").ToLower().Contains(term) ||
+                r.resident.ResidentFirstName.ToLower().Contains(term) ||
+                r.resident.ResidentLastName.ToLower().Contains(term) ||
                 r.resident.InternalCode.ToLower().Contains(term) ||
                 r.resident.CaseControlNo.ToLower().Contains(term) ||
                 r.resident.AssignedSocialWorker.ToLower().Contains(term) ||
@@ -93,8 +93,8 @@ public static class AdminCaseloadEndpointExtensions
                 r.resident.ResidentId,
                 r.resident.InternalCode,
                 r.resident.CaseControlNo,
-                r.resident.FirstName,
-                r.resident.LastName,
+                r.resident.ResidentFirstName,
+                r.resident.ResidentLastName,
                 r.resident.CaseStatus,
                 r.resident.SafehouseId,
                 r.Name,
@@ -170,8 +170,8 @@ public static class AdminCaseloadEndpointExtensions
         {
             CaseControlNo = request.CaseControlNo?.Trim() ?? string.Empty,
             InternalCode = request.InternalCode.Trim(),
-            FirstName = request.FirstName?.Trim(),
-            LastName = request.LastName?.Trim(),
+            ResidentFirstName = request.FirstName?.Trim() ?? string.Empty,
+            ResidentLastName = request.LastName?.Trim() ?? string.Empty,
             SafehouseId = request.SafehouseId,
             CaseStatus = request.CaseStatus?.Trim() ?? "Active",
             Sex = request.Sex?.Trim() ?? "Female",
@@ -256,8 +256,8 @@ public static class AdminCaseloadEndpointExtensions
 
         resident.CaseControlNo = request.CaseControlNo?.Trim() ?? string.Empty;
         resident.InternalCode = request.InternalCode.Trim();
-        resident.FirstName = request.FirstName?.Trim();
-        resident.LastName = request.LastName?.Trim();
+        resident.ResidentFirstName = request.FirstName?.Trim() ?? string.Empty;
+        resident.ResidentLastName = request.LastName?.Trim() ?? string.Empty;
         resident.SafehouseId = request.SafehouseId;
         resident.CaseStatus = request.CaseStatus?.Trim() ?? "Active";
         resident.Sex = request.Sex?.Trim() ?? "Female";
@@ -320,8 +320,8 @@ public static class AdminCaseloadEndpointExtensions
             resident.ResidentId,
             resident.InternalCode,
             resident.CaseControlNo,
-            resident.FirstName,
-            resident.LastName,
+            resident.ResidentFirstName,
+            resident.ResidentLastName,
             resident.CaseStatus,
             resident.SafehouseId,
             safehouseName,

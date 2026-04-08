@@ -849,11 +849,6 @@ namespace INTEX_W2026_Group_2_7.Migrations.Operational
                     b.Property<bool>("FamilySoloParent")
                         .HasColumnType("bit");
 
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("ResidentFirstName");
-
                     b.Property<bool>("HasSpecialNeeds")
                         .HasColumnType("bit");
 
@@ -874,11 +869,6 @@ namespace INTEX_W2026_Group_2_7.Migrations.Operational
 
                     b.Property<bool>("IsPwd")
                         .HasColumnType("bit");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("ResidentLastName");
 
                     b.Property<string>("LengthOfStay")
                         .IsRequired()
