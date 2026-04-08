@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import logo from '@/assets/logo.png';
 import { withPathLanguage } from '@/i18n/routing';
 import useAuth from '@/auth/useAuth';
@@ -17,6 +16,7 @@ const Navbar = () => {
   const links = [
     { to: '/', label: t('nav.home') },
     { to: '/get-help', label: t('nav.getHelp') },
+    { to: '/impact', label: t('nav.impact') },
     ...(auth.isAdmin
       ? [{ to: '/dashboard', label: t('nav.dashboard') }]
       : auth.isAuthenticated
@@ -56,8 +56,19 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {!auth.isAuthenticated && (
+              <Link
+                to={localizedPath('/login')}
+                className={`inline-flex h-9 items-center rounded-md border border-input px-3 text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/login')
+                    ? 'text-primary border-primary'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {t('nav.signIn')}
+              </Link>
+            )}
           </div>
-          <LanguageSwitcher />
           {auth.isAuthenticated ? (
             <Button
               variant="outline"
@@ -67,16 +78,7 @@ const Navbar = () => {
             >
               {t('nav.signOut')}
             </Button>
-          ) : (
-            <Link to={localizedPath('/login')}>
-              <Button
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                {t('nav.signIn')}
-              </Button>
-            </Link>
-          )}
+          ) : null}
           <Button
             asChild
             size="sm"
@@ -116,7 +118,19 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
-          <LanguageSwitcher triggerClassName="w-full bg-background" />
+          {!auth.isAuthenticated && (
+            <Link
+              to={localizedPath('/login')}
+              onClick={() => setIsOpen(false)}
+              className={`flex h-9 items-center rounded-md border border-input px-3 text-sm font-medium ${
+                isActive('/login')
+                  ? 'text-primary border-primary'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              {t('nav.signIn')}
+            </Link>
+          )}
           {auth.isAuthenticated ? (
             <Button
               variant="outline"
@@ -128,16 +142,7 @@ const Navbar = () => {
             >
               {t('nav.signOut')}
             </Button>
-          ) : (
-            <Link to={localizedPath('/login')} onClick={() => setIsOpen(false)}>
-              <Button
-                variant="outline"
-                className="w-full border-input text-muted-foreground"
-              >
-                {t('nav.signIn')}
-              </Button>
-            </Link>
-          )}
+          ) : null}
           <Button
             asChild
             className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"

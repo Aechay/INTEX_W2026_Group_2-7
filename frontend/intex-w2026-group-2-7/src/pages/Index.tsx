@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, Users, Heart, HandHeart, ArrowRight } from "lucide-react";
+import { Shield, Users, Heart, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,13 +12,6 @@ import { withPathLanguage } from "@/i18n/routing";
 
 const Index = () => {
   const { t, i18n } = useTranslation("home");
-
-  const stats = [
-    { label: t("stats.childrenHelped"), value: "", icon: Users },
-    { label: t("stats.yearsOfService"), value: "", icon: Shield },
-    { label: t("stats.activeDonors"), value: "", icon: Heart },
-    { label: t("stats.staffAndVolunteers"), value: "", icon: HandHeart },
-  ];
 
   const services = [
     {
@@ -110,22 +103,6 @@ const Index = () => {
                 height={720}
               />
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-primary">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <stat.icon className="h-8 w-8 mx-auto mb-3 text-accent" />
-                <div className="text-3xl md:text-4xl font-bold text-primary-foreground">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-primary-foreground/80 mt-1">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

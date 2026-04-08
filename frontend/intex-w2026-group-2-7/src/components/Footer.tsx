@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { withPathLanguage } from "@/i18n/routing";
 import { useTheme } from "@/contexts/ThemeProvider";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Footer = () => {
   const { t, i18n } = useTranslation("common");
@@ -79,6 +80,7 @@ const Footer = () => {
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
+            <LanguageSwitcher triggerClassName="h-9 w-[100px] bg-background/80" />
             <Button
               asChild
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"

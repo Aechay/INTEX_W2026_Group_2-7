@@ -8,6 +8,7 @@ export const resources = {
       nav: {
         home: "Home",
         getHelp: "Get Help",
+        impact: "Impact",
         dashboard: "Dashboard",
         donate: "Donate",
         openMenu: "Open navigation menu",
@@ -208,6 +209,75 @@ export const resources = {
       message: "Oops! Page not found",
       returnHome: "Return to Home",
     },
+    impact: {
+      title: "Our Impact",
+      subtitle:
+        "This page shares aggregated, anonymized data to clearly show outcomes, progress, and resource use.",
+      stats: {
+        girlsHelped: "Girls Helped",
+        yearsOfService: "Years of Service",
+        activeDonors: "Active Donors",
+        operatingSafeHouses: "Operating Safe Houses",
+      },
+      cards: {
+        outcomes: {
+          title: "Outcomes",
+          description:
+            "We track everything to understand how many girls are being served and how they are growing.",
+        },
+        progress: {
+          title: "Progress",
+          description:
+            "Trend-level progress indicators help the team improve care plans, identify needs, and strengthen long-term support.",
+        },
+        resourceUse: {
+          title: "Resource Use",
+          description:
+            "Donor and operational resources are summarized at a high level for transparency while preserving individual privacy.",
+        },
+      },
+      preview: {
+        outcomes: {
+          girlsReintegrated: "Girls Reintegrated",
+          activeResidents: "Active Residents",
+          openCases: "Open Cases",
+        },
+        progress: {
+          schoolAttendance: "School Attendance",
+          educationGrowth: "Education Growth (Quarter)",
+          processSessionsThisMonth: "Support Sessions This Month",
+        },
+        resourceUse: {
+          programAllocation: "Program Allocation",
+          costPerGirl: "Avg Cost per Girl",
+          recurringDonors: "Recurring Donor Share",
+        },
+      },
+      pillars: {
+        title: "Safety, Healing, and Encouragement",
+        safety: {
+          title: "Safety",
+          description:
+            "We prioritize immediate safety planning and stable shelter placement so every girl can begin recovery in a secure environment.",
+        },
+        healing: {
+          title: "Healing",
+          description:
+            "Girls receive trauma-informed care, case support, and consistent follow-up to strengthen wellbeing and resilience.",
+        },
+        empowerment: {
+          title: "Encouragement",
+          description:
+            "Education, life-skills coaching, and community integration help girls move from crisis toward long-term independence.",
+        },
+      },
+      campaign: {
+        title: "Wheels of Hope",
+        description:
+          "Transportation is critical to safety, court access, school continuity, and healthcare. Campaign support helps keep girls connected to essential services.",
+        cta: "Support the Campaign",
+      },
+    },
   },
   es: {
     common: {
@@ -218,6 +288,7 @@ export const resources = {
       nav: {
         home: "Inicio",
         getHelp: "Obtener ayuda",
+        impact: "Impacto",
         dashboard: "Panel",
         donate: "Donar",
         openMenu: "Abrir menú de navegación",
@@ -419,6 +490,80 @@ export const resources = {
     notFound: {
       message: "Vaya, no se encontró la página",
       returnHome: "Volver al inicio",
+    },
+    impact: {
+      title: "Nuestro Impacto",
+      subtitle:
+        "Esta pagina comparte datos agregados y anonimizados para mostrar claramente resultados, progreso y uso de recursos.",
+      stats: {
+        girlsHelped: "Ninas ayudadas",
+        yearsOfService: "Anos de servicio",
+        activeDonors: "Donantes activos",
+        operatingSafeHouses: "Casas seguras operando",
+      },
+      cards: {
+        outcomes: {
+          title: "Los Resultados",
+          description:
+            "Seguimos resultados agregados para entender cuantas ninas reciben apoyo y como avanzan las metas clave en el tiempo.",
+        },
+        progress: {
+          title: "El Progreso",
+          description:
+            "Los indicadores de progreso ayudan al equipo a mejorar planes de cuidado, detectar necesidades y fortalecer el apoyo.",
+        },
+        resourceUse: {
+          title: "El Uso de los Recursos",
+          description:
+            "Los recursos de donantes y operacion se resumen a alto nivel para transparencia y privacidad de cada persona.",
+        },
+      },
+      preview: {
+        outcomes: {
+          girlsReintegrated: "Ninas reintegradas",
+          activeResidents: "Ninas en casos activos",
+          openCases: "Casos abiertos",
+        },
+        progress: {
+          schoolAttendance: "Asistencia escolar",
+          educationGrowth: "Crecimiento educativo (trimestre)",
+          processSessionsThisMonth: "Sesiones de apoyo este mes",
+        },
+        resourceUse: {
+          programAllocation: "Asignacion a programas",
+          costPerGirl: "Costo promedio por nina",
+          recurringDonors: "Porcentaje de donantes recurrentes",
+        },
+      },
+      pillars: {
+        title: "Seguridad, sanacion, justicia y empoderamiento",
+        safety: {
+          title: "La Seguridad",
+          description:
+            "Priorizamos planes de seguridad inmediatos y ubicacion estable para que cada nina inicie su recuperacion en un entorno seguro.",
+        },
+        healing: {
+          title: "La Sanacion",
+          description:
+            "Las ninas reciben apoyo informado por trauma, seguimiento de caso y acompanamiento constante para fortalecer su bienestar.",
+        },
+        justice: {
+          title: "La Justicia",
+          description:
+            "Cuando se solicita, apoyamos rutas legales con coordinacion, defensa y seguimiento documentado del progreso de cada caso.",
+        },
+        empowerment: {
+          title: "El Ánimo",
+          description:
+            "Educacion, habilidades para la vida e integracion comunitaria ayudan a pasar de la crisis a una mayor independencia.",
+        },
+      },
+      campaign: {
+        title: "Ruedas de Esperanza",
+        description:
+          "El transporte es clave para seguridad, acceso a tribunales, continuidad escolar y salud. El apoyo a esta campana mantiene servicios esenciales.",
+        cta: "Apoyar la campana",
+      },
     },
   },
 } as const;
