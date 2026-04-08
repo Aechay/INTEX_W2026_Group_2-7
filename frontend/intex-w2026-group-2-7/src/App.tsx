@@ -16,6 +16,9 @@ import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
 import Caseload from './pages/Caseload';
+import ProcessRecording from './pages/ProcessRecording';
+import HomeVisitation from './pages/HomeVisitation';
+import Reports from './pages/Reports';
 import DonorPortal from './pages/DonorPortal';
 import Impact from './pages/Impact';
 import Donate from './pages/Donate';
@@ -87,6 +90,12 @@ const App = () => (
                 <Route path="/:lang/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/caseload" element={<Caseload />} />
                 <Route path="/:lang/dashboard/caseload" element={<Caseload />} />
+                <Route path="/dashboard/process-recordings" element={<ProcessRecording />} />
+                <Route path="/:lang/dashboard/process-recordings" element={<ProcessRecording />} />
+                <Route path="/dashboard/home-visitations" element={<HomeVisitation />} />
+                <Route path="/:lang/dashboard/home-visitations" element={<HomeVisitation />} />
+                <Route path="/dashboard/reports" element={<Reports />} />
+                <Route path="/:lang/dashboard/reports" element={<Reports />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
