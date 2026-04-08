@@ -16,6 +16,7 @@ from .social_media_inference import (
     CATEGORICAL_FEATURES,
     NUMERIC_FEATURES,
     SOCIAL_REQUEST_FIELDS,
+    predict_social_media_value,
 )
 
 
