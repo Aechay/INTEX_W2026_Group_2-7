@@ -85,13 +85,9 @@ const Footer = () => {
               asChild
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             >
-              <a
-                href="https://donate.hopeshelter.org"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link to={localizedPath("/donate")}>
                 <Heart className="h-4 w-4 mr-1" /> {t("footer.donateNow")}
-              </a>
+              </Link>
             </Button>
           </div>
         </div>
