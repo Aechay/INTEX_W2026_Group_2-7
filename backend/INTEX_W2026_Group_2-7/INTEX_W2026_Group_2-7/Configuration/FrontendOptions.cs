@@ -6,5 +6,5 @@ public sealed class FrontendOptions
 
     public string? BaseUrl { get; set; }
 
-    public string ExternalAuthCallbackPath { get; set; } = "/auth/external/callback";
+    public string ExternalAuthCallbackPath { get; set; } = "/external-auth/callback";
 }

@@ -13,6 +13,7 @@ import {
 
 const DonorPortal = () => {
   const auth = useAuth();
+  const donorName = auth.user?.displayName?.trim() || auth.user?.email?.split('@')[0] || '';
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -23,7 +24,7 @@ const DonorPortal = () => {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Welcome back{auth.user?.email ? `, ${auth.user.email.split('@')[0]}` : ''}
+              Welcome back{donorName ? `, ${donorName}` : ''}
             </h1>
             <p className="mt-1 text-muted-foreground">
               Thank you for your continued support of Hope Shelter.

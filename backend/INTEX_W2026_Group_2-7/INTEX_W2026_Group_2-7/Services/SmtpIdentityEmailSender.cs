@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using INTEX_W2026_Group_2_7.Configuration;
 using INTEX_W2026_Group_2_7.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 
 namespace INTEX_W2026_Group_2_7.Services;
@@ -52,6 +54,10 @@ public sealed class SmtpIdentityEmailSender : IEmailSender<ApplicationUser>
 
     public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
     {
+        var displayCode = TryDecodeIdentityCode(resetCode, out var decodedCode)
+            ? decodedCode
+            : resetCode;
+
         return SendEmailAsync(
             email,
             "Your password reset code",
@@ -59,10 +65,24 @@ public sealed class SmtpIdentityEmailSender : IEmailSender<ApplicationUser>
              A password reset was requested for your account.
 
              Your reset code is:
-             {resetCode}
+             {displayCode}
 
              If you did not request this code, you can ignore this email.
              """);
+    }
+
+    private static bool TryDecodeIdentityCode(string code, out string decodedCode)
+    {
+        try
+        {
+            decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+            return true;
+        }
+        catch (FormatException)
+        {
+            decodedCode = string.Empty;
+            return false;
+        }
     }
 
     private async Task SendEmailAsync(string recipientEmail, string subject, string body)

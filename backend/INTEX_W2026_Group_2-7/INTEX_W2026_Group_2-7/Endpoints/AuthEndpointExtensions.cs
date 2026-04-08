@@ -194,9 +194,70 @@ public static class AuthEndpointExtensions
                 return Results.Ok(new CurrentUserResponse(
                     user.Id,
                     user.Email ?? string.Empty,
+                    user.DisplayName,
                     roles.ToArray()));
             })
             .WithName("GetCurrentUser")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
+        group.MapPut("/profile/display-name", async (
+                UpdateDisplayNameRequest request,
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var displayName = request.DisplayName.Trim();
+                if (string.IsNullOrWhiteSpace(displayName))
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.DisplayName)] = ["Display name is required."]
+                    });
+                }
+
+                if (displayName.Length > 200)
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.DisplayName)] = ["Display name must be 200 characters or fewer."]
+                    });
+                }
+
+                if (string.Equals(user.DisplayName, displayName, StringComparison.Ordinal))
+                {
+                    var existingRoles = await userManager.GetRolesAsync(user);
+                    return Results.Ok(new CurrentUserResponse(
+                        user.Id,
+                        user.Email ?? string.Empty,
+                        user.DisplayName,
+                        existingRoles.ToArray()));
+                }
+
+                user.DisplayName = displayName;
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    return Results.ValidationProblem(updateResult.Errors
+                        .GroupBy(error => error.Code, StringComparer.Ordinal)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.Select(error => error.Description).ToArray(),
+                            StringComparer.Ordinal));
+                }
+
+                var roles = await userManager.GetRolesAsync(user);
+                return Results.Ok(new CurrentUserResponse(
+                    user.Id,
+                    user.Email ?? string.Empty,
+                    user.DisplayName,
+                    roles.ToArray()));
+            })
+            .WithName("UpdateDisplayName")
             .RequireAuthorization(AppPolicies.AuthenticatedUser);
 
         group.MapGet("/admin/ping", (ClaimsPrincipal principal) =>
@@ -251,12 +312,14 @@ public static class AuthEndpointExtensions
         }
 
         var user = await userManager.FindByEmailAsync(email);
+        var displayName = ExternalDisplayNameResolver.Resolve(externalLoginInfo.Principal);
         if (user is null)
         {
             user = new ApplicationUser
             {
                 UserName = email,
                 Email = email,
+                DisplayName = displayName,
                 EmailConfirmed = ShouldMarkEmailConfirmed(externalLoginInfo)
             };
 
@@ -266,13 +329,30 @@ public static class AuthEndpointExtensions
                 return ExternalUserResolutionResult.Fail("user_create_failed");
             }
         }
-        else if (!user.EmailConfirmed && ShouldMarkEmailConfirmed(externalLoginInfo))
+        else
         {
-            user.EmailConfirmed = true;
-            var updateUserResult = await userManager.UpdateAsync(user);
-            if (!updateUserResult.Succeeded)
+            var shouldUpdateUser = false;
+
+            if (!user.EmailConfirmed && ShouldMarkEmailConfirmed(externalLoginInfo))
             {
-                return ExternalUserResolutionResult.Fail("user_update_failed");
+                user.EmailConfirmed = true;
+                shouldUpdateUser = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(displayName) &&
+                !string.Equals(user.DisplayName, displayName, StringComparison.Ordinal))
+            {
+                user.DisplayName = displayName;
+                shouldUpdateUser = true;
+            }
+
+            if (shouldUpdateUser)
+            {
+                var updateUserResult = await userManager.UpdateAsync(user);
+                if (!updateUserResult.Succeeded)
+                {
+                    return ExternalUserResolutionResult.Fail("user_update_failed");
+                }
             }
         }
 
@@ -305,7 +385,7 @@ public static class AuthEndpointExtensions
         }
 
         var callbackPath = string.IsNullOrWhiteSpace(options.ExternalAuthCallbackPath)
-            ? "/auth/external/callback"
+            ? "/external-auth/callback"
             : options.ExternalAuthCallbackPath;
 
         frontendCallbackUrl = new Uri(frontendBaseUri, callbackPath).ToString();

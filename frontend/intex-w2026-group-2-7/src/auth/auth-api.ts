@@ -20,6 +20,12 @@ type JsonRequestInit = Omit<RequestInit, "body"> & {
   body?: BodyInit | object | null;
 };
 
+export type ExternalAuthProvider = {
+  name: string;
+  displayName: string;
+  startUrl: string;
+};
+
 export const resolveApiBaseUrl = (): string => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
   if (configuredBaseUrl) {
@@ -131,10 +137,51 @@ export const registerRequest = (apiBaseUrl: string, email: string, password: str
     body: { email, password },
   });
 
+export const forgotPasswordRequest = (apiBaseUrl: string, email: string) =>
+  requestJson<void>(apiBaseUrl, "/auth/forgotPassword", {
+    method: "POST",
+    body: { email },
+  });
+
+const encodeResetCode = (code: string): string => {
+  const utf8Bytes = new TextEncoder().encode(code);
+  let binary = "";
+
+  utf8Bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+
+export const resetPasswordRequest = (
+  apiBaseUrl: string,
+  email: string,
+  resetCode: string,
+  newPassword: string,
+) =>
+  requestJson<void>(apiBaseUrl, "/auth/resetPassword", {
+    method: "POST",
+    body: {
+      email,
+      resetCode: encodeResetCode(resetCode),
+      newPassword,
+    },
+  });
+
 export const loginRequest = (apiBaseUrl: string, email: string, password: string) =>
   requestJson<AuthTokens>(apiBaseUrl, "/auth/login?useCookies=false", {
     method: "POST",
     body: { email, password },
+  });
+
+export const getExternalAuthProvidersRequest = (apiBaseUrl: string) =>
+  requestJson<ExternalAuthProvider[]>(apiBaseUrl, "/auth/external/providers");
+
+export const exchangeExternalAuthCodeRequest = (apiBaseUrl: string, code: string) =>
+  requestJson<AuthTokens>(apiBaseUrl, "/auth/external/exchange", {
+    method: "POST",
+    body: { code },
   });
 
 export const refreshRequest = (apiBaseUrl: string, refreshToken: string) =>
