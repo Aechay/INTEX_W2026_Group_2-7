@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/auth/AuthProvider';
 import RequireAdmin from '@/auth/RequireAdmin';
 import RequireAuth from '@/auth/RequireAuth';
+import RedirectAdminFromDonorPortal from '@/auth/RedirectAdminFromDonorPortal';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -75,10 +76,12 @@ const App = () => (
               <Route path="/external-auth/callback" element={<ExternalAuthCallback />} />
               <Route path="/:lang/external-auth/callback" element={<ExternalAuthCallback />} />
 
-              {/* Protected: any authenticated user */}
+              {/* Protected: donors only (admins use /dashboard) */}
               <Route element={<RequireAuth />}>
-                <Route path="/donor-portal" element={<DonorPortal />} />
-                <Route path="/:lang/donor-portal" element={<DonorPortal />} />
+                <Route element={<RedirectAdminFromDonorPortal />}>
+                  <Route path="/donor-portal" element={<DonorPortal />} />
+                  <Route path="/:lang/donor-portal" element={<DonorPortal />} />
+                </Route>
               </Route>
 
               {/* Protected: Admin only */}

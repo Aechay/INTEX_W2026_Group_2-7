@@ -40,6 +40,14 @@ public static class AdminCaseloadEndpointExtensions
             .Select(s => new SafehouseOptionDto(s.SafehouseId, s.Name))
             .ToArrayAsync(cancellationToken);
 
+        var caseCategoryOptions = await dbContext.Residents
+            .AsNoTracking()
+            .Where(r => !string.IsNullOrWhiteSpace(r.CaseCategory))
+            .Select(r => r.CaseCategory)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToArrayAsync(cancellationToken);
+
         var residentQuery = dbContext.Residents
             .AsNoTracking()
             .Join(
@@ -150,7 +158,7 @@ public static class AdminCaseloadEndpointExtensions
             residents.Select(r => r.ReintegrationStatus).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().OrderBy(v => v).ToArray()!
         );
 
-        return TypedResults.Ok(new CaseloadResidentsResponse(residents, safehouses, filterOptions));
+        return TypedResults.Ok(new CaseloadResidentsResponse(residents, safehouses, filterOptions, caseCategoryOptions));
     }
 
     private static async Task<Results<Created<ResidentCardDto>, ValidationProblem>> CreateResidentAsync(
@@ -373,7 +381,8 @@ public static class AdminCaseloadEndpointExtensions
 public sealed record CaseloadResidentsResponse(
     ResidentCardDto[] Residents,
     SafehouseOptionDto[] Safehouses,
-    CaseloadFilterOptionsDto FilterOptions);
+    CaseloadFilterOptionsDto FilterOptions,
+    string[] CaseCategoryOptions);
 
 public sealed record SafehouseOptionDto(int SafehouseId, string Name);
 

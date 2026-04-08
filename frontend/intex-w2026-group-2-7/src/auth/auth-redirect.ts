@@ -36,3 +36,25 @@ export const consumePendingAuthRedirect = (): string | null => {
 
   return path;
 };
+
+/**
+ * After sign-in, send admins to the staff dashboard instead of the donor portal
+ * (e.g. when `from` was `/donor-portal` from RequireAuth).
+ */
+export const resolvePostAuthRedirect = (args: {
+  pendingPath: string | null;
+  isAdmin: boolean;
+  localizedDashboard: string;
+  localizedDonorPortal: string;
+}): string => {
+  const { pendingPath, isAdmin, localizedDashboard, localizedDonorPortal } = args;
+
+  if (pendingPath) {
+    if (isAdmin && pendingPath.includes("donor-portal")) {
+      return localizedDashboard;
+    }
+    return pendingPath;
+  }
+
+  return isAdmin ? localizedDashboard : localizedDonorPortal;
+};

@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { getAuthRedirectFromState, storePendingAuthRedirect } from "@/auth/auth-redirect";
+import {
+  getAuthRedirectFromState,
+  resolvePostAuthRedirect,
+  storePendingAuthRedirect,
+} from "@/auth/auth-redirect";
 import {
   forgotPasswordRequest,
   getErrorMessage,
@@ -103,13 +107,15 @@ const Login = () => {
     }
 
     if (!auth.isBootstrapping && auth.isAuthenticated) {
-      const redirectTo = getAuthRedirectFromState(location.state);
-      const fallbackPath = withPathLanguage(
-        auth.isAdmin ? "/dashboard" : "/donor-portal",
-        i18n.resolvedLanguage,
-      );
+      const pendingPath = getAuthRedirectFromState(location.state);
+      const target = resolvePostAuthRedirect({
+        pendingPath,
+        isAdmin: auth.isAdmin,
+        localizedDashboard: withPathLanguage("/dashboard", i18n.resolvedLanguage),
+        localizedDonorPortal: withPathLanguage("/donor-portal", i18n.resolvedLanguage),
+      });
 
-      navigate(redirectTo ?? fallbackPath, { replace: true });
+      navigate(target, { replace: true });
     }
   }, [
     auth.isAdmin,
