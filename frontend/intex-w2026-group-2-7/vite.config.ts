@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
-const LOCAL_API_BASE_URL = 'https://localhost:7229';
+const LOCAL_API_BASE_URL = "https://localhost:7229";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({

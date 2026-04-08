@@ -15,6 +15,7 @@ import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
 import DonorPortal from './pages/DonorPortal';
+import Impact from './pages/Impact';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 
@@ -55,6 +56,8 @@ const App = () => (
               <Route path="/:lang" element={<Index />} />
               <Route path="/get-help" element={<GetHelp />} />
               <Route path="/:lang/get-help" element={<GetHelp />} />
+              <Route path="/impact" element={<Impact />} />
+              <Route path="/:lang/impact" element={<Impact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/:lang/login" element={<Login />} />
 
