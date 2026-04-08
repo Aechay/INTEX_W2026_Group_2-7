@@ -7,21 +7,14 @@ from typing import Any
 
 import azure.functions as func
 
-from hope_shelter_ml.blob_store import BlobArtifactStore
-from hope_shelter_ml.settings import load_runtime_settings
-from hope_shelter_ml.social_media_inference import (
-    SOCIAL_REQUEST_FIELDS,
-    predict_social_media_value,
-)
-
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-
 _cache_lock = Lock()
 _cached_model: Any | None = None
 _cached_manifest_version: str | None = None
 
 
 def _ensure_authorized(request: func.HttpRequest) -> bool:
+    from hope_shelter_ml.settings import load_runtime_settings
+
     settings = load_runtime_settings()
     if not settings.function_shared_secret:
         return True
@@ -31,6 +24,9 @@ def _ensure_authorized(request: func.HttpRequest) -> bool:
 
 
 def _load_social_media_model() -> tuple[Any, str]:
+    from hope_shelter_ml.blob_store import BlobArtifactStore
+    from hope_shelter_ml.settings import load_runtime_settings
+
     global _cached_manifest_version, _cached_model
 
     settings = load_runtime_settings()
@@ -52,8 +48,12 @@ def _load_social_media_model() -> tuple[Any, str]:
         return model, manifest_version
 
 
-@app.route(route="social-media/predict", methods=["POST"])
-def social_media_predict(request: func.HttpRequest) -> func.HttpResponse:
+def main(request: func.HttpRequest) -> func.HttpResponse:
+    from hope_shelter_ml.social_media_inference import (
+        SOCIAL_REQUEST_FIELDS,
+        predict_social_media_value,
+    )
+
     if not _ensure_authorized(request):
         return func.HttpResponse("Unauthorized.", status_code=401)
 
