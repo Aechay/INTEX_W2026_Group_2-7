@@ -1,36 +1,45 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
+import { componentTagger } from 'lovable-tagger';
 
-const LOCAL_API_BASE_URL = "https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net";
+const LOCAL_API_BASE_URL = 'https://localhost:7229';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: '::',
     port: 8080,
     hmr: {
       overlay: false,
     },
     proxy: {
-      "/auth": {
+      '/auth': {
         target: LOCAL_API_BASE_URL,
         changeOrigin: true,
         secure: false,
       },
-      "/api": {
+      '/api': {
         target: LOCAL_API_BASE_URL,
         changeOrigin: true,
         secure: false,
       },
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === 'development' && componentTagger()].filter(
+    Boolean
+  ),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
+    dedupe: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      '@tanstack/react-query',
+      '@tanstack/query-core',
+    ],
   },
 }));
