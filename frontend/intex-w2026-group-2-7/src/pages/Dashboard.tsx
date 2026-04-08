@@ -4,6 +4,7 @@ import {
   BedDouble,
   CalendarClock,
   CircleAlert,
+  ClipboardList,
   FileBarChart2,
   HeartHandshake,
   Home,
@@ -236,13 +237,17 @@ const Dashboard = () => {
   const overview = overviewQuery.data;
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath, active: true },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
+    { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
+    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },
-    { label: t("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
   const progressChartData = (overview?.progressTrend ?? []).map((point) => ({
