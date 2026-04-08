@@ -89,9 +89,7 @@ type DashboardOverviewResponse = {
   };
 };
 
-const donationFormatter = new Intl.NumberFormat("en-PH", {
-  style: "currency",
-  currency: "PHP",
+const donationFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
@@ -122,33 +120,36 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
 });
 
-const formatCurrency = (value: number) => donationFormatter.format(value);
+const formatCurrency = (value: number) => `DR$${donationFormatter.format(value)}`;
 
-const formatPercent = (value: number | null | undefined) =>
-  value === null || value === undefined ? "No data" : `${percentFormatter.format(value)}%`;
+const formatPercent = (value: number | null | undefined, noDataLabel: string) =>
+  value === null || value === undefined ? noDataLabel : `${percentFormatter.format(value)}%`;
 
-const formatHealthScore = (value: number | null | undefined) =>
-  value === null || value === undefined ? "No data" : `${decimalFormatter.format(value)}/5`;
+const formatHealthScore = (value: number | null | undefined, noDataLabel: string) =>
+  value === null || value === undefined ? noDataLabel : `${decimalFormatter.format(value)}/5`;
 
-const formatDate = (value: string | null | undefined) =>
-  value ? dateFormatter.format(new Date(value)) : "No date";
+const formatDate = (value: string | null | undefined, noDateLabel: string) =>
+  value ? dateFormatter.format(new Date(value)) : noDateLabel;
 
 const formatDateTime = (value: string) => dateTimeFormatter.format(new Date(value));
 
-const formatMonth = (value: string | null | undefined) =>
-  value ? monthFormatter.format(new Date(value)) : "No period";
+const formatMonth = (value: string | null | undefined, noPeriodLabel: string) =>
+  value ? monthFormatter.format(new Date(value)) : noPeriodLabel;
 
-const formatConferenceTiming = (daysFromToday: number) => {
+const formatConferenceTiming = (
+  daysFromToday: number,
+  labels: { today: string; inDays: string; overdue: string },
+) => {
   if (daysFromToday === 0) {
-    return "Today";
+    return labels.today;
   }
 
   if (daysFromToday > 0) {
-    return `In ${daysFromToday} day${daysFromToday === 1 ? "" : "s"}`;
+    return labels.inDays.replace("{{count}}", daysFromToday.toString());
   }
 
   const overdueDays = Math.abs(daysFromToday);
-  return `${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue`;
+  return labels.overdue.replace("{{count}}", overdueDays.toString());
 };
 
 const getConferenceBadgeClassName = (daysFromToday: number) => {
@@ -214,6 +215,7 @@ const LoadingDashboard = () => (
 const Dashboard = () => {
   const auth = useAuth();
   const { i18n } = useTranslation("common");
+  const { t } = useTranslation("dashboard");
   const [signOutPending, setSignOutPending] = useState(false);
 
   const overviewQuery = useQuery({
@@ -233,18 +235,19 @@ const Dashboard = () => {
 
   const overview = overviewQuery.data;
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
+  const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
-    { label: "Dashboard", icon: LayoutDashboard, to: dashboardPath, active: true },
-    { label: "Residents", icon: UsersRound, disabled: true },
-    { label: "Donations", icon: HeartHandshake, disabled: true },
-    { label: "Case Conferences", icon: CalendarClock, disabled: true },
-    { label: "Safehouses", icon: Home, disabled: true },
-    { label: "Reports", icon: FileBarChart2, disabled: true },
-    { label: "Settings", icon: Settings, disabled: true },
+    { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath, active: true },
+    { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
+    { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
+    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
   const progressChartData = (overview?.progressTrend ?? []).map((point) => ({
     ...point,
-    monthLabel: formatMonth(point.monthStart),
+    monthLabel: formatMonth(point.monthStart, t("common.noPeriod")),
   }));
   const conferenceHighlights = overview?.conferenceQueue.highlights ?? [];
   const showingUpcomingConferences = (overview?.conferenceQueue.upcomingCount ?? 0) > 0;
@@ -265,17 +268,17 @@ const Dashboard = () => {
             </div>
             <div className="space-y-2">
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Dashboard data is unavailable
+                {t("error.title")}
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                 {getErrorMessage(
                   overviewQuery.error,
-                  "The operational overview could not be loaded right now.",
+                  t("error.description"),
                 )}
               </p>
             </div>
             <Button type="button" onClick={() => void overviewQuery.refetch()}>
-              Try again
+              {t("actions.tryAgain")}
             </Button>
           </CardContent>
         </Card>
@@ -285,28 +288,28 @@ const Dashboard = () => {
             <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                  Dashboard
+                  {t("header.kicker")}
                 </div>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  Admin Dashboard
+                  {t("header.title")}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Resident capacity, donation activity, conference scheduling, and care progress.
+                  {t("header.description")}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="border border-border bg-background px-4 py-3">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Reporting Month
+                    {t("header.reportingMonth")}
                   </div>
                   <div className="mt-1 text-sm font-medium text-foreground">
-                    {formatMonth(overview.progressSnapshot.monthStart)}
+                    {formatMonth(overview.progressSnapshot.monthStart, t("common.noPeriod"))}
                   </div>
                 </div>
                 <div className="border border-border bg-background px-4 py-3">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Last Refreshed
+                    {t("header.lastRefreshed")}
                   </div>
                   <div className="mt-1 text-sm font-medium text-foreground">
                     {formatDateTime(overview.generatedAt)}
@@ -318,30 +321,32 @@ const Dashboard = () => {
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              title="Active residents"
+              title={t("metrics.activeResidents.title")}
               value={overview.summary.activeResidents.toString()}
-              detail={`${overview.summary.activeSafehouses} safehouses online`}
+              detail={t("metrics.activeResidents.detail", { count: overview.summary.activeSafehouses })}
               icon={UsersRound}
             />
             <MetricCard
-              title="Available beds"
+              title={t("metrics.availableBeds.title")}
               value={overview.summary.availableBeds.toString()}
-              detail={`${overview.summary.totalCapacity} total capacity`}
+              detail={t("metrics.availableBeds.detail", { count: overview.summary.totalCapacity })}
               icon={BedDouble}
             />
             <MetricCard
-              title="Recent donations"
+              title={t("metrics.recentDonations.title")}
               value={formatCurrency(overview.summary.recentDonationTotal)}
-              detail={`${overview.summary.recentDonationCount} gifts in the last 90 days`}
+              detail={t("metrics.recentDonations.detail", { count: overview.summary.recentDonationCount })}
               icon={HeartHandshake}
             />
             <MetricCard
-              title="Upcoming conferences"
+              title={t("metrics.upcomingConferences.title")}
               value={overview.summary.upcomingCaseConferenceCount.toString()}
               detail={
                 overview.summary.overdueCaseConferenceCount > 0
-                  ? `${overview.summary.overdueCaseConferenceCount} need rescheduling`
-                  : "Conference calendar is clear"
+                  ? t("metrics.upcomingConferences.detailOverdue", {
+                      count: overview.summary.overdueCaseConferenceCount,
+                    })
+                  : t("metrics.upcomingConferences.detailClear")
               }
               icon={CalendarClock}
             />
@@ -353,45 +358,46 @@ const Dashboard = () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <CardTitle className="text-2xl font-semibold tracking-tight">
-                          Progress snapshot
+                          {t("progress.title")}
                         </CardTitle>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          Education and health indicators from the latest completed reporting
-                          periods.
+                          {t("progress.description")}
                         </p>
                       </div>
                       <Badge variant="outline" className="w-fit rounded-none bg-primary/5 px-3 py-1 text-primary">
-                        Updated through {formatMonth(overview.progressSnapshot.monthStart)}
+                        {t("progress.updatedThrough", {
+                          month: formatMonth(overview.progressSnapshot.monthStart, t("common.noPeriod")),
+                        })}
                       </Badge>
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-3">
                       <div className="border border-border bg-background p-4">
                         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                          Education Progress
+                          {t("progress.cards.educationProgress")}
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-foreground">
-                          {formatPercent(overview.progressSnapshot.avgEducationProgress)}
+                          {formatPercent(overview.progressSnapshot.avgEducationProgress, t("common.noData"))}
                         </div>
                       </div>
                       <div className="border border-border bg-background p-4">
                         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                          Health Score
+                          {t("progress.cards.healthScore")}
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-foreground">
-                          {formatHealthScore(overview.progressSnapshot.avgHealthScore)}
+                          {formatHealthScore(overview.progressSnapshot.avgHealthScore, t("common.noData"))}
                         </div>
                       </div>
                       <div className="border border-border bg-background p-4">
                         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                          Care Activity
+                          {t("progress.cards.careActivity")}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-foreground">
-                          <span>{overview.progressSnapshot.processRecordingCount} sessions</span>
+                          <span>{t("progress.cards.sessions", { count: overview.progressSnapshot.processRecordingCount })}</span>
                           <span className="text-muted-foreground">•</span>
-                          <span>{overview.progressSnapshot.homeVisitationCount} visits</span>
+                          <span>{t("progress.cards.visits", { count: overview.progressSnapshot.homeVisitationCount })}</span>
                           <span className="text-muted-foreground">•</span>
-                          <span>{overview.progressSnapshot.incidentCount} incidents</span>
+                          <span>{t("progress.cards.incidents", { count: overview.progressSnapshot.incidentCount })}</span>
                         </div>
                       </div>
                     </div>
@@ -402,11 +408,11 @@ const Dashboard = () => {
                       className="h-[320px] w-full"
                       config={{
                         avgEducationProgress: {
-                          label: "Education progress",
+                          label: t("progress.chart.educationProgress"),
                           color: "hsl(var(--primary))",
                         },
                         avgHealthScore: {
-                          label: "Health score",
+                          label: t("progress.chart.healthScore"),
                           color: "hsl(var(--secondary))",
                         },
                       }}
@@ -435,7 +441,9 @@ const Dashboard = () => {
                               formatter={(value, name) => (
                                 <div className="flex min-w-[8rem] items-center justify-between gap-4">
                                   <span className="text-muted-foreground">
-                                    {name === "avgHealthScore" ? "Health score" : "Education progress"}
+                                    {name === "avgHealthScore"
+                                      ? t("progress.chart.healthScore")
+                                      : t("progress.chart.educationProgress")}
                                   </span>
                                   <span className="font-mono font-medium tabular-nums text-foreground">
                                     {name === "avgHealthScore"
@@ -472,27 +480,30 @@ const Dashboard = () => {
                 <Card className="rounded-none border border-border bg-card shadow-none">
                   <CardHeader className="p-6 pb-3">
                     <CardTitle className="text-2xl font-semibold tracking-tight">
-                      Safehouse occupancy
+                      {t("safehouses.title")}
                     </CardTitle>
                     <p className="text-sm leading-6 text-muted-foreground">
-                      Live bed availability across all active locations.
+                      {t("safehouses.description")}
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4 p-6 pt-2">
                     <div className="border-l-4 border-primary bg-background px-4 py-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                        Network Utilization
+                        {t("safehouses.networkUtilization")}
                       </div>
                       <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
                         {formatPercent(
                           overview.summary.totalCapacity === 0
                             ? 0
                             : (overview.summary.activeResidents / overview.summary.totalCapacity) * 100,
+                          t("common.noData"),
                         )}
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {overview.summary.activeResidents} residents across {overview.summary.activeSafehouses} active
-                        safehouses.
+                        {t("safehouses.summary", {
+                          residents: overview.summary.activeResidents,
+                          safehouses: overview.summary.activeSafehouses,
+                        })}
                       </p>
                     </div>
 
@@ -522,7 +533,7 @@ const Dashboard = () => {
                                 {safehouse.currentOccupancy}/{safehouse.capacity}
                               </div>
                               <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                                {safehouse.availableBeds} open
+                                {t("safehouses.openBeds", { count: safehouse.availableBeds })}
                               </div>
                             </div>
                           </div>
@@ -547,12 +558,12 @@ const Dashboard = () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <CardTitle className="text-2xl font-semibold tracking-tight">
-                          Case conference calendar
+                          {t("conferences.title")}
                         </CardTitle>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
                           {showingUpcomingConferences
-                            ? "Next scheduled case conferences requiring staff attention."
-                            : "No future conferences are scheduled. These plans need a new date."}
+                            ? t("conferences.descriptionUpcoming")
+                            : t("conferences.descriptionOverdue")}
                         </p>
                       </div>
                       <Badge
@@ -565,15 +576,15 @@ const Dashboard = () => {
                         )}
                       >
                         {showingUpcomingConferences
-                          ? `${overview.conferenceQueue.upcomingCount} upcoming`
-                          : `${overview.conferenceQueue.overdueCount} overdue`}
+                          ? t("conferences.badgeUpcoming", { count: overview.conferenceQueue.upcomingCount })
+                          : t("conferences.badgeOverdue", { count: overview.conferenceQueue.overdueCount })}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 p-6 pt-2">
                     {conferenceHighlights.length === 0 ? (
                       <div className="border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                        No case conferences are on the calendar right now.
+                        {t("conferences.empty")}
                       </div>
                     ) : (
                       conferenceHighlights.map((conference) => (
@@ -594,7 +605,11 @@ const Dashboard = () => {
                                     getConferenceBadgeClassName(conference.daysFromToday),
                                   )}
                                 >
-                                  {formatConferenceTiming(conference.daysFromToday)}
+                                  {formatConferenceTiming(conference.daysFromToday, {
+                                    today: t("conferences.timing.today"),
+                                    inDays: t("conferences.timing.inDays"),
+                                    overdue: t("conferences.timing.overdue"),
+                                  })}
                                 </Badge>
                               </div>
                               <p className="mt-2 text-sm font-medium text-foreground">
@@ -605,7 +620,7 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-sm font-medium text-foreground">
-                              {formatDate(conference.caseConferenceDate)}
+                              {formatDate(conference.caseConferenceDate, t("common.noDate"))}
                             </div>
                           </div>
                         </div>
@@ -619,21 +634,21 @@ const Dashboard = () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <CardTitle className="text-2xl font-semibold tracking-tight">
-                          Recent donations
+                          {t("donations.title")}
                         </CardTitle>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          Latest recorded gifts and in-kind support from the last 90 days.
+                          {t("donations.description")}
                         </p>
                       </div>
                       <Badge variant="outline" className="w-fit rounded-none bg-primary/10 px-3 py-1 text-primary">
-                        {overview.summary.recentDonationCount} total
+                        {t("donations.totalBadge", { count: overview.summary.recentDonationCount })}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 p-6 pt-2">
                     {overview.recentDonations.length === 0 ? (
                       <div className="border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                        No recent donations are available for this reporting window.
+                        {t("donations.empty")}
                       </div>
                     ) : (
                       overview.recentDonations.map((donation) => (
@@ -647,10 +662,13 @@ const Dashboard = () => {
                                 {donation.supporterName}
                               </div>
                               <p className="mt-1 text-sm text-muted-foreground">
-                                {donation.donationType} via {donation.channelSource}
+                                {t("donations.via", {
+                                  type: donation.donationType,
+                                  channel: donation.channelSource,
+                                })}
                               </p>
                               <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                {formatDate(donation.donationDate)}
+                                {formatDate(donation.donationDate, t("common.noDate"))}
                               </p>
                             </div>
                             <div className="text-right">

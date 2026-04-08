@@ -153,48 +153,101 @@ export const resources = {
       },
     },
     dashboard: {
-      title: "Dashboard",
-      subtitle: "Welcome back. Here's an overview of Hope Shelter.",
-      overview: {
-        totalChildren: {
-          title: "Total Girls",
-          change: "+3 this month",
+      common: {
+        noData: "No data",
+        noDate: "No date",
+        noPeriod: "No period",
+      },
+      sidebar: {
+        dashboard: "Dashboard",
+        residents: "Residents",
+        donations: "Donations",
+        caseConferences: "Case Conferences",
+        safehouses: "Safehouses",
+        reports: "Reports",
+        settings: "Settings",
+      },
+      actions: {
+        tryAgain: "Try again",
+      },
+      error: {
+        title: "Dashboard data is unavailable",
+        description: "The operational overview could not be loaded right now.",
+      },
+      header: {
+        kicker: "Dashboard",
+        title: "Admin Dashboard",
+        description: "Resident capacity, donation activity, conference scheduling, and care progress.",
+        reportingMonth: "Reporting Month",
+        lastRefreshed: "Last Refreshed",
+      },
+      metrics: {
+        activeResidents: {
+          title: "Active residents",
+          detail_one: "{{count}} safehouse online",
+          detail_other: "{{count}} safehouses online",
         },
-        activeCases: {
-          title: "Active Cases",
-          change: "12 in progress",
+        availableBeds: {
+          title: "Available beds",
+          detail: "{{count}} total capacity",
         },
-        activeDonors: {
-          title: "Active Donors",
-          change: "+18 this quarter",
+        recentDonations: {
+          title: "Recent donations",
+          detail_one: "{{count}} gift in the last 90 days",
+          detail_other: "{{count}} gifts in the last 90 days",
         },
-        staffMembers: {
-          title: "Staff Members",
-          change: "All active",
+        upcomingConferences: {
+          title: "Upcoming conferences",
+          detailOverdue: "{{count}} need rescheduling",
+          detailClear: "Conference calendar is clear",
         },
       },
-      recentActivity: {
-        title: "Recent Activity",
-        intake: {
-          text: "New intake form submitted for Maria G.",
-          time: "2 hours ago",
+      progress: {
+        title: "Progress snapshot",
+        description: "Education and health indicators from the latest completed reporting periods.",
+        updatedThrough: "Updated through {{month}}",
+        cards: {
+          educationProgress: "Education Progress",
+          healthScore: "Health Score",
+          careActivity: "Care Activity",
+          sessions_one: "{{count}} session",
+          sessions_other: "{{count}} sessions",
+          visits_one: "{{count}} visit",
+          visits_other: "{{count}} visits",
+          incidents_one: "{{count}} incident",
+          incidents_other: "{{count}} incidents",
         },
-        donation: {
-          text: "Donor Sarah K. made a recurring donation of $150",
-          time: "5 hours ago",
+        chart: {
+          educationProgress: "Education progress",
+          healthScore: "Health score",
         },
-        caseUpdate: {
-          text: "Case #1042 updated — Educational milestone reached",
-          time: "1 day ago",
+      },
+      safehouses: {
+        title: "Safehouse occupancy",
+        description: "Live bed availability across all active locations.",
+        networkUtilization: "Network Utilization",
+        summary: "{{residents}} residents across {{safehouses}} active safehouses.",
+        openBeds: "{{count}} open",
+      },
+      conferences: {
+        title: "Case conference calendar",
+        descriptionUpcoming: "Next scheduled case conferences requiring staff attention.",
+        descriptionOverdue: "No future conferences are scheduled. These plans need a new date.",
+        badgeUpcoming: "{{count}} upcoming",
+        badgeOverdue: "{{count}} overdue",
+        empty: "No case conferences are on the calendar right now.",
+        timing: {
+          today: "Today",
+          inDays: "In {{count}} days",
+          overdue: "{{count}} days overdue",
         },
-        report: {
-          text: "Monthly report generated for March 2026",
-          time: "2 days ago",
-        },
-        volunteer: {
-          text: "New volunteer application from Juan R.",
-          time: "3 days ago",
-        },
+      },
+      donations: {
+        title: "Recent donations",
+        description: "Latest recorded gifts and in-kind support from the last 90 days.",
+        totalBadge: "{{count}} total",
+        empty: "No recent donations are available for this reporting window.",
+        via: "{{type}} via {{channel}}",
       },
     },
     login: {
@@ -354,6 +407,107 @@ export const resources = {
         description: "Every donation helps girls access safety, healing, and hope.",
       },
     },
+    caseload: {
+      sidebar: {
+        dashboard: "Dashboard",
+        residents: "Residents",
+        donations: "Donations",
+        caseConferences: "Case Conferences",
+        safehouses: "Safehouses",
+        reports: "Reports",
+        settings: "Settings",
+      },
+      header: {
+        kicker: "Case Management",
+        title: "Residents",
+        description: "View, search, filter, and maintain resident case records.",
+      },
+      common: {
+        all: "All",
+      },
+      filters: {
+        search: "Search",
+        searchPlaceholder: "Name/code, worker, category, safehouse",
+        caseStatus: "Case Status",
+        safehouse: "Safehouse",
+        caseCategory: "Case Category",
+        socialWorker: "Social Worker",
+      },
+      list: {
+        residentCount_one: "{{count}} resident",
+        residentCount_other: "{{count}} residents",
+        perPage: "Per page",
+      },
+      cards: {
+        unnamedResident: "Unnamed resident",
+        socialWorker: "Social worker",
+        unassigned: "Unassigned",
+        noStatus: "No status",
+        dobNotSet: "DOB not set",
+        noCategory: "No category",
+        noSubcategories: "No sub-categories",
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next",
+        pageOf: "Page {{page}} of {{total}}",
+      },
+      dialogs: {
+        profileTitle: "Resident profile",
+        createTitle: "Create resident",
+      },
+      actions: {
+        addResident: "Add resident",
+        edit: "Edit",
+        cancelEdit: "Cancel edit",
+        save: "Save",
+        cancel: "Cancel",
+      },
+      fields: {
+        residentCode: "Resident name/code",
+        firstName: "First Name",
+        lastName: "Last Name",
+        caseControlNo: "Case Control No.",
+        caseStatus: "Case Status",
+        caseCategory: "Case Category",
+        safehouse: "Safehouse",
+        assignedSocialWorker: "Assigned Social Worker",
+        dateOfBirth: "Date of Birth",
+        dateOfAdmission: "Date of Admission",
+        referralSource: "Referral Source",
+        reintegrationStatus: "Reintegration Status",
+        pwdType: "PWD Type",
+        specialNeedsDiagnosis: "Special Needs Diagnosis",
+        restrictedNotes: "Restricted Notes",
+      },
+      sections: {
+        caseSubcategories: "Case sub-categories",
+        familyProfile: "Family socio-demographic profile",
+      },
+      subCategories: {
+        subCatOrphaned: "Orphaned",
+        subCatTrafficked: "Trafficked",
+        subCatChildLabor: "Child Labor",
+        subCatPhysicalAbuse: "Physical Abuse",
+        subCatSexualAbuse: "Sexual Abuse",
+        subCatOsaec: "OSAEC",
+        subCatCicl: "CICL",
+        subCatAtRisk: "At Risk",
+        subCatStreetChild: "Street Child",
+        subCatChildWithHiv: "Child With HIV",
+      },
+      familyProfile: {
+        familyIs4Ps: "4Ps Beneficiary",
+        familySoloParent: "Solo Parent",
+        familyIndigenous: "Indigenous Group",
+        familyParentPwd: "Parent with Disability",
+        familyInformalSettler: "Informal Settler",
+      },
+      errors: {
+        loadFailed: "Could not load caseload data.",
+        saveFailed: "Could not save resident changes.",
+      },
+    },
   },
   es: {
     common: {
@@ -511,48 +665,103 @@ export const resources = {
       },
     },
     dashboard: {
-      title: "Panel",
-      subtitle: "Bienvenida de nuevo. Aquí tienes un resumen de Refugio de Esperanza.",
-      overview: {
-        totalChildren: {
-          title: "Total de niñas",
-          change: "+3 este mes",
+      common: {
+        noData: "Sin datos",
+        noDate: "Sin fecha",
+        noPeriod: "Sin periodo",
+      },
+      sidebar: {
+        dashboard: "Panel",
+        residents: "Residentes",
+        donations: "Donaciones",
+        caseConferences: "Conferencias de caso",
+        safehouses: "Casas seguras",
+        reports: "Reportes",
+        settings: "Configuracion",
+      },
+      actions: {
+        tryAgain: "Intentar de nuevo",
+      },
+      error: {
+        title: "No hay datos del panel disponibles",
+        description: "No se pudo cargar el resumen operativo en este momento.",
+      },
+      header: {
+        kicker: "Panel",
+        title: "Panel de administracion",
+        description:
+          "Capacidad de residentes, actividad de donaciones, programacion de conferencias y progreso del cuidado.",
+        reportingMonth: "Mes del informe",
+        lastRefreshed: "Ultima actualizacion",
+      },
+      metrics: {
+        activeResidents: {
+          title: "Residentes activas",
+          detail_one: "{{count}} casa segura activa",
+          detail_other: "{{count}} casas seguras activas",
         },
-        activeCases: {
-          title: "Casos activos",
-          change: "12 en progreso",
+        availableBeds: {
+          title: "Camas disponibles",
+          detail: "{{count}} capacidad total",
         },
-        activeDonors: {
-          title: "Donantes activos",
-          change: "+18 este trimestre",
+        recentDonations: {
+          title: "Donaciones recientes",
+          detail_one: "{{count}} donacion en los ultimos 90 dias",
+          detail_other: "{{count}} donaciones en los ultimos 90 dias",
         },
-        staffMembers: {
-          title: "Miembros del personal",
-          change: "Todas activas",
+        upcomingConferences: {
+          title: "Conferencias proximas",
+          detailOverdue: "{{count}} requieren reprogramacion",
+          detailClear: "El calendario de conferencias esta al dia",
         },
       },
-      recentActivity: {
-        title: "Actividad reciente",
-        intake: {
-          text: "Se envió un nuevo formulario de ingreso para María G.",
-          time: "Hace 2 horas",
+      progress: {
+        title: "Resumen de progreso",
+        description:
+          "Indicadores de educacion y salud de los periodos de reporte completados mas recientes.",
+        updatedThrough: "Actualizado hasta {{month}}",
+        cards: {
+          educationProgress: "Progreso educativo",
+          healthScore: "Puntaje de salud",
+          careActivity: "Actividad de cuidado",
+          sessions_one: "{{count}} sesion",
+          sessions_other: "{{count}} sesiones",
+          visits_one: "{{count}} visita",
+          visits_other: "{{count}} visitas",
+          incidents_one: "{{count}} incidente",
+          incidents_other: "{{count}} incidentes",
         },
-        donation: {
-          text: "La donante Sarah K. hizo una donación recurrente de $150",
-          time: "Hace 5 horas",
+        chart: {
+          educationProgress: "Progreso educativo",
+          healthScore: "Puntaje de salud",
         },
-        caseUpdate: {
-          text: "Caso #1042 actualizado: se alcanzó un logro educativo",
-          time: "Hace 1 día",
+      },
+      safehouses: {
+        title: "Ocupacion de casas seguras",
+        description: "Disponibilidad de camas en tiempo real en todas las ubicaciones activas.",
+        networkUtilization: "Utilizacion de la red",
+        summary: "{{residents}} residentes en {{safehouses}} casas seguras activas.",
+        openBeds: "{{count}} libres",
+      },
+      conferences: {
+        title: "Calendario de conferencias de caso",
+        descriptionUpcoming: "Proximas conferencias de caso que requieren atencion del personal.",
+        descriptionOverdue: "No hay conferencias futuras programadas. Estos planes requieren nueva fecha.",
+        badgeUpcoming: "{{count}} proximas",
+        badgeOverdue: "{{count}} vencidas",
+        empty: "No hay conferencias de caso en el calendario en este momento.",
+        timing: {
+          today: "Hoy",
+          inDays: "En {{count}} dias",
+          overdue: "{{count}} dias vencida",
         },
-        report: {
-          text: "Se generó el informe mensual de marzo de 2026",
-          time: "Hace 2 días",
-        },
-        volunteer: {
-          text: "Nueva solicitud de voluntariado de Juan R.",
-          time: "Hace 3 días",
-        },
+      },
+      donations: {
+        title: "Donaciones recientes",
+        description: "Ultimos aportes registrados y apoyo en especie de los ultimos 90 dias.",
+        totalBadge: "{{count}} total",
+        empty: "No hay donaciones recientes disponibles para este periodo.",
+        via: "{{type}} via {{channel}}",
       },
     },
     login: {
@@ -716,6 +925,107 @@ export const resources = {
       toast: {
         title: "Gracias por tu generosidad",
         description: "Cada donacion ayuda a las ninas a acceder a seguridad, sanacion y esperanza.",
+      },
+    },
+    caseload: {
+      sidebar: {
+        dashboard: "Panel",
+        residents: "Residentes",
+        donations: "Donaciones",
+        caseConferences: "Conferencias de caso",
+        safehouses: "Casas seguras",
+        reports: "Reportes",
+        settings: "Configuracion",
+      },
+      header: {
+        kicker: "Gestion de casos",
+        title: "Las Residentes",
+        description: "Ver, buscar, filtrar y mantener expedientes de residentes.",
+      },
+      common: {
+        all: "Todos",
+      },
+      filters: {
+        search: "Buscar",
+        searchPlaceholder: "Nombre/codigo, trabajadora, categoria, casa segura",
+        caseStatus: "Estado del caso",
+        safehouse: "Casa segura",
+        caseCategory: "Categoria del caso",
+        socialWorker: "Trabajadora social",
+      },
+      list: {
+        residentCount_one: "{{count}} residente",
+        residentCount_other: "{{count}} residentes",
+        perPage: "Por pagina",
+      },
+      cards: {
+        unnamedResident: "Residente sin nombre",
+        socialWorker: "Trabajadora social",
+        unassigned: "Sin asignar",
+        noStatus: "Sin estado",
+        dobNotSet: "Fecha de nacimiento no definida",
+        noCategory: "Sin categoria",
+        noSubcategories: "Sin subcategorias",
+      },
+      pagination: {
+        previous: "Anterior",
+        next: "Siguiente",
+        pageOf: "Pagina {{page}} de {{total}}",
+      },
+      dialogs: {
+        profileTitle: "Perfil de residente",
+        createTitle: "Crear residente",
+      },
+      actions: {
+        addResident: "Agregar residente",
+        edit: "Editar",
+        cancelEdit: "Cancelar edicion",
+        save: "Guardar",
+        cancel: "Cancelar",
+      },
+      fields: {
+        residentCode: "Nombre/codigo de residente",
+        firstName: "Nombre",
+        lastName: "Apellido",
+        caseControlNo: "No. de control del caso",
+        caseStatus: "Estado del caso",
+        caseCategory: "Categoria del caso",
+        safehouse: "Casa segura",
+        assignedSocialWorker: "Trabajadora social asignada",
+        dateOfBirth: "Fecha de nacimiento",
+        dateOfAdmission: "Fecha de admision",
+        referralSource: "Fuente de referencia",
+        reintegrationStatus: "Estado de reintegracion",
+        pwdType: "Tipo de discapacidad",
+        specialNeedsDiagnosis: "Diagnostico de necesidades especiales",
+        restrictedNotes: "Notas restringidas",
+      },
+      sections: {
+        caseSubcategories: "Subcategorias del caso",
+        familyProfile: "Perfil socio-demografico familiar",
+      },
+      subCategories: {
+        subCatOrphaned: "Huerfana",
+        subCatTrafficked: "Victima de trata",
+        subCatChildLabor: "Trabajo infantil",
+        subCatPhysicalAbuse: "Maltrato fisico",
+        subCatSexualAbuse: "Abuso sexual",
+        subCatOsaec: "OSAEC",
+        subCatCicl: "CICL",
+        subCatAtRisk: "En riesgo",
+        subCatStreetChild: "Nina de la calle",
+        subCatChildWithHiv: "Nina con VIH",
+      },
+      familyProfile: {
+        familyIs4Ps: "Beneficiaria 4Ps",
+        familySoloParent: "Madre/padre solo",
+        familyIndigenous: "Grupo indigena",
+        familyParentPwd: "Padre/madre con discapacidad",
+        familyInformalSettler: "Asentamiento informal",
+      },
+      errors: {
+        loadFailed: "No se pudieron cargar los datos de la carga de casos.",
+        saveFailed: "No se pudieron guardar los cambios de la residente.",
       },
     },
   },

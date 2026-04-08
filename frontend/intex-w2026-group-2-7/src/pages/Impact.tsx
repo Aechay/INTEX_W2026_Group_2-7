@@ -119,7 +119,7 @@ const Impact = () => {
         label: t("preview.resourceUse.costPerGirl"),
         value:
           publicStats?.preview.resourceUse.costPerGirl !== undefined
-            ? `$${publicStats.preview.resourceUse.costPerGirl}/mo`
+            ? `DR$${publicStats.preview.resourceUse.costPerGirl}/mo`
             : "-",
       },
       {

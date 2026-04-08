@@ -175,6 +175,8 @@ public class OperationalDbContext : DbContext
             entity.HasKey(resident => resident.ResidentId);
             entity.Property(resident => resident.CaseControlNo).HasMaxLength(32);
             entity.Property(resident => resident.InternalCode).HasMaxLength(32);
+            entity.Property(resident => resident.FirstName).HasColumnName("ResidentFirstName").HasMaxLength(100);
+            entity.Property(resident => resident.LastName).HasColumnName("ResidentLastName").HasMaxLength(100);
             entity.Property(resident => resident.CaseStatus).HasMaxLength(32);
             entity.Property(resident => resident.Sex).HasMaxLength(8);
             entity.Property(resident => resident.DateOfBirth).HasColumnType("date");
