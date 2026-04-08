@@ -114,8 +114,6 @@ public sealed class Resident
     public string ResidentLastName { get; set; } = string.Empty;
     public string CaseControlNo { get; set; } = string.Empty;
     public string InternalCode { get; set; } = string.Empty;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
     public int SafehouseId { get; set; }
     public string CaseStatus { get; set; } = string.Empty;
     public string Sex { get; set; } = string.Empty;
