@@ -20,6 +20,7 @@ import Donate from './pages/Donate';
 import Login from './pages/Login';
 import ExternalAuthCallback from './pages/ExternalAuthCallback';
 import NotFound from './pages/NotFound';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,8 @@ const App = () => (
               <Route path="/:lang/get-help" element={<GetHelp />} />
               <Route path="/impact" element={<Impact />} />
               <Route path="/:lang/impact" element={<Impact />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/:lang/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/donate" element={<Donate />} />
               <Route path="/:lang/donate" element={<Donate />} />
               <Route path="/login" element={<Login />} />

@@ -45,6 +45,12 @@ const Footer = () => {
               >
                 {t("footer.staffLogin")}
               </Link>
+              <Link
+                to={localizedPath("/privacy-policy")}
+                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
+              >
+                {t("footer.privacyPolicy")}
+              </Link>
             </div>
           </div>
 
