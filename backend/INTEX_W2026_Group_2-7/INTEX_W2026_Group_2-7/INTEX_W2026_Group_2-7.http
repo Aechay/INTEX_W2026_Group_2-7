@@ -27,7 +27,7 @@ Accept: application/json
 
 ###
 
-GET {{INTEX_W2026_Group_2_7_HostAddress}}/weatherforecast/
+GET {{INTEX_W2026_Group_2_7_HostAddress}}/api/public/stats
 Authorization: Bearer {{accessToken}}
 Accept: application/json
 
