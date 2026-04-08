@@ -37,7 +37,7 @@ const Footer = () => {
                 {t("nav.getHelp")}
               </Link>
               <Link
-                to={localizedPath("/login")}
+                to={localizedPath("/login") + "?tab=staff"}
                 className="block text-sm text-muted-foreground hover:text-accent transition-colors"
               >
                 {t("footer.staffLogin")}

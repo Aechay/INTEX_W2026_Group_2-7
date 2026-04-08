@@ -1,21 +1,23 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import useAuth from "@/auth/useAuth";
 
-const FullScreenMessage = ({ message }: { message: string }) => (
-  <div className="min-h-screen bg-muted text-foreground flex items-center justify-center px-4">
-    <p className="text-sm text-muted-foreground">{message}</p>
+const SessionLoader = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+    <div className="h-8 w-8 rounded-full border-[3px] border-primary/25 border-t-primary animate-spin" />
+    <p className="text-sm text-muted-foreground">Checking your session…</p>
   </div>
 );
 
 const RequireAdmin = () => {
   const auth = useAuth();
+  const location = useLocation();
 
   if (auth.isBootstrapping) {
-    return <FullScreenMessage message="Checking your session..." />;
+    return <SessionLoader />;
   }
 
   if (!auth.isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (!auth.isAdmin) {
