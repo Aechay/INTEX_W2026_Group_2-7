@@ -8,7 +8,8 @@ from .blob_store import BlobArtifactStore, publish_bundle_locally
 from .donor_churn import train_donor_churn_model
 from .resident_risk import train_resident_risk_model
 from .settings import load_runtime_settings
-from .social_media import predict_social_media_value, train_social_media_model
+from .social_media import train_social_media_model
+from .social_media_inference import predict_social_media_value
 from .training import load_training_frames, persist_batch_predictions, publish_training_run, run_training
 
 
