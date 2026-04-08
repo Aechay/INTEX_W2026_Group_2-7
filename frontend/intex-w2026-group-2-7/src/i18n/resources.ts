@@ -47,6 +47,12 @@ export const resources = {
         donateNow: "Donate Now",
         rights: "All rights reserved.",
       },
+      cookieConsent: {
+        title: "Cookie Notice",
+        description:
+          "We only use necessary cookies to keep this site secure and functioning properly. These cookies cannot be disabled. Review our <privacyLink>Privacy Policy</privacyLink> for more details.",
+        acknowledge: "Acknowledge",
+      },
     },
     home: {
       hero: {
@@ -403,6 +409,12 @@ export const resources = {
         location: "Santo Domingo, República Dominicana",
         donateNow: "Donar ahora",
         rights: "Todos los derechos reservados.",
+      },
+      cookieConsent: {
+        title: "Aviso de cookies",
+        description:
+          "Solo usamos cookies necesarias para mantener este sitio seguro y funcionando correctamente. Estas cookies no se pueden desactivar. Consulta nuestra <privacyLink>Política de privacidad</privacyLink> para obtener más información.",
+        acknowledge: "Entendido",
       },
     },
     home: {

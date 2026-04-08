@@ -11,6 +11,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { DEFAULT_LANGUAGE, isSupportedLanguage } from '@/i18n/languages';
 import { getPathLanguage } from '@/i18n/routing';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
@@ -84,6 +85,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <CookieConsentBanner />
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
