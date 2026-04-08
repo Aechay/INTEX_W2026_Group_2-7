@@ -84,13 +84,9 @@ const Navbar = () => {
             size="sm"
             className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
           >
-            <a
-              href="https://donate.hopeshelter.org"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <Link to={localizedPath('/donate')}>
               {t('nav.donate')}
-            </a>
+            </Link>
           </Button>
         </div>
 
@@ -147,13 +143,9 @@ const Navbar = () => {
             asChild
             className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
           >
-            <a
-              href="https://donate.hopeshelter.org"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <Link to={localizedPath('/donate')} onClick={() => setIsOpen(false)}>
               {t('nav.donate')}
-            </a>
+            </Link>
           </Button>
         </div>
       )}

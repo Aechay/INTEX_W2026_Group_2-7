@@ -317,6 +317,44 @@ export const resources = {
         cta: "Support the Campaign",
       },
     },
+    donate: {
+      hero: {
+        title: "Support Their Future",
+        subtitle: "Every donation is used to help girls find safety, healing, and opportunity.",
+        alt: "Donate to support girls",
+      },
+      form: {
+        title: "Make a Donation",
+        nameLabel: "Name",
+        namePlaceholder: "Your full name",
+        emailLabel: "Email",
+        emailPlaceholder: "you@example.com",
+        amountLabel: "Donation Amount",
+        amountPlaceholder: "50.00",
+        submit: "Donate",
+      },
+      cards: {
+        why: {
+          title: "Why Donations Matter",
+          description:
+            "Donations fund shelter operations, case support, education services, food, and transportation so girls can continue building safe, stable lives.",
+        },
+        operations: {
+          title: "Keeping Services Running",
+          description:
+            "It takes ongoing funding every month to keep safe houses, programs, staffing, and daily care fully operational for every girl we serve.",
+        },
+        gratitude: {
+          title: "Thank You",
+          description:
+            "We are deeply grateful for every gift. Every penny is used to help girls through safety, healing, and long-term support.",
+        },
+      },
+      toast: {
+        title: "Thank you for your generosity!",
+        description: "Every donation helps girls access safety, healing, and hope.",
+      },
+    },
   },
   es: {
     common: {
@@ -614,7 +652,7 @@ export const resources = {
         },
       },
       pillars: {
-        title: "Seguridad, sanacion, justicia y empoderamiento",
+        title: "La seguridad, la sanacion, y el ánimo",
         safety: {
           title: "La Seguridad",
           description:
@@ -641,6 +679,45 @@ export const resources = {
         description:
           "El transporte es clave para seguridad, acceso a tribunales, continuidad escolar y salud. El apoyo a esta campana mantiene servicios esenciales.",
         cta: "Apoyar la campana",
+      },
+    },
+    donate: {
+      hero: {
+        title: "Apoya su futuro",
+        subtitle:
+          "Cada donacion se usa para ayudar a las ninas a encontrar seguridad, sanacion y oportunidades.",
+        alt: "Donar para apoyar a las ninas",
+      },
+      form: {
+        title: "Haz una donacion",
+        nameLabel: "Nombre",
+        namePlaceholder: "Tu nombre completo",
+        emailLabel: "Correo electronico",
+        emailPlaceholder: "tu@ejemplo.com",
+        amountLabel: "Monto de donacion",
+        amountPlaceholder: "50.00",
+        submit: "Donar",
+      },
+      cards: {
+        why: {
+          title: "Por que importan las donaciones",
+          description:
+            "Las donaciones financian operaciones de refugio, apoyo de casos, servicios educativos, alimentos y transporte para que las ninas sigan construyendo vidas seguras y estables.",
+        },
+        operations: {
+          title: "Mantener a los servicios",
+          description:
+            "Se necesita financiamiento constante cada mes para mantener casas seguras, programas, personal y cuidado diario totalmente operativos para cada nina.",
+        },
+        gratitude: {
+          title: "Gracias",
+          description:
+            "Estamos profundamente agradecidas por cada aporte. Cada centavo se usa para ayudar a las ninas con seguridad, sanacion y apoyo a largo plazo.",
+        },
+      },
+      toast: {
+        title: "Gracias por tu generosidad",
+        description: "Cada donacion ayuda a las ninas a acceder a seguridad, sanacion y esperanza.",
       },
     },
   },
