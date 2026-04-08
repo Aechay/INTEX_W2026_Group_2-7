@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, Moon, Sun, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logo from "@/assets/logo.png";
-import { useTheme } from "@/contexts/ThemeProvider";
 import { withPathLanguage } from "@/i18n/routing";
 import useAuth from "@/auth/useAuth";
 
@@ -13,8 +12,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { t, i18n } = useTranslation("common");
-  const { isDark, toggleTheme } = useTheme();
-  const auth = useAuth();
 
   const links = [
     { to: "/", label: t("nav.home") },
