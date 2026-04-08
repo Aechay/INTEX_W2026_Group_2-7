@@ -1,156 +1,342 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
-  ArrowRight,
+  BedDouble,
+  CalendarClock,
   CircleAlert,
+  FileBarChart2,
   HeartHandshake,
+  Home,
+  LayoutDashboard,
   LogOut,
-  ShieldAlert,
-  Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  Shield,
+  UsersRound,
 } from "lucide-react";
+import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { getErrorMessage } from "@/auth/auth-api";
 import useAuth from "@/auth/useAuth";
 import Navbar from "@/components/Navbar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { withPathLanguage } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 
-type DonorChurnPredictionResponse = {
-  donorId: number;
-  riskScore: number;
-  riskBand: string;
-  modelVersion: string;
-  scoredAt: string;
+type DashboardOverviewResponse = {
+  generatedAt: string;
+  summary: {
+    activeResidents: number;
+    totalCapacity: number;
+    availableBeds: number;
+    activeSafehouses: number;
+    recentDonationTotal: number;
+    recentDonationCount: number;
+    upcomingCaseConferenceCount: number;
+    overdueCaseConferenceCount: number;
+  };
+  progressSnapshot: {
+    monthStart: string | null;
+    avgEducationProgress: number | null;
+    avgHealthScore: number | null;
+    processRecordingCount: number;
+    homeVisitationCount: number;
+    incidentCount: number;
+  };
+  safehouses: Array<{
+    safehouseId: number;
+    safehouseCode: string;
+    name: string;
+    region: string;
+    currentOccupancy: number;
+    capacity: number;
+    utilizationRate: number;
+    availableBeds: number;
+  }>;
+  progressTrend: Array<{
+    monthStart: string;
+    avgEducationProgress: number | null;
+    avgHealthScore: number | null;
+  }>;
+  recentDonations: Array<{
+    donationId: number;
+    supporterName: string;
+    donationType: string;
+    channelSource: string;
+    donationDate: string;
+    estimatedValue: number;
+    impactUnit: string;
+  }>;
+  conferenceQueue: {
+    upcomingCount: number;
+    overdueCount: number;
+    highlights: Array<{
+      planId: number;
+      residentCode: string;
+      planCategory: string;
+      safehouseName: string;
+      assignedSocialWorker: string;
+      caseConferenceDate: string;
+      status: string;
+      daysFromToday: number;
+    }>;
+  };
 };
 
-type ResidentRiskPredictionResponse = {
-  residentId: number;
-  predictedRisk: string;
-  predictedRiskNum: number;
-  flagForReview: boolean;
-  modelVersion: string;
-  scoredAt: string;
+const donationFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  maximumFractionDigits: 0,
+});
+
+const percentFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
+
+const decimalFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const monthFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "2-digit",
+});
+
+const formatCurrency = (value: number) => donationFormatter.format(value);
+
+const formatPercent = (value: number | null | undefined) =>
+  value === null || value === undefined ? "No data" : `${percentFormatter.format(value)}%`;
+
+const formatHealthScore = (value: number | null | undefined) =>
+  value === null || value === undefined ? "No data" : `${decimalFormatter.format(value)}/5`;
+
+const formatDate = (value: string | null | undefined) =>
+  value ? dateFormatter.format(new Date(value)) : "No date";
+
+const formatDateTime = (value: string) => dateTimeFormatter.format(new Date(value));
+
+const formatMonth = (value: string | null | undefined) =>
+  value ? monthFormatter.format(new Date(value)) : "No period";
+
+const formatConferenceTiming = (daysFromToday: number) => {
+  if (daysFromToday === 0) {
+    return "Today";
+  }
+
+  if (daysFromToday > 0) {
+    return `In ${daysFromToday} day${daysFromToday === 1 ? "" : "s"}`;
+  }
+
+  const overdueDays = Math.abs(daysFromToday);
+  return `${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue`;
 };
 
-type SocialMediaPredictionRequest = {
-  platform: string;
-  postType: string;
-  mediaType: string;
-  contentTopic: string;
-  sentimentTone: string;
-  timeBucket: string;
-  captionLength: number;
-  numHashtags: number;
-  mentionsCount: number;
-  isCta: number;
-  isStory: number;
-  isBoostedFlag: number;
-  followerCountAtPost: number;
-  isWeekend: number;
-  postHour: number;
+const getConferenceBadgeClassName = (daysFromToday: number) => {
+  if (daysFromToday < 0) {
+    return "border-0 bg-secondary/15 text-secondary";
+  }
+
+  if (daysFromToday === 0) {
+    return "border-0 bg-accent/25 text-foreground";
+  }
+
+  return "border-0 bg-primary/15 text-primary";
 };
 
-type SocialMediaPredictionResponse = {
-  predictedDonationPhp: number;
-  modelVersion: string;
-  scoredAt: string;
+const AdminSidebar = ({
+  isOpen,
+  isMobile,
+  dashboardPath,
+  email,
+  signOutPending,
+  onSignOut,
+  activeSafehouses,
+}: {
+  isOpen: boolean;
+  isMobile: boolean;
+  dashboardPath: string;
+  email?: string;
+  signOutPending: boolean;
+  onSignOut: () => Promise<void>;
+  activeSafehouses: number;
+}) => {
+  const navItems = [
+    { label: "Dashboard", icon: LayoutDashboard, to: dashboardPath, active: true },
+    { label: "Residents", icon: UsersRound, disabled: true },
+    { label: "Donations", icon: HeartHandshake, disabled: true },
+    { label: "Case Conferences", icon: CalendarClock, disabled: true },
+    { label: "Safehouses", icon: Home, disabled: true },
+    { label: "Reports", icon: FileBarChart2, disabled: true },
+    { label: "Settings", icon: Settings, disabled: true },
+  ] as const;
+
+  return (
+    <aside
+      className={cn(
+        "fixed bottom-0 left-0 top-16 z-40 w-72 border-r border-primary/20 bg-foreground text-white transition-transform duration-200",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+      )}
+      aria-hidden={!isOpen && isMobile}
+    >
+      <div className="flex h-full flex-col">
+        <div className="border-b border-primary/20 px-4 py-4">
+          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-primary-foreground/80">
+            <Shield className="h-4 w-4 text-primary" />
+            Admin
+          </div>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-2 py-3">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm text-white/60"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-3 border-l-4 px-4 py-3 text-sm font-medium",
+                  item.active
+                    ? "border-primary bg-primary/15 text-white"
+                    : "border-transparent text-white/80",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-primary/20 px-4 py-4">
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">
+                Signed In
+              </div>
+              <div className="mt-1 truncate text-white/90">{email ?? "Admin"}</div>
+            </div>
+            <div className="flex items-center justify-between border border-white/10 px-3 py-2">
+              <span className="text-white/70">Active safehouses</span>
+              <span className="font-semibold text-primary">{activeSafehouses}</span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-center gap-2 rounded-none border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              onClick={() => void onSignOut()}
+              disabled={signOutPending}
+            >
+              <LogOut className="h-4 w-4" />
+              {signOutPending ? "Signing out..." : "Sign out"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
 };
 
-const initialPredictionRequest: SocialMediaPredictionRequest = {
-  platform: "Facebook",
-  postType: "ImpactStory",
-  mediaType: "Photo",
-  contentTopic: "DonorImpact",
-  sentimentTone: "Hopeful",
-  timeBucket: "Morning",
-  captionLength: 120,
-  numHashtags: 3,
-  mentionsCount: 1,
-  isCta: 1,
-  isStory: 1,
-  isBoostedFlag: 0,
-  followerCountAtPost: 5000,
-  isWeekend: 0,
-  postHour: 10,
-};
+const MetricCard = ({
+  title,
+  value,
+  detail,
+  icon: Icon,
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon: typeof UsersRound;
+}) => (
+  <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
+    <CardContent className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {title}
+          </p>
+          <p className="text-3xl font-semibold tracking-tight text-foreground">{value}</p>
+          <p className="text-sm text-muted-foreground">{detail}</p>
+        </div>
+        <div className="border-l-4 border-primary pl-3 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
-const selectClassName =
-  "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 2,
-  }).format(value);
-
-const formatScoreTime = (value?: string) =>
-  value
-    ? new Intl.DateTimeFormat("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value))
-    : "Pending";
+const LoadingDashboard = () => (
+  <div className="space-y-6">
+    <div className="h-32 animate-pulse bg-card" />
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="h-32 animate-pulse bg-card" />
+      ))}
+    </div>
+    <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+      <div className="h-[26rem] animate-pulse bg-card" />
+      <div className="h-[26rem] animate-pulse bg-card" />
+    </div>
+    <div className="grid gap-6 xl:grid-cols-2">
+      <div className="h-[22rem] animate-pulse bg-card" />
+      <div className="h-[22rem] animate-pulse bg-card" />
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
-  const { t } = useTranslation("dashboard");
   const auth = useAuth();
-  const [request, setRequest] = useState(initialPredictionRequest);
+  const { i18n } = useTranslation("common");
+  const isMobile = useIsMobile();
   const [signOutPending, setSignOutPending] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window === "undefined" ? true : window.innerWidth >= 1024,
+  );
 
-  const donorQuery = useQuery({
-    queryKey: ["ml", "donor-churn"],
+  const overviewQuery = useQuery({
+    queryKey: ["admin-dashboard-overview"],
     queryFn: () =>
-      auth.authenticatedJson<DonorChurnPredictionResponse[]>("/api/admin/ml/donor-churn/current?take=8"),
+      auth.authenticatedJson<DashboardOverviewResponse>("/api/admin/dashboard/overview"),
   });
-
-  const residentQuery = useQuery({
-    queryKey: ["ml", "resident-risk"],
-    queryFn: () =>
-      auth.authenticatedJson<ResidentRiskPredictionResponse[]>("/api/admin/ml/resident-risk/current?take=8"),
-  });
-
-  const socialPrediction = useMutation({
-    mutationFn: (body: SocialMediaPredictionRequest) =>
-      auth.authenticatedJson<SocialMediaPredictionResponse>("/api/admin/ml/social-media/predict", {
-        method: "POST",
-        body,
-      }),
-  });
-
-  const latestScoredAt =
-    donorQuery.data?.[0]?.scoredAt ?? residentQuery.data?.[0]?.scoredAt ?? socialPrediction.data?.scoredAt;
-  const highRiskDonors = donorQuery.data?.filter((row) => row.riskBand === "High").length ?? 0;
-  const reviewResidents = residentQuery.data?.filter((row) => row.flagForReview).length ?? 0;
-  const activeModelVersion =
-    socialPrediction.data?.modelVersion ??
-    donorQuery.data?.[0]?.modelVersion ??
-    residentQuery.data?.[0]?.modelVersion ??
-    "Not loaded";
-
-  const handleNumberChange = (field: keyof SocialMediaPredictionRequest, value: string) => {
-    setRequest((current) => ({
-      ...current,
-      [field]: Number(value),
-    }));
-  };
-
-  const handleStringChange = (field: keyof SocialMediaPredictionRequest, value: string) => {
-    setRequest((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
 
   const handleLogout = async () => {
     setSignOutPending(true);
@@ -161,389 +347,474 @@ const Dashboard = () => {
     }
   };
 
+  const overview = overviewQuery.data;
+  const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
+  const progressChartData = (overview?.progressTrend ?? []).map((point) => ({
+    ...point,
+    monthLabel: formatMonth(point.monthStart),
+  }));
+  const conferenceHighlights = overview?.conferenceQueue.highlights ?? [];
+  const showingUpcomingConferences = (overview?.conferenceQueue.upcomingCount ?? 0) > 0;
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.12),_transparent_28%),linear-gradient(180deg,_rgba(250,250,249,1)_0%,_rgba(244,244,245,1)_100%)]">
+    <div className="min-h-screen bg-muted">
       <Navbar />
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8">
-        <section className="rounded-[2rem] border border-primary/10 bg-card/90 p-8 shadow-xl backdrop-blur-sm">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-primary">
-                {t("title")}
-              </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
-                Retraining outputs and live inference in one place.
-              </h1>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
-                {t("subtitle")} The batch tables below reflect the most recent nightly scoring run,
-                while the social-media form calls the backend proxy for live inference.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl border border-border/70 bg-background/90 px-4 py-3 text-sm shadow-sm">
-                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Signed in
+      {sidebarOpen && isMobile ? (
+        <button
+          type="button"
+          aria-label="Hide sidebar"
+          className="fixed inset-0 top-16 z-30 bg-black/35"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        isMobile={isMobile}
+        dashboardPath={dashboardPath}
+        email={auth.user?.email}
+        signOutPending={signOutPending}
+        onSignOut={handleLogout}
+        activeSafehouses={overview?.summary.activeSafehouses ?? 0}
+      />
+      <main className={cn("w-full transition-[padding] duration-200", sidebarOpen ? "lg:pl-72" : "lg:pl-0")}>
+        <section className="min-w-0 space-y-6 px-4 py-4 lg:px-6 lg:py-6">
+          {overviewQuery.isLoading && !overview ? (
+            <LoadingDashboard />
+          ) : overviewQuery.isError ? (
+            <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
+              <CardContent className="flex flex-col items-start gap-4 p-8">
+                <div className="border-l-4 border-destructive pl-3 text-destructive">
+                  <CircleAlert className="h-5 w-5" />
                 </div>
-                <div className="mt-1 font-medium text-foreground">{auth.user?.email}</div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handleLogout()}
-                disabled={signOutPending}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                {signOutPending ? "Signing out..." : "Sign out"}
-              </Button>
-            </div>
-          </div>
-        </section>
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                    Dashboard data is unavailable
+                  </h1>
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {getErrorMessage(
+                      overviewQuery.error,
+                      "The operational overview could not be loaded right now.",
+                    )}
+                  </p>
+                </div>
+                <Button type="button" onClick={() => void overviewQuery.refetch()}>
+                  Try again
+                </Button>
+              </CardContent>
+            </Card>
+          ) : overview ? (
+            <>
+              <section className="border border-border bg-card">
+                <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-fit justify-center gap-2 rounded-none"
+                      onClick={() => setSidebarOpen((current) => !current)}
+                    >
+                      {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                      {sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                    </Button>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        Dashboard
+                      </div>
+                      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                        Admin Dashboard
+                      </h1>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                        Resident capacity, donation activity, conference scheduling, and care
+                        progress.
+                      </p>
+                    </div>
+                  </div>
 
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            {
-              title: "Current donor rows",
-              value: donorQuery.data?.length ?? 0,
-              detail: `${highRiskDonors} flagged high risk`,
-              icon: HeartHandshake,
-            },
-            {
-              title: "Resident review flags",
-              value: reviewResidents,
-              detail: `${residentQuery.data?.length ?? 0} residents in latest batch`,
-              icon: ShieldAlert,
-            },
-            {
-              title: "Active model version",
-              value: activeModelVersion,
-              detail: `Last scored ${formatScoreTime(latestScoredAt)}`,
-              icon: Activity,
-            },
-            {
-              title: "Live demo estimate",
-              value:
-                socialPrediction.data?.predictedDonationPhp !== undefined
-                  ? formatCurrency(socialPrediction.data.predictedDonationPhp)
-                  : "Run demo",
-              detail: socialPrediction.data
-                ? `Predicted ${formatScoreTime(socialPrediction.data.scoredAt)}`
-                : "Uses the deployed social-media model",
-              icon: Sparkles,
-            },
-          ].map((card) => (
-            <Card key={card.title} className="border-primary/10 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{card.title}</p>
-                    <p className="mt-3 text-2xl font-semibold text-foreground break-words">
-                      {card.value}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="border border-border bg-background px-4 py-3">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Reporting Month
+                      </div>
+                      <div className="mt-1 text-sm font-medium text-foreground">
+                        {formatMonth(overview.progressSnapshot.monthStart)}
+                      </div>
+                    </div>
+                    <div className="border border-border bg-background px-4 py-3">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Last Refreshed
+                      </div>
+                      <div className="mt-1 text-sm font-medium text-foreground">
+                        {formatDateTime(overview.generatedAt)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <MetricCard
+                  title="Active residents"
+                  value={overview.summary.activeResidents.toString()}
+                  detail={`${overview.summary.activeSafehouses} safehouses online`}
+                  icon={UsersRound}
+                />
+                <MetricCard
+                  title="Available beds"
+                  value={overview.summary.availableBeds.toString()}
+                  detail={`${overview.summary.totalCapacity} total capacity`}
+                  icon={BedDouble}
+                />
+                <MetricCard
+                  title="Recent donations"
+                  value={formatCurrency(overview.summary.recentDonationTotal)}
+                  detail={`${overview.summary.recentDonationCount} gifts in the last 90 days`}
+                  icon={HeartHandshake}
+                />
+                <MetricCard
+                  title="Upcoming conferences"
+                  value={overview.summary.upcomingCaseConferenceCount.toString()}
+                  detail={
+                    overview.summary.overdueCaseConferenceCount > 0
+                      ? `${overview.summary.overdueCaseConferenceCount} need rescheduling`
+                      : "Conference calendar is clear"
+                  }
+                  icon={CalendarClock}
+                />
+              </section>
+
+              <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+                <Card className="rounded-none border border-border bg-card shadow-none">
+                  <CardHeader className="space-y-4 p-6 pb-0">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="text-2xl font-semibold tracking-tight">
+                          Progress snapshot
+                        </CardTitle>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          Education and health indicators from the latest completed reporting
+                          periods.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="w-fit rounded-none bg-primary/5 px-3 py-1 text-primary">
+                        Updated through {formatMonth(overview.progressSnapshot.monthStart)}
+                      </Badge>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <div className="border border-border bg-background p-4">
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Education Progress
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-foreground">
+                          {formatPercent(overview.progressSnapshot.avgEducationProgress)}
+                        </div>
+                      </div>
+                      <div className="border border-border bg-background p-4">
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Health Score
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-foreground">
+                          {formatHealthScore(overview.progressSnapshot.avgHealthScore)}
+                        </div>
+                      </div>
+                      <div className="border border-border bg-background p-4">
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Care Activity
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-foreground">
+                          <span>{overview.progressSnapshot.processRecordingCount} sessions</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>{overview.progressSnapshot.homeVisitationCount} visits</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>{overview.progressSnapshot.incidentCount} incidents</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-6 pt-4">
+                    <ChartContainer
+                      className="h-[320px] w-full"
+                      config={{
+                        avgEducationProgress: {
+                          label: "Education progress",
+                          color: "hsl(var(--primary))",
+                        },
+                        avgHealthScore: {
+                          label: "Health score",
+                          color: "hsl(var(--secondary))",
+                        },
+                      }}
+                    >
+                      <ComposedChart data={progressChartData}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        <XAxis dataKey="monthLabel" tickLine={false} axisLine={false} />
+                        <YAxis
+                          yAxisId="education"
+                          domain={[0, 100]}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `${value}%`}
+                        />
+                        <YAxis
+                          yAxisId="health"
+                          orientation="right"
+                          domain={[0, 5]}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => value.toFixed(1)}
+                        />
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value, name) => (
+                                <div className="flex min-w-[8rem] items-center justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    {name === "avgHealthScore" ? "Health score" : "Education progress"}
+                                  </span>
+                                  <span className="font-mono font-medium tabular-nums text-foreground">
+                                    {name === "avgHealthScore"
+                                      ? decimalFormatter.format(Number(value))
+                                      : `${percentFormatter.format(Number(value))}%`}
+                                  </span>
+                                </div>
+                              )}
+                            />
+                          }
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Bar
+                          yAxisId="education"
+                          dataKey="avgEducationProgress"
+                          fill="var(--color-avgEducationProgress)"
+                          radius={[12, 12, 0, 0]}
+                          maxBarSize={42}
+                        />
+                        <Line
+                          yAxisId="health"
+                          type="monotone"
+                          dataKey="avgHealthScore"
+                          stroke="var(--color-avgHealthScore)"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "var(--color-avgHealthScore)" }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </ComposedChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-none border border-border bg-card shadow-none">
+                  <CardHeader className="p-6 pb-3">
+                    <CardTitle className="text-2xl font-semibold tracking-tight">
+                      Safehouse occupancy
+                    </CardTitle>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Live bed availability across all active locations.
                     </p>
-                    <p className="mt-2 text-sm text-muted-foreground">{card.detail}</p>
-                  </div>
-                  <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                    <card.icon className="h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </section>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-6 pt-2">
+                    <div className="border-l-4 border-primary bg-background px-4 py-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        Network Utilization
+                      </div>
+                      <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                        {formatPercent(
+                          overview.summary.totalCapacity === 0
+                            ? 0
+                            : (overview.summary.activeResidents / overview.summary.totalCapacity) * 100,
+                        )}
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {overview.summary.activeResidents} residents across {overview.summary.activeSafehouses} active
+                        safehouses.
+                      </p>
+                    </div>
 
-        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="grid gap-6">
-            <Card className="border-primary/10 shadow-sm">
-              <CardHeader>
-                <CardTitle>Latest donor churn scores</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {donorQuery.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading donor predictions...</p>
-                ) : donorQuery.isError ? (
-                  <ErrorBanner
-                    message={getErrorMessage(
-                      donorQuery.error,
-                      "Could not load donor churn predictions.",
-                    )}
-                  />
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Donor</TableHead>
-                        <TableHead>Risk band</TableHead>
-                        <TableHead>Risk score</TableHead>
-                        <TableHead>Scored at</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {donorQuery.data?.map((row) => (
-                        <TableRow key={row.donorId}>
-                          <TableCell className="font-medium">#{row.donorId}</TableCell>
-                          <TableCell>{row.riskBand}</TableCell>
-                          <TableCell>{row.riskScore.toFixed(3)}</TableCell>
-                          <TableCell>{formatScoreTime(row.scoredAt)}</TableCell>
-                        </TableRow>
+                    <div className="space-y-3">
+                      {overview.safehouses.map((safehouse) => (
+                        <div
+                          key={safehouse.safehouseId}
+                          className="border border-border bg-background p-4"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground">
+                                  {safehouse.name}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-none bg-primary/5 px-2.5 py-0.5 text-[11px] text-primary"
+                                >
+                                  {safehouse.safehouseCode}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">{safehouse.region}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-semibold text-foreground">
+                                {safehouse.currentOccupancy}/{safehouse.capacity}
+                              </div>
+                              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                                {safehouse.availableBeds} open
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 h-2 bg-muted">
+                            <div
+                              className="h-2 bg-primary"
+                              style={{
+                                width: `${Math.min(safehouse.utilizationRate * 100, 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
                       ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
 
-            <Card className="border-primary/10 shadow-sm">
-              <CardHeader>
-                <CardTitle>Latest resident early-warning scores</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {residentQuery.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading resident predictions...</p>
-                ) : residentQuery.isError ? (
-                  <ErrorBanner
-                    message={getErrorMessage(
-                      residentQuery.error,
-                      "Could not load resident early-warning predictions.",
+              <section className="grid gap-6 xl:grid-cols-2">
+                <Card className="rounded-none border border-border bg-card shadow-none">
+                  <CardHeader className="p-6 pb-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="text-2xl font-semibold tracking-tight">
+                          Case conference calendar
+                        </CardTitle>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {showingUpcomingConferences
+                            ? "Next scheduled case conferences requiring staff attention."
+                            : "No future conferences are scheduled. These plans need a new date."}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "w-fit rounded-none px-3 py-1",
+                          overview.conferenceQueue.overdueCount > 0
+                            ? "bg-secondary/10 text-secondary"
+                            : "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {showingUpcomingConferences
+                          ? `${overview.conferenceQueue.upcomingCount} upcoming`
+                          : `${overview.conferenceQueue.overdueCount} overdue`}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-6 pt-2">
+                    {conferenceHighlights.length === 0 ? (
+                      <div className="border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                        No case conferences are on the calendar right now.
+                      </div>
+                    ) : (
+                      conferenceHighlights.map((conference) => (
+                        <div
+                          key={conference.planId}
+                          className="border border-border bg-background p-4"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground">
+                                  {conference.residentCode}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "rounded-none px-2.5 py-0.5 text-[11px] font-medium",
+                                    getConferenceBadgeClassName(conference.daysFromToday),
+                                  )}
+                                >
+                                  {formatConferenceTiming(conference.daysFromToday)}
+                                </Badge>
+                              </div>
+                              <p className="mt-2 text-sm font-medium text-foreground">
+                                {conference.planCategory}
+                              </p>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {conference.safehouseName} · {conference.assignedSocialWorker}
+                              </p>
+                            </div>
+                            <div className="text-sm font-medium text-foreground">
+                              {formatDate(conference.caseConferenceDate)}
+                            </div>
+                          </div>
+                        </div>
+                      ))
                     )}
-                  />
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Resident</TableHead>
-                        <TableHead>Predicted risk</TableHead>
-                        <TableHead>Review</TableHead>
-                        <TableHead>Scored at</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {residentQuery.data?.map((row) => (
-                        <TableRow key={row.residentId}>
-                          <TableCell className="font-medium">#{row.residentId}</TableCell>
-                          <TableCell>{row.predictedRisk}</TableCell>
-                          <TableCell>{row.flagForReview ? "Flagged" : "No change"}</TableCell>
-                          <TableCell>{formatScoreTime(row.scoredAt)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
 
-          <Card className="border-primary/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>Real-time social media demo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-                Use this to score a hypothetical post against the deployed model artifact. The
-                backend calls the Python Function App, not the frontend directly.
-              </div>
-
-              <form
-                className="grid gap-4 md:grid-cols-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  socialPrediction.mutate(request);
-                }}
-              >
-                <SelectField
-                  label="Platform"
-                  value={request.platform}
-                  onChange={(value) => handleStringChange("platform", value)}
-                  options={["Facebook", "Instagram", "TikTok", "YouTube"]}
-                />
-                <SelectField
-                  label="Post type"
-                  value={request.postType}
-                  onChange={(value) => handleStringChange("postType", value)}
-                  options={["ImpactStory", "FundraisingAppeal", "EventPromo", "VolunteerSpotlight"]}
-                />
-                <SelectField
-                  label="Media type"
-                  value={request.mediaType}
-                  onChange={(value) => handleStringChange("mediaType", value)}
-                  options={["Photo", "Carousel", "Video", "Graphic"]}
-                />
-                <SelectField
-                  label="Content topic"
-                  value={request.contentTopic}
-                  onChange={(value) => handleStringChange("contentTopic", value)}
-                  options={["DonorImpact", "ResidentJourney", "CampaignLaunch", "UrgentNeed"]}
-                />
-                <SelectField
-                  label="Sentiment tone"
-                  value={request.sentimentTone}
-                  onChange={(value) => handleStringChange("sentimentTone", value)}
-                  options={["Hopeful", "Urgent", "Grateful", "Informative"]}
-                />
-                <SelectField
-                  label="Time bucket"
-                  value={request.timeBucket}
-                  onChange={(value) => handleStringChange("timeBucket", value)}
-                  options={["Morning", "Afternoon", "Evening", "Night"]}
-                />
-
-                <NumberField
-                  label="Caption length"
-                  value={request.captionLength}
-                  onChange={(value) => handleNumberChange("captionLength", value)}
-                />
-                <NumberField
-                  label="Hashtags"
-                  value={request.numHashtags}
-                  onChange={(value) => handleNumberChange("numHashtags", value)}
-                />
-                <NumberField
-                  label="Mentions"
-                  value={request.mentionsCount}
-                  onChange={(value) => handleNumberChange("mentionsCount", value)}
-                />
-                <NumberField
-                  label="Follower count"
-                  value={request.followerCountAtPost}
-                  onChange={(value) => handleNumberChange("followerCountAtPost", value)}
-                />
-                <NumberField
-                  label="Post hour"
-                  value={request.postHour}
-                  onChange={(value) => handleNumberChange("postHour", value)}
-                  min={0}
-                  max={23}
-                />
-                <SelectField
-                  label="Call to action"
-                  value={String(request.isCta)}
-                  onChange={(value) => handleNumberChange("isCta", value)}
-                  options={["0", "1"]}
-                />
-                <SelectField
-                  label="Resident story"
-                  value={String(request.isStory)}
-                  onChange={(value) => handleNumberChange("isStory", value)}
-                  options={["0", "1"]}
-                />
-                <SelectField
-                  label="Boosted post"
-                  value={String(request.isBoostedFlag)}
-                  onChange={(value) => handleNumberChange("isBoostedFlag", value)}
-                  options={["0", "1"]}
-                />
-                <SelectField
-                  label="Weekend post"
-                  value={String(request.isWeekend)}
-                  onChange={(value) => handleNumberChange("isWeekend", value)}
-                  options={["0", "1"]}
-                />
-
-                <div className="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={socialPrediction.isPending}
-                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    {socialPrediction.isPending ? "Predicting..." : "Run live prediction"}
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setRequest(initialPredictionRequest);
-                      socialPrediction.reset();
-                    }}
-                  >
-                    Reset sample
-                  </Button>
-                </div>
-              </form>
-
-              {socialPrediction.isError ? (
-                <ErrorBanner
-                  message={getErrorMessage(
-                    socialPrediction.error,
-                    "The live social media prediction failed.",
-                  )}
-                />
-              ) : null}
-
-              {socialPrediction.data ? (
-                <div className="rounded-[1.5rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-5 shadow-sm">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Predicted donation value
-                  </p>
-                  <p className="mt-3 text-4xl font-semibold text-foreground">
-                    {formatCurrency(socialPrediction.data.predictedDonationPhp)}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-6 text-sm text-muted-foreground">
-                    <span>Model: {socialPrediction.data.modelVersion}</span>
-                    <span>Scored: {formatScoreTime(socialPrediction.data.scoredAt)}</span>
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+                <Card className="rounded-none border border-border bg-card shadow-none">
+                  <CardHeader className="p-6 pb-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="text-2xl font-semibold tracking-tight">
+                          Recent donations
+                        </CardTitle>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          Latest recorded gifts and in-kind support from the last 90 days.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="w-fit rounded-none bg-primary/10 px-3 py-1 text-primary">
+                        {overview.summary.recentDonationCount} total
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-6 pt-2">
+                    {overview.recentDonations.length === 0 ? (
+                      <div className="border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                        No recent donations are available for this reporting window.
+                      </div>
+                    ) : (
+                      overview.recentDonations.map((donation) => (
+                        <div
+                          key={donation.donationId}
+                          className="border border-border bg-background p-4"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-foreground">
+                                {donation.supporterName}
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {donation.donationType} via {donation.channelSource}
+                              </p>
+                              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                {formatDate(donation.donationDate)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-semibold text-foreground">
+                                {formatCurrency(donation.estimatedValue)}
+                              </div>
+                              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                                {donation.impactUnit}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+              </section>
+            </>
+          ) : null}
         </section>
       </main>
     </div>
   );
 };
-
-const NumberField = ({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: string) => void;
-  min?: number;
-  max?: number;
-}) => (
-  <label className="space-y-1.5">
-    <span className="text-sm font-medium text-foreground">{label}</span>
-    <Input
-      type="number"
-      value={value}
-      min={min}
-      max={max}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  </label>
-);
-
-const SelectField = ({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-}) => (
-  <label className="space-y-1.5">
-    <span className="text-sm font-medium text-foreground">{label}</span>
-    <select value={value} onChange={(event) => onChange(event.target.value)} className={selectClassName}>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </label>
-);
-
-const ErrorBanner = ({ message }: { message: string }) => (
-  <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive flex items-start gap-2">
-    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-    <span>{message}</span>
-  </div>
-);
 
 export default Dashboard;
