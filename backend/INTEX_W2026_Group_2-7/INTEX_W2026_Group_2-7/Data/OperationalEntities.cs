@@ -110,6 +110,8 @@ public sealed class DonationAllocation
 public sealed class Resident
 {
     public int ResidentId { get; set; }
+    public string ResidentFirstName { get; set; } = string.Empty;
+    public string ResidentLastName { get; set; } = string.Empty;
     public string CaseControlNo { get; set; } = string.Empty;
     public string InternalCode { get; set; } = string.Empty;
     public int SafehouseId { get; set; }
