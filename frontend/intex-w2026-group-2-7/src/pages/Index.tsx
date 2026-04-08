@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import LandingPage from "@/components/LandingPage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import QuickExitButton from "@/components/QuickExitButton";
 import heroImage from "@/assets/hero-beach.jpg";
 import missionImage from "@/assets/safehouse.avif";
 import { withPathLanguage } from "@/i18n/routing";
@@ -35,6 +36,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <LandingPage />
       <Navbar />
+      <QuickExitButton />
 
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
         <img

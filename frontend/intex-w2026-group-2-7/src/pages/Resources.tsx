@@ -1,6 +1,7 @@
 import { Phone } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import QuickExitButton from "@/components/QuickExitButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -353,6 +354,7 @@ const Resources = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <QuickExitButton />
 
       <main className="flex-1 bg-muted">
         <section className="relative py-20 overflow-hidden">

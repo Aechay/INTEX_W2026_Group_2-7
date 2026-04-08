@@ -4,6 +4,7 @@ import { Activity, Heart, Home, Shield, Sparkles, TrendingUp, Users } from "luci
 import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import QuickExitButton from "@/components/QuickExitButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import safehouseImage from "@/assets/safehouse.avif";
 import healingImage from "@/assets/healing.jpg";
@@ -135,6 +136,7 @@ const Impact = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <QuickExitButton />
       <main className="flex-1 bg-muted">
         <section className="relative py-20 overflow-hidden">
           <img

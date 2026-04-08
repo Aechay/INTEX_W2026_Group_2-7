@@ -26,6 +26,7 @@ export const resources = {
           es: "Español",
         },
       },
+      quickExit: "Quick Exit",
       preferences: {
         button: "Preferences",
         title: "Preferences",
@@ -98,7 +99,6 @@ export const resources = {
       },
     },
     getHelp: {
-      quickExit: "Quick Exit",
       emergency: {
         prefix: "If you are in immediate danger, call",
         connector: "or",
@@ -389,6 +389,7 @@ export const resources = {
           es: "Español",
         },
       },
+      quickExit: "Salida rápida",
       preferences: {
         button: "Preferencias",
         title: "Preferencias",
@@ -461,7 +462,6 @@ export const resources = {
       },
     },
     getHelp: {
-      quickExit: "Salida rápida",
       emergency: {
         prefix: "Si estás en peligro inmediato, llama al",
         connector: "o al",
