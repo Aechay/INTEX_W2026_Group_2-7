@@ -19,6 +19,7 @@ import Impact from './pages/Impact';
 import Donate from './pages/Donate';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import Resources from './pages/Resources';
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,8 @@ const App = () => (
               <Route path="/:lang/get-help" element={<GetHelp />} />
               <Route path="/impact" element={<Impact />} />
               <Route path="/:lang/impact" element={<Impact />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/:lang/resources" element={<Resources />} />
               <Route path="/donate" element={<Donate />} />
               <Route path="/:lang/donate" element={<Donate />} />
               <Route path="/login" element={<Login />} />
