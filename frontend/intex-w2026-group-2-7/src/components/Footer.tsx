@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { Heart, Mail, Phone, MapPin } from "lucide-react";
+import { Heart, Mail, Moon, Phone, Sun, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { withPathLanguage } from "@/i18n/routing";
+import { useTheme } from "@/contexts/ThemeProvider";
 
 const Footer = () => {
   const { t, i18n } = useTranslation("common");
+  const { isDark, toggleTheme } = useTheme();
   const localizedPath = (path: string) => withPathLanguage(path, i18n.resolvedLanguage);
 
   return (
@@ -68,18 +70,28 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}
           </p>
-          <Button
-            asChild
-            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-          >
-            <a
-              href="https://donate.hopeshelter.org"
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+              title={isDark ? t("nav.lightMode") : t("nav.darkMode")}
+              className="h-9 w-9 flex items-center justify-center rounded-md border border-input bg-background/80 text-muted-foreground transition-all hover:border-2 hover:border-input"
             >
-              <Heart className="h-4 w-4 mr-1" /> {t("footer.donateNow")}
-            </a>
-          </Button>
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <Button
+              asChild
+              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+            >
+              <a
+                href="https://donate.hopeshelter.org"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Heart className="h-4 w-4 mr-1" /> {t("footer.donateNow")}
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
     </footer>

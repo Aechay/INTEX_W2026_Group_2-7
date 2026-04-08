@@ -7,7 +7,7 @@ import LandingPage from "@/components/LandingPage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-beach.jpg";
-import missionImage from "@/assets/mission-beach.jpg";
+import missionImage from "@/assets/safehouse.avif";
 import { withPathLanguage } from "@/i18n/routing";
 
 const Index = () => {
@@ -63,15 +63,6 @@ const Index = () => {
             <Button
               asChild
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8"
-            >
-              <Link to={withPathLanguage("/get-help", i18n.resolvedLanguage)}>
-                {t("hero.primaryAction")} <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground text-lg px-8"
             >
               <a
@@ -81,6 +72,15 @@ const Index = () => {
               >
                 <Heart className="mr-2 h-5 w-5" /> {t("hero.secondaryAction")}
               </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8"
+            >
+              <Link to={withPathLanguage("/get-help", i18n.resolvedLanguage)}>
+                {t("hero.primaryAction")} <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </div>
