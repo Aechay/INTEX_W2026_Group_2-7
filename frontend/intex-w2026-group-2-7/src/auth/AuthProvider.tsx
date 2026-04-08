@@ -1,6 +1,7 @@
 import { useEffect, useState, type PropsWithChildren } from "react";
 import {
   ApiError,
+  exchangeExternalAuthCodeRequest,
   getCurrentUserRequest,
   loginRequest,
   logoutRequest,
@@ -104,6 +105,56 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     applySession(tokens, user);
   };
 
+  const completeExternalLogin = async (code: string) => {
+    const tokens = await exchangeExternalAuthCodeRequest(apiBaseUrl, code);
+    const user = await getCurrentUserRequest(apiBaseUrl, tokens.accessToken);
+    applySession(tokens, user);
+    return user;
+  };
+
+  const updateDisplayName = async (displayName: string) => {
+    const trimmedDisplayName = displayName.trim();
+    let accessToken = session.accessToken;
+
+    if (!accessToken) {
+      accessToken = (await refreshSession()).accessToken;
+    }
+
+    const persistDisplayName = async (token: string) =>
+      requestJson<CurrentUser>(
+        apiBaseUrl,
+        "/auth/profile/display-name",
+        {
+          method: "PUT",
+          body: { displayName: trimmedDisplayName },
+        },
+        token,
+      );
+
+    try {
+      const user = await persistDisplayName(accessToken);
+      setSession((currentSession) => ({
+        ...currentSession,
+        user,
+        isBootstrapping: false,
+      }));
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        const refreshedTokens = await refreshSession();
+        const user = await persistDisplayName(refreshedTokens.accessToken);
+        setSession((currentSession) => ({
+          ...currentSession,
+          user,
+          isBootstrapping: false,
+        }));
+        return user;
+      }
+
+      throw error;
+    }
+  };
+
   const logout = async () => {
     const accessToken = session.accessToken;
     clearSession();
@@ -148,6 +199,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     isAdmin: session.user?.roles.includes("Admin") ?? false,
     isBootstrapping: session.isBootstrapping,
     login,
+    completeExternalLogin,
+    updateDisplayName,
     logout,
     authenticatedJson,
   };

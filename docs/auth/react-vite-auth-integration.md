@@ -387,7 +387,7 @@ Backend routes:
 
 Frontend route to add:
 
-- `/auth/external/callback`
+- `/external-auth/callback`
 
 Recommended frontend flow:
 
@@ -395,8 +395,8 @@ Recommended frontend flow:
 2. If `Google` is present, render a "Continue with Google" button.
 3. On click, navigate the browser to the provider's `startUrl`.
 4. After Google login, the backend redirects the browser to the frontend callback route:
-   - success: `/auth/external/callback?provider=Google&code=...`
-   - failure: `/auth/external/callback?provider=Google&error=...`
+   - success: `/external-auth/callback?provider=Google&code=...`
+   - failure: `/external-auth/callback?provider=Google&error=...`
 5. In the callback page, if `code` exists, call `POST /auth/external/exchange` with:
 
 ```json

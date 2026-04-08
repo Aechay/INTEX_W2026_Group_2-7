@@ -8,6 +8,8 @@ export type AuthContextValue = {
   isAdmin: boolean;
   isBootstrapping: boolean;
   login: (email: string, password: string) => Promise<void>;
+  completeExternalLogin: (code: string) => Promise<CurrentUser>;
+  updateDisplayName: (displayName: string) => Promise<CurrentUser>;
   logout: () => Promise<void>;
   authenticatedJson: <T>(
     path: string,
