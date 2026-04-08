@@ -15,12 +15,21 @@ import {
   isSupportedLanguage,
 } from "@/i18n/languages";
 import { withPathLanguage } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 
 type LanguageSwitcherProps = {
+  containerClassName?: string;
+  contentClassName?: string;
+  iconClassName?: string;
   triggerClassName?: string;
 };
 
-const LanguageSwitcher = ({ triggerClassName }: LanguageSwitcherProps) => {
+const LanguageSwitcher = ({
+  containerClassName,
+  contentClassName,
+  iconClassName,
+  triggerClassName,
+}: LanguageSwitcherProps) => {
   const { t, i18n } = useTranslation("common");
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,16 +51,16 @@ const LanguageSwitcher = ({ triggerClassName }: LanguageSwitcherProps) => {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Languages className="h-4 w-4 text-muted-foreground" />
+    <div className={cn("flex items-center gap-2", containerClassName)}>
+      <Languages className={cn("h-4 w-4 text-muted-foreground", iconClassName)} />
       <Select onValueChange={handleChange} value={currentLanguage}>
         <SelectTrigger
           aria-label={t("language.label")}
-          className={triggerClassName ?? "h-9 w-[100px] bg-background/80"}
+          className={cn("h-9 w-[100px] bg-background/80", triggerClassName)}
         >
           <SelectValue placeholder={t("language.label")} />
         </SelectTrigger>
-        <SelectContent className="w-[100px] min-w-0">
+        <SelectContent className={cn("w-[100px] min-w-0", contentClassName)}>
           {SUPPORTED_LANGUAGES.map((language) => (
             <SelectItem key={language} value={language}>
               {t(`language.options.${language}`)}

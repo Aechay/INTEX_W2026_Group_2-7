@@ -26,6 +26,16 @@ export const resources = {
           es: "Español",
         },
       },
+      preferences: {
+        button: "Preferences",
+        title: "Preferences",
+        description: "Manage appearance and language settings for the admin workspace.",
+        appearance: "Appearance",
+        light: "Light",
+        dark: "Dark",
+        save: "Save",
+        cancel: "Cancel",
+      },
       footer: {
         description:
           "Providing safety, hope, and healing for at-risk girls in the Dominican Republic.",
@@ -305,6 +315,16 @@ export const resources = {
           en: "English",
           es: "Español",
         },
+      },
+      preferences: {
+        button: "Preferencias",
+        title: "Preferencias",
+        description: "Administra la apariencia y el idioma del espacio administrativo.",
+        appearance: "Apariencia",
+        light: "Claro",
+        dark: "Oscuro",
+        save: "Guardar",
+        cancel: "Cancelar",
       },
       footer: {
         description:
