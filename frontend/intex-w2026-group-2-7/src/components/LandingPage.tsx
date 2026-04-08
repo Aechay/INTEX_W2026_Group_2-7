@@ -6,7 +6,7 @@ const metaDefinitions = [
     attributes: {
       name: "description",
       content:
-        "Hope Shelter provides safety, healing, and support for at-risk children in the Dominican Republic. Get help, donate, or learn about our mission.",
+        "Hope Shelter provides safety, healing, and support for at-risk girls in the Dominican Republic. Get help, donate, or learn about our mission.",
     },
   },
   {
@@ -20,7 +20,7 @@ const metaDefinitions = [
     selector: 'meta[property="og:title"]',
     attributes: {
       property: "og:title",
-      content: "Hope Shelter - Safety & Hope for At-Risk Children",
+      content: "Hope Shelter - Safety & Hope for At-Risk Girls",
     },
   },
   {
@@ -28,7 +28,7 @@ const metaDefinitions = [
     attributes: {
       property: "og:description",
       content:
-        "Providing safety, healing, and brighter futures for at-risk children in the Dominican Republic.",
+        "Providing safety, healing, and brighter futures for at-risk girls in the Dominican Republic.",
     },
   },
   {
@@ -83,7 +83,7 @@ const upsertMetaTag = (selector: string, attributes: Record<string, string>) => 
 
 const LandingPage = () => {
   useEffect(() => {
-    document.title = "Hope Shelter - Safety & Hope for At-Risk Children in the DR";
+    document.title = "Hope Shelter - Safety & Hope for At-Risk Girls in the DR";
     metaDefinitions.forEach(({ selector, attributes }) =>
       upsertMetaTag(selector, attributes),
     );

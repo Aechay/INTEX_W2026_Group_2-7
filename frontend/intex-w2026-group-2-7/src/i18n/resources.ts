@@ -46,16 +46,16 @@ export const resources = {
       mission: {
         title: "Our Mission",
         paragraph1:
-          "Hope Shelter provides staff and board members with a secure, centralized platform to manage children's progress and donor relationships, while offering at-risk girls in the Dominican Republic trusted access to safety resources and support.",
+          "Hope Shelter provides staff and board members with a secure, centralized platform to manage girls' progress and donor relationships, while offering at-risk girls in the Dominican Republic trusted access to safety resources and support.",
         paragraph2:
-          "We believe every child deserves safety, love, and the chance to thrive. Through dedicated case management, community partnerships, and generous donor support, we create pathways from vulnerability to empowerment.",
-        imageAlt: "Peaceful tropical shore with palm trees",
+          "We believe every girl deserves safety, love, and the chance to thrive. Through dedicated case management, community partnerships, and generous donor support, we create pathways from vulnerability to empowerment.",
+        imageAlt: "Safe house for girls",
       },
       stats: {
-        childrenHelped: "Children Helped",
+        childrenHelped: "Girls Helped",
         yearsOfService: "Years of Service",
         activeDonors: "Active Donors",
-        staffAndVolunteers: "Staff & Volunteers",
+        staffAndVolunteers: "Operating Safe Houses",
       },
       services: {
         title: "How We Help",
@@ -67,7 +67,7 @@ export const resources = {
         caseManagement: {
           title: "Case Management",
           description:
-            "Professional tracking of each child's progress, education, and well-being through our secure platform.",
+            "Professional tracking of each girl's progress, education, and well-being through our secure platform.",
         },
         donorSupport: {
           title: "Donor Support",
@@ -143,7 +143,7 @@ export const resources = {
       subtitle: "Welcome back. Here's an overview of Hope Shelter.",
       overview: {
         totalChildren: {
-          title: "Total Children",
+          title: "Total Girls",
           change: "+3 this month",
         },
         activeCases: {
@@ -247,13 +247,13 @@ export const resources = {
           "Refugio de Esperanza brinda al personal y a los miembros de la junta una plataforma segura y centralizada para gestionar el progreso de las niñas y las relaciones con donantes, mientras ofrece a niñas en riesgo en la República Dominicana acceso confiable a recursos de seguridad y apoyo.",
         paragraph2:
           "Creemos que cada niña merece seguridad, amor y la oportunidad de prosperar. A través de una gestión de casos dedicada, alianzas comunitarias y el generoso apoyo de donantes, creamos caminos que llevan de la vulnerabilidad al empoderamiento.",
-        imageAlt: "Costa tropical tranquila con palmeras",
+        imageAlt: "Casa segura para niñas",
       },
       stats: {
         childrenHelped: "Niñas ayudadas",
         yearsOfService: "Años de servicio",
         activeDonors: "Donantes activos",
-        staffAndVolunteers: "Personal y voluntariado",
+        staffAndVolunteers: "Numero de casas seguras",
       },
       services: {
         title: "Cómo ayudamos",
