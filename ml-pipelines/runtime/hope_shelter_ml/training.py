@@ -108,15 +108,17 @@ def persist_batch_predictions(
 ) -> None:
     runtime_settings = settings or load_runtime_settings()
     sql = SqlDatabase(runtime_settings.sql)
-    run_id = str(uuid4())
+    donor_run_id = str(uuid4())
+    resident_run_id = str(uuid4())
+    social_media_run_id = str(uuid4())
     run_started_at = utcnow()
     run_completed_at = utcnow()
 
     with sql.transaction() as connection:
-        for training_result, artifact_key in [
-            (result.donor_churn, "donor-churn"),
-            (result.resident_risk, "resident-risk"),
-            (result.social_media, "social-media"),
+        for training_result, artifact_key, run_id in [
+            (result.donor_churn, "donor-churn", donor_run_id),
+            (result.resident_risk, "resident-risk", resident_run_id),
+            (result.social_media, "social-media", social_media_run_id),
         ]:
             sql.append_model_run(
                 connection,
@@ -132,14 +134,14 @@ def persist_batch_predictions(
 
         sql.append_donor_predictions(
             connection,
-            run_id=run_id,
+            run_id=donor_run_id,
             model_version=result.donor_churn.bundle.model_version,
             scored_at=run_completed_at,
             predictions=result.donor_churn.predictions,
         )
         sql.append_resident_predictions(
             connection,
-            run_id=run_id,
+            run_id=resident_run_id,
             model_version=result.resident_risk.bundle.model_version,
             scored_at=run_completed_at,
             predictions=result.resident_risk.predictions,

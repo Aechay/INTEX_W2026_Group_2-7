@@ -4,6 +4,8 @@ The nightly training job can run in `ML_INPUT_MODE=sql`. In that mode it reads d
 
 These views are **not** created automatically by the Python runtime or the Bicep template. Create them in the operational database after you decide how your production tables map to the notebook feature engineering.
 
+This repository includes an idempotent Azure SQL script at [`infra/sql/create-ml-training-views.sql`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/infra/sql/create-ml-training-views.sql) that creates the default `ml.*TrainingView` objects against the current operational schema.
+
 ## Required access
 
 The Azure Container Apps Job managed identity needs:
@@ -16,12 +18,12 @@ The Azure Container Apps Job managed identity needs:
 The simplest setup is:
 
 ```sql
-CREATE USER [hope-ml-training] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_datareader ADD MEMBER [hope-ml-training];
-ALTER ROLE db_datawriter ADD MEMBER [hope-ml-training];
+CREATE USER [hope-ml-training-id] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_datareader ADD MEMBER [hope-ml-training-id];
+ALTER ROLE db_datawriter ADD MEMBER [hope-ml-training-id];
 ```
 
-Replace `hope-ml-training` with the actual managed identity name or contained user you create for the Container Apps Job.
+Replace `hope-ml-training-id` with the actual managed identity name or contained user you create for the Container Apps Job. With the default Bicep `namePrefix` of `hope-ml`, the user-assigned identity name is `hope-ml-training-id`.
 
 ## View names
 
