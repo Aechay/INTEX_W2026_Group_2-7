@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BedDouble,
@@ -8,19 +8,14 @@ import {
   HeartHandshake,
   Home,
   LayoutDashboard,
-  LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings,
-  Shield,
   UsersRound,
 } from "lucide-react";
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { getErrorMessage } from "@/auth/auth-api";
 import useAuth from "@/auth/useAuth";
-import Navbar from "@/components/Navbar";
+import AdminWorkspace, { type AdminNavItem } from "@/components/admin/AdminWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +26,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { withPathLanguage } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -169,112 +163,6 @@ const getConferenceBadgeClassName = (daysFromToday: number) => {
   return "border-0 bg-primary/15 text-primary";
 };
 
-const AdminSidebar = ({
-  isOpen,
-  isMobile,
-  dashboardPath,
-  email,
-  signOutPending,
-  onSignOut,
-  activeSafehouses,
-}: {
-  isOpen: boolean;
-  isMobile: boolean;
-  dashboardPath: string;
-  email?: string;
-  signOutPending: boolean;
-  onSignOut: () => Promise<void>;
-  activeSafehouses: number;
-}) => {
-  const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, to: dashboardPath, active: true },
-    { label: "Residents", icon: UsersRound, disabled: true },
-    { label: "Donations", icon: HeartHandshake, disabled: true },
-    { label: "Case Conferences", icon: CalendarClock, disabled: true },
-    { label: "Safehouses", icon: Home, disabled: true },
-    { label: "Reports", icon: FileBarChart2, disabled: true },
-    { label: "Settings", icon: Settings, disabled: true },
-  ] as const;
-
-  return (
-    <aside
-      className={cn(
-        "fixed bottom-0 left-0 top-16 z-40 w-72 border-r border-primary/20 bg-foreground text-white transition-transform duration-200",
-        isOpen ? "translate-x-0" : "-translate-x-full",
-      )}
-      aria-hidden={!isOpen && isMobile}
-    >
-      <div className="flex h-full flex-col">
-        <div className="border-b border-primary/20 px-4 py-4">
-          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-primary-foreground/80">
-            <Shield className="h-4 w-4 text-primary" />
-            Admin
-          </div>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-
-            if (item.disabled) {
-              return (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm text-white/60"
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </div>
-              );
-            }
-
-            return (
-              <Link
-                key={item.label}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 border-l-4 px-4 py-3 text-sm font-medium",
-                  item.active
-                    ? "border-primary bg-primary/15 text-white"
-                    : "border-transparent text-white/80",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-primary/20 px-4 py-4">
-          <div className="space-y-3 text-sm">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">
-                Signed In
-              </div>
-              <div className="mt-1 truncate text-white/90">{email ?? "Admin"}</div>
-            </div>
-            <div className="flex items-center justify-between border border-white/10 px-3 py-2">
-              <span className="text-white/70">Active safehouses</span>
-              <span className="font-semibold text-primary">{activeSafehouses}</span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full justify-center gap-2 rounded-none border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              onClick={() => void onSignOut()}
-              disabled={signOutPending}
-            >
-              <LogOut className="h-4 w-4" />
-              {signOutPending ? "Signing out..." : "Sign out"}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-};
-
 const MetricCard = ({
   title,
   value,
@@ -326,11 +214,7 @@ const LoadingDashboard = () => (
 const Dashboard = () => {
   const auth = useAuth();
   const { i18n } = useTranslation("common");
-  const isMobile = useIsMobile();
   const [signOutPending, setSignOutPending] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window === "undefined" ? true : window.innerWidth >= 1024,
-  );
 
   const overviewQuery = useQuery({
     queryKey: ["admin-dashboard-overview"],
@@ -349,6 +233,15 @@ const Dashboard = () => {
 
   const overview = overviewQuery.data;
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
+  const navigationItems: AdminNavItem[] = [
+    { label: "Dashboard", icon: LayoutDashboard, to: dashboardPath, active: true },
+    { label: "Residents", icon: UsersRound, disabled: true },
+    { label: "Donations", icon: HeartHandshake, disabled: true },
+    { label: "Case Conferences", icon: CalendarClock, disabled: true },
+    { label: "Safehouses", icon: Home, disabled: true },
+    { label: "Reports", icon: FileBarChart2, disabled: true },
+    { label: "Settings", icon: Settings, disabled: true },
+  ];
   const progressChartData = (overview?.progressTrend ?? []).map((point) => ({
     ...point,
     monthLabel: formatMonth(point.monthStart),
@@ -356,137 +249,103 @@ const Dashboard = () => {
   const conferenceHighlights = overview?.conferenceQueue.highlights ?? [];
   const showingUpcomingConferences = (overview?.conferenceQueue.upcomingCount ?? 0) > 0;
 
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [isMobile]);
-
   return (
-    <div className="min-h-screen bg-muted">
-      <Navbar />
-      {sidebarOpen && isMobile ? (
-        <button
-          type="button"
-          aria-label="Hide sidebar"
-          className="fixed inset-0 top-16 z-30 bg-black/35"
-          onClick={() => setSidebarOpen(false)}
-        />
-      ) : null}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        isMobile={isMobile}
-        dashboardPath={dashboardPath}
-        email={auth.user?.email}
-        signOutPending={signOutPending}
-        onSignOut={handleLogout}
-        activeSafehouses={overview?.summary.activeSafehouses ?? 0}
-      />
-      <main className={cn("w-full transition-[padding] duration-200", sidebarOpen ? "lg:pl-72" : "lg:pl-0")}>
-        <section className="min-w-0 space-y-6 px-4 py-4 lg:px-6 lg:py-6">
-          {overviewQuery.isLoading && !overview ? (
-            <LoadingDashboard />
-          ) : overviewQuery.isError ? (
-            <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
-              <CardContent className="flex flex-col items-start gap-4 p-8">
-                <div className="border-l-4 border-destructive pl-3 text-destructive">
-                  <CircleAlert className="h-5 w-5" />
+    <AdminWorkspace
+      items={navigationItems}
+      signOutPending={signOutPending}
+      onSignOut={handleLogout}
+    >
+      {overviewQuery.isLoading && !overview ? (
+        <LoadingDashboard />
+      ) : overviewQuery.isError ? (
+        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
+          <CardContent className="flex flex-col items-start gap-4 p-8">
+            <div className="border-l-4 border-destructive pl-3 text-destructive">
+              <CircleAlert className="h-5 w-5" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Dashboard data is unavailable
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                {getErrorMessage(
+                  overviewQuery.error,
+                  "The operational overview could not be loaded right now.",
+                )}
+              </p>
+            </div>
+            <Button type="button" onClick={() => void overviewQuery.refetch()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      ) : overview ? (
+        <>
+          <section className="border border-border bg-card">
+            <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Dashboard
                 </div>
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                    Dashboard data is unavailable
-                  </h1>
-                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    {getErrorMessage(
-                      overviewQuery.error,
-                      "The operational overview could not be loaded right now.",
-                    )}
-                  </p>
-                </div>
-                <Button type="button" onClick={() => void overviewQuery.refetch()}>
-                  Try again
-                </Button>
-              </CardContent>
-            </Card>
-          ) : overview ? (
-            <>
-              <section className="border border-border bg-card">
-                <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-fit justify-center gap-2 rounded-none"
-                      onClick={() => setSidebarOpen((current) => !current)}
-                    >
-                      {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-                      {sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-                    </Button>
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                        Dashboard
-                      </div>
-                      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                        Admin Dashboard
-                      </h1>
-                      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                        Resident capacity, donation activity, conference scheduling, and care
-                        progress.
-                      </p>
-                    </div>
-                  </div>
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  Admin Dashboard
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Resident capacity, donation activity, conference scheduling, and care progress.
+                </p>
+              </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="border border-border bg-background px-4 py-3">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Reporting Month
-                      </div>
-                      <div className="mt-1 text-sm font-medium text-foreground">
-                        {formatMonth(overview.progressSnapshot.monthStart)}
-                      </div>
-                    </div>
-                    <div className="border border-border bg-background px-4 py-3">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Last Refreshed
-                      </div>
-                      <div className="mt-1 text-sm font-medium text-foreground">
-                        {formatDateTime(overview.generatedAt)}
-                      </div>
-                    </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="border border-border bg-background px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Reporting Month
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-foreground">
+                    {formatMonth(overview.progressSnapshot.monthStart)}
                   </div>
                 </div>
-              </section>
+                <div className="border border-border bg-background px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Last Refreshed
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-foreground">
+                    {formatDateTime(overview.generatedAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <MetricCard
-                  title="Active residents"
-                  value={overview.summary.activeResidents.toString()}
-                  detail={`${overview.summary.activeSafehouses} safehouses online`}
-                  icon={UsersRound}
-                />
-                <MetricCard
-                  title="Available beds"
-                  value={overview.summary.availableBeds.toString()}
-                  detail={`${overview.summary.totalCapacity} total capacity`}
-                  icon={BedDouble}
-                />
-                <MetricCard
-                  title="Recent donations"
-                  value={formatCurrency(overview.summary.recentDonationTotal)}
-                  detail={`${overview.summary.recentDonationCount} gifts in the last 90 days`}
-                  icon={HeartHandshake}
-                />
-                <MetricCard
-                  title="Upcoming conferences"
-                  value={overview.summary.upcomingCaseConferenceCount.toString()}
-                  detail={
-                    overview.summary.overdueCaseConferenceCount > 0
-                      ? `${overview.summary.overdueCaseConferenceCount} need rescheduling`
-                      : "Conference calendar is clear"
-                  }
-                  icon={CalendarClock}
-                />
-              </section>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              title="Active residents"
+              value={overview.summary.activeResidents.toString()}
+              detail={`${overview.summary.activeSafehouses} safehouses online`}
+              icon={UsersRound}
+            />
+            <MetricCard
+              title="Available beds"
+              value={overview.summary.availableBeds.toString()}
+              detail={`${overview.summary.totalCapacity} total capacity`}
+              icon={BedDouble}
+            />
+            <MetricCard
+              title="Recent donations"
+              value={formatCurrency(overview.summary.recentDonationTotal)}
+              detail={`${overview.summary.recentDonationCount} gifts in the last 90 days`}
+              icon={HeartHandshake}
+            />
+            <MetricCard
+              title="Upcoming conferences"
+              value={overview.summary.upcomingCaseConferenceCount.toString()}
+              detail={
+                overview.summary.overdueCaseConferenceCount > 0
+                  ? `${overview.summary.overdueCaseConferenceCount} need rescheduling`
+                  : "Conference calendar is clear"
+              }
+              icon={CalendarClock}
+            />
+          </section>
 
               <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
                 <Card className="rounded-none border border-border bg-card shadow-none">
@@ -809,11 +668,9 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               </section>
-            </>
-          ) : null}
-        </section>
-      </main>
-    </div>
+        </>
+      ) : null}
+    </AdminWorkspace>
   );
 };
 
