@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Phone, MapPin, Shield, AlertTriangle, ExternalLink, Send } from "lucide-react";
+import { Phone, MapPin, Shield, AlertTriangle, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import QuickExitButton from "@/components/QuickExitButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,28 +22,6 @@ const GetHelp = () => {
     contactMethod: "",
   });
 
-  const resources = [
-    {
-      name: t("resources.nationalChildAbuseHotline.name"),
-      phone: "1-800-422-4453",
-      type: t("resources.nationalChildAbuseHotline.type"),
-    },
-    {
-      name: t("resources.conani.name"),
-      phone: "+1 (809) 567-2233",
-      type: t("resources.conani.type"),
-    },
-    {
-      name: t("resources.womensShelter.name"),
-      phone: "+1 (809) 555-7890",
-      type: t("resources.womensShelter.type"),
-    },
-    {
-      name: t("resources.legalAid.name"),
-      phone: "+1 (809) 555-3456",
-      type: t("resources.legalAid.type"),
-    },
-  ];
   const emergencyContacts = [
     {
       label: "911",
@@ -64,10 +43,6 @@ const GetHelp = () => {
     },
   ];
 
-  const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -80,14 +55,7 @@ const GetHelp = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-
-      <button
-        onClick={handleQuickExit}
-        className="fixed bottom-6 right-6 z-50 bg-black text-white px-6 py-3 rounded-full shadow-lg hover:bg-black/90 transition-colors font-bold text-sm border-2 border-black"
-        type="button"
-      >
-        ✕ {t("quickExit")}
-      </button>
+      <QuickExitButton />
 
       <div className="bg-destructive/20 text-destructive py-3 border-b border-destructive/30">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-center text-sm font-medium">
@@ -109,7 +77,7 @@ const GetHelp = () => {
         <div className="container mx-auto px-4 text-center text-sm text-foreground">
           <Shield className="h-4 w-4 inline mr-2" />
           <strong>{t("safetyNotice.emphasis")}</strong> {t("safetyNotice.beforeQuickExit")}{" "}
-          <strong>{t("quickExit")}</strong> {t("safetyNotice.afterQuickExit")}
+          <strong>{t("quickExit", { ns: "common" })}</strong> {t("safetyNotice.afterQuickExit")}
         </div>
       </div>
 
