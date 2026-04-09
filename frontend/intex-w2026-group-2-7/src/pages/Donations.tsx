@@ -5,13 +5,11 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Mail,
   Megaphone,
   Plus,
   Search,
-  Settings,
   UsersRound,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -302,12 +300,9 @@ const Donations = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath, active: true },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   useEffect(() => {
@@ -588,14 +583,14 @@ const Donations = () => {
           </div>
         </header>
 
-        <Card className="rounded-none border border-border shadow-none">
+        <Card className="rounded-none border border-border bg-card shadow-none">
           <CardHeader className="border-b border-border">
             <CardTitle className="text-base font-semibold text-foreground">
               {t("donorsContributions.filters.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 p-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
-            <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
+            <div className="flex h-10 items-center gap-2 rounded-none border border-input bg-background px-3">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
@@ -605,7 +600,7 @@ const Donations = () => {
               />
             </div>
             <Select value={donorType} onValueChange={setDonorType}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-none">
                 <SelectValue placeholder={t("donorsContributions.filters.donorType")} />
               </SelectTrigger>
               <SelectContent>
@@ -618,7 +613,7 @@ const Donations = () => {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-none">
                 <SelectValue placeholder={t("donorsContributions.filters.status")} />
               </SelectTrigger>
               <SelectContent>
@@ -628,7 +623,7 @@ const Donations = () => {
               </SelectContent>
             </Select>
             <Select value={contributionType} onValueChange={setContributionType}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-none">
                 <SelectValue placeholder={t("donorsContributions.filters.contributionType")} />
               </SelectTrigger>
               <SelectContent>
@@ -645,7 +640,7 @@ const Donations = () => {
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
-            <Card className="rounded-none border border-border shadow-none">
+            <Card className="rounded-none border border-border bg-card shadow-none">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-base font-semibold text-foreground">
                   {t("donorsContributions.donorProfiles.title")}
@@ -686,7 +681,7 @@ const Donations = () => {
                       >
                         <TableCell className="font-medium">{donor.name}</TableCell>
                         <TableCell>
-                          <Badge variant={donor.status === "Active" ? "default" : "secondary"}>
+                          <Badge variant="outline" className={donor.status === "Active" ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200" : "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200"}>
                             {donor.status === "Active"
                               ? t("donorsContributions.options.status.active")
                               : t("donorsContributions.options.status.inactive")}
@@ -708,7 +703,7 @@ const Donations = () => {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                     <Select value={pageSize} onValueChange={setPageSize}>
-                      <SelectTrigger className="h-8 w-[90px]">
+                      <SelectTrigger className="h-8 w-[90px] rounded-none">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -743,7 +738,7 @@ const Donations = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-none border border-border shadow-none">
+            <Card className="rounded-none border border-border bg-card shadow-none">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-base font-semibold text-foreground">
                   {t("donorsContributions.allocation.title")}
@@ -771,7 +766,7 @@ const Donations = () => {
             </Card>
           </div>
 
-          <Card className="rounded-none border border-border shadow-none">
+          <Card className="rounded-none border border-border bg-card shadow-none">
             <CardHeader className="border-b border-border">
               <CardTitle className="text-base font-semibold text-foreground">
                 {t("donorsContributions.contributions.title")}
@@ -839,7 +834,7 @@ const Donations = () => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                   <Select value={contributionsPageSize} onValueChange={setContributionsPageSize}>
-                    <SelectTrigger className="h-8 w-[90px]">
+                    <SelectTrigger className="h-8 w-[90px] rounded-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -228,6 +228,7 @@ app.MapMlEndpoints();
 app.MapAdminProcessRecordingEndpoints();
 app.MapAdminHomeVisitationEndpoints();
 app.MapAdminReportsEndpoints();
+app.MapAdminCaseConferenceEndpoints();
 
 await app.SeedIdentityDataAsync();
 

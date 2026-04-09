@@ -14,7 +14,6 @@ import {
   Facebook,
   FileBarChart2,
   HeartHandshake,
-  Home,
   ImagePlus,
   Instagram,
   LayoutDashboard,
@@ -23,7 +22,6 @@ import {
   PencilLine,
   Plus,
   Rocket,
-  Settings,
   Sparkles,
   Trash2,
   TrendingUp,
@@ -458,12 +456,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
     { label: dashboardT("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath, active: true },
     { label: dashboardT("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: dashboardT("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
-    { label: dashboardT("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: dashboardT("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: dashboardT("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: dashboardT("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: dashboardT("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: dashboardT("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: dashboardT("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const handleLogout = async () => {
@@ -1096,7 +1091,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 </div>
               </div>
             )}
-          <Card className="rounded-none border border-border shadow-none">
+          <Card className="rounded-none border border-border bg-card shadow-none">
             <CardHeader className="space-y-4 border-b border-border">
               <div className="flex items-center justify-between gap-6">
                 <div className="flex flex-1 items-center gap-3">
@@ -1611,7 +1606,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
       ) : null}
 
       {!isComposerMode ? (
-        <Card className="rounded-none border border-border shadow-none">
+        <Card className="rounded-none border border-border bg-card shadow-none">
           <CardHeader className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>

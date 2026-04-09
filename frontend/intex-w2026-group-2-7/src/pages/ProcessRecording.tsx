@@ -6,12 +6,10 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Megaphone,
   Pencil,
   Plus,
-  Settings,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -172,6 +170,11 @@ const ProcessRecording = () => {
   const [form, setForm] = useState<ProcessRecordingUpsertForm>(emptyForm());
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [viewDetail, setViewDetail] = useState<ProcessRecordingDetail | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [residentSearch, setResidentSearch] = useState("");
+  const [filterResidentSearch, setFilterResidentSearch] = useState("");
+  const [upcomingPage, setUpcomingPage] = useState(1);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
@@ -186,12 +189,9 @@ const ProcessRecording = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath, active: true },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const residentsQuery = useQuery({
@@ -268,12 +268,14 @@ const ProcessRecording = () => {
     setEditingId(null);
     setForm(emptyForm());
     setSaveError(null);
+    setResidentSearch("");
     setDialogOpen(true);
   };
 
   const openEdit = async (recording: ProcessRecordingCard) => {
     setEditingId(recording.recordingId);
     setSaveError(null);
+    setResidentSearch("");
     setForm({
       residentId: recording.residentId,
       sessionDate: recording.sessionDate.slice(0, 10),
@@ -308,14 +310,37 @@ const ProcessRecording = () => {
     }
   };
 
+  const openView = async (recording: ProcessRecordingCard) => {
+    setViewDetail(null);
+    setViewDialogOpen(true);
+    try {
+      const detail = await auth.authenticatedJson<ProcessRecordingDetail>(
+        `/api/admin/process-recordings/${recording.recordingId}`,
+      );
+      setViewDetail(detail);
+    } catch {
+      setViewDialogOpen(false);
+    }
+  };
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     upsertMutation.mutate({ id: editingId, body: form });
   };
 
   const recordings = recordingsQuery.data ?? [];
-  const totalPages = Math.max(1, Math.ceil(recordings.length / ITEMS_PER_PAGE));
-  const paginatedRecordings = recordings.slice(
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingSessions = recordings
+    .filter((r) => r.sessionDate.slice(0, 10) > today)
+    .sort((a, b) => a.sessionDate.localeCompare(b.sessionDate));
+  const upcomingTotalPages = Math.max(1, Math.ceil(upcomingSessions.length / ITEMS_PER_PAGE));
+  const paginatedUpcoming = upcomingSessions.slice(
+    (upcomingPage - 1) * ITEMS_PER_PAGE,
+    upcomingPage * ITEMS_PER_PAGE,
+  );
+  const pastRecordings = recordings.filter((r) => r.sessionDate.slice(0, 10) <= today);
+  const totalPages = Math.max(1, Math.ceil(pastRecordings.length / ITEMS_PER_PAGE));
+  const paginatedRecordings = pastRecordings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
@@ -328,7 +353,7 @@ const ProcessRecording = () => {
     >
       {/* Header */}
       <div className="border border-border bg-card">
-        <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
               {t("header.kicker")}
@@ -369,13 +394,29 @@ const ProcessRecording = () => {
                 <SelectTrigger className="rounded-none">
                   <SelectValue placeholder={t("filters.allResidents")} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom">
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search residents..."
+                      className="rounded-none h-8 text-sm"
+                      value={filterResidentSearch}
+                      onChange={(e) => setFilterResidentSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
-                  {(residentsQuery.data ?? []).map((r) => (
-                    <SelectItem key={r.residentId} value={String(r.residentId)}>
-                      {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
-                    </SelectItem>
-                  ))}
+                  {(residentsQuery.data ?? [])
+                    .filter((r) => {
+                      if (!filterResidentSearch) return true;
+                      const q = filterResidentSearch.toLowerCase();
+                      const name = r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.toLowerCase() : "";
+                      return name.includes(q) || r.internalCode.toLowerCase().includes(q) || r.caseControlNo.toLowerCase().includes(q);
+                    })
+                    .map((r) => (
+                      <SelectItem key={r.residentId} value={String(r.residentId)}>
+                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -407,6 +448,129 @@ const ProcessRecording = () => {
         </CardContent>
       </Card>
 
+      {/* Upcoming Sessions */}
+      <Card className="rounded-none border border-border bg-card shadow-none">
+        <CardHeader className="px-5 py-4">
+          <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {recordingsQuery.isLoading ? (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-12 animate-pulse bg-muted" />
+              ))}
+            </div>
+          ) : upcomingSessions.length === 0 ? (
+            <div className="border-t border-border p-8 text-center text-sm text-muted-foreground">
+              No upcoming sessions scheduled.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("table.sessionDate")}</TableHead>
+                    <TableHead>{t("table.resident")}</TableHead>
+                    <TableHead>{t("table.socialWorker")}</TableHead>
+                    <TableHead>{t("table.sessionType")}</TableHead>
+                    <TableHead>{t("table.emotionalState")}</TableHead>
+                    <TableHead>{t("table.progress")}</TableHead>
+                    <TableHead>{t("table.concerns")}</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUpcoming.map((rec) => (
+                    <TableRow key={rec.recordingId} className="cursor-pointer" onClick={() => void openView(rec)}>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {formatDate(rec.sessionDate)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {rec.residentDisplayName}
+                      </TableCell>
+                      <TableCell className="text-sm">{rec.socialWorker}</TableCell>
+                      <TableCell className="text-sm">{rec.sessionType}</TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-muted-foreground">{rec.emotionalStateObserved}</span>
+                        {" → "}
+                        <span>{rec.emotionalStateEnd}</span>
+                      </TableCell>
+                      <TableCell>
+                        {rec.progressNoted ? (
+                          <Badge variant="outline" className="rounded-none border-0 bg-primary/10 text-primary text-xs">
+                            Yes
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {rec.concernsFlagged ? (
+                          <Badge variant="outline" className="rounded-none border-0 bg-destructive/10 text-destructive text-xs">
+                            Flagged
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openEdit(rec)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteId(rec.recordingId)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          {upcomingTotalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-none"
+                disabled={upcomingPage === 1}
+                onClick={() => setUpcomingPage((p) => p - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {upcomingPage} of {upcomingTotalPages}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-none"
+                disabled={upcomingPage === upcomingTotalPages}
+                onClick={() => setUpcomingPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Table */}
       {recordingsQuery.isError ? (
         <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
@@ -426,7 +590,7 @@ const ProcessRecording = () => {
         <Card className="rounded-none border border-border bg-card shadow-none">
           <CardHeader className="px-5 py-4">
             <CardTitle className="text-lg font-semibold">
-              {recordings.length} {recordings.length === 1 ? "record" : "records"}
+              Session History
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -436,7 +600,7 @@ const ProcessRecording = () => {
                   <div key={i} className="h-12 animate-pulse bg-muted" />
                 ))}
               </div>
-            ) : recordings.length === 0 ? (
+            ) : pastRecordings.length === 0 ? (
               <div className="border-t border-border p-8 text-center text-sm text-muted-foreground">
                 {t("table.noRecords")}
               </div>
@@ -458,7 +622,7 @@ const ProcessRecording = () => {
                     </TableHeader>
                     <TableBody>
                       {paginatedRecordings.map((rec) => (
-                        <TableRow key={rec.recordingId}>
+                        <TableRow key={rec.recordingId} className="cursor-pointer" onClick={() => void openView(rec)}>
                           <TableCell className="whitespace-nowrap text-sm">
                             {formatDate(rec.sessionDate)}
                           </TableCell>
@@ -492,7 +656,7 @@ const ProcessRecording = () => {
                               <span className="text-xs text-muted-foreground">—</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex justify-end gap-1">
                               <Button
                                 type="button"
@@ -554,6 +718,119 @@ const ProcessRecording = () => {
         </Card>
       )}
 
+      {/* View Detail Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-none border-border bg-card p-0 shadow-xl sm:max-w-[700px]">
+          <DialogHeader className="border-b border-border px-6 py-5">
+            <DialogTitle>Session Details</DialogTitle>
+          </DialogHeader>
+          {!viewDetail ? (
+            <div className="space-y-3 p-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-8 animate-pulse bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="px-6 py-5 space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Resident</p>
+                  <p className="text-sm font-medium">{viewDetail.residentDisplayName}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Session Date</p>
+                  <p className="text-sm">{formatDate(viewDetail.sessionDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Social Worker</p>
+                  <p className="text-sm">{viewDetail.socialWorker}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Session Type</p>
+                  <p className="text-sm">{viewDetail.sessionType}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Duration</p>
+                  <p className="text-sm">{viewDetail.sessionDurationMinutes} minutes</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Emotional State</p>
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">{viewDetail.emotionalStateObserved}</span>
+                    {" → "}
+                    <span>{viewDetail.emotionalStateEnd}</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Progress Noted</p>
+                  {viewDetail.progressNoted ? (
+                    <Badge variant="outline" className="rounded-none border-0 bg-primary/10 text-primary text-xs">Yes</Badge>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Concerns Flagged</p>
+                  {viewDetail.concernsFlagged ? (
+                    <Badge variant="outline" className="rounded-none border-0 bg-destructive/10 text-destructive text-xs">Flagged</Badge>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Referral Made</p>
+                  <p className="text-sm">{viewDetail.referralMade ? "Yes" : "No"}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Session Narrative</p>
+                  <p className="text-sm whitespace-pre-wrap text-foreground">{viewDetail.sessionNarrative || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Interventions Applied</p>
+                  <p className="text-sm whitespace-pre-wrap text-foreground">{viewDetail.interventionsApplied || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-1">Follow-Up Actions</p>
+                  <p className="text-sm whitespace-pre-wrap text-foreground">{viewDetail.followUpActions || "—"}</p>
+                </div>
+                {viewDetail.notesRestricted && (
+                  <div className="rounded-none border border-destructive/20 bg-destructive/5 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-destructive mb-1">Restricted Notes</p>
+                    <p className="text-sm whitespace-pre-wrap text-foreground">{viewDetail.notesRestricted}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-border pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-none"
+                  onClick={() => setViewDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-none"
+                  onClick={() => {
+                    setViewDialogOpen(false);
+                    const card = recordingsQuery.data?.find((r) => r.recordingId === viewDetail.recordingId);
+                    if (card) void openEdit(card);
+                  }}
+                >
+                  <Pencil className="mr-2 h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-none border-border bg-card p-0 shadow-xl sm:max-w-[800px]">
@@ -574,11 +851,27 @@ const ProcessRecording = () => {
                     <SelectValue placeholder="Select resident" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(residentsQuery.data ?? []).map((r) => (
-                      <SelectItem key={r.residentId} value={String(r.residentId)}>
-                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
-                      </SelectItem>
-                    ))}
+                    <div className="p-2">
+                      <Input
+                        placeholder="Search residents..."
+                        className="rounded-none h-8 text-sm"
+                        value={residentSearch}
+                        onChange={(e) => setResidentSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {(residentsQuery.data ?? [])
+                      .filter((r) => {
+                        if (!residentSearch) return true;
+                        const q = residentSearch.toLowerCase();
+                        const name = r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.toLowerCase() : "";
+                        return name.includes(q) || r.internalCode.toLowerCase().includes(q) || r.caseControlNo.toLowerCase().includes(q);
+                      })
+                      .map((r) => (
+                        <SelectItem key={r.residentId} value={String(r.residentId)}>
+                          {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </Field>
