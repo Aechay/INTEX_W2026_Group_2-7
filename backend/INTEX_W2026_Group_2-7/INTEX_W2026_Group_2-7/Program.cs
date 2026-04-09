@@ -169,7 +169,18 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.Context.Request.Path.StartsWithSegments("/social-media-assets/temp"))
+        {
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type");
+        }
+    }
+});
 
 app.Use(async (context, next) =>
 {
