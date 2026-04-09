@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  ClipboardList,
   FileBarChart2,
   HeartHandshake,
   Home,
   LayoutDashboard,
+  Megaphone,
   Plus,
   Search,
   Settings,
@@ -45,6 +47,7 @@ type DonorProfile = {
   status: "Active" | "Inactive";
   lastContribution: string;
   totalValue: string;
+  churnRisk: string | null;
   supporterId: number;
 };
 
@@ -64,6 +67,7 @@ type DonationsOverviewResponse = {
     status: string;
     lastDonationDate: string | null;
     totalEstimatedValue: number;
+    churnRiskBand: string | null;
   }>;
   contributions: Array<{
     donationId: number;
@@ -155,6 +159,28 @@ const formatContributionType = (value: string): Contribution["type"] => {
 const formatDisplayLabel = (value: string) =>
   value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\s+/g, " ").trim();
 
+const donationTypeTranslationKey = (value: string): string | null => {
+  switch (value) {
+    case "Monetary":
+      return "donorsContributions.options.donationTypes.monetary";
+    case "In-kind":
+      return "donorsContributions.options.donationTypes.inKind";
+    case "Time":
+      return "donorsContributions.options.donationTypes.time";
+    case "Skills":
+      return "donorsContributions.options.donationTypes.skills";
+    case "Social Media":
+      return "donorsContributions.options.donationTypes.socialMedia";
+    default:
+      return null;
+  }
+};
+
+const translateDonationType = (t: (key: string) => string, value: string) => {
+  const key = donationTypeTranslationKey(value);
+  return key ? t(key) : value;
+};
+
 const getImpactUnitForDonationType = (value: string) => {
   switch (value) {
     case "Monetary":
@@ -192,6 +218,7 @@ const Donations = () => {
   const [contributionsPage, setContributionsPage] = useState(1);
   const [contributionsPageSize, setContributionsPageSize] = useState("10");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [signOutPending, setSignOutPending] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [displayNameTouched, setDisplayNameTouched] = useState(false);
@@ -228,13 +255,20 @@ const Donations = () => {
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const donationsPath = withPathLanguage("/dashboard/donations", i18n.resolvedLanguage);
+  const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
+    { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath, active: true },
     { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
+    { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
+    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },
-    { label: t("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
@@ -268,7 +302,7 @@ const Donations = () => {
     },
     onError: (error: unknown) => {
       setCreateError(
-        error instanceof Error ? error.message : "Unable to create donor. Please try again.",
+        error instanceof Error ? error.message : t("donorsContributions.errors.createDonorFailed"),
       );
     },
   });
@@ -339,35 +373,35 @@ const Donations = () => {
     },
     onError: (error: unknown) => {
       setContributionError(
-        error instanceof Error ? error.message : "Unable to record contribution. Please try again.",
+        error instanceof Error ? error.message : t("donorsContributions.errors.createContributionFailed"),
       );
     },
   });
 
   const validateCreateForm = (form: DonorCreateForm) => {
     const errors: Record<string, string> = {};
-    if (!form.firstName.trim()) errors.firstName = "First name is required.";
-    if (!form.lastName.trim()) errors.lastName = "Last name is required.";
-    if (!form.displayName.trim()) errors.displayName = "Display name is required.";
-    if (!form.email.trim()) errors.email = "Email is required.";
-    if (!form.phone.trim()) errors.phone = "Phone is required.";
-    if (!form.supporterType.trim()) errors.supporterType = "Supporter type is required.";
-    if (!form.relationshipType.trim()) errors.relationshipType = "Relationship type is required.";
-    if (!form.region.trim()) errors.region = "Region is required.";
-    if (!form.country.trim()) errors.country = "Country is required.";
-    if (!form.status.trim()) errors.status = "Status is required.";
-    if (!form.acquisitionChannel.trim()) errors.acquisitionChannel = "Acquisition channel is required.";
+    if (!form.firstName.trim()) errors.firstName = t("donorsContributions.validation.firstNameRequired");
+    if (!form.lastName.trim()) errors.lastName = t("donorsContributions.validation.lastNameRequired");
+    if (!form.displayName.trim()) errors.displayName = t("donorsContributions.validation.displayNameRequired");
+    if (!form.email.trim()) errors.email = t("donorsContributions.validation.emailRequired");
+    if (!form.phone.trim()) errors.phone = t("donorsContributions.validation.phoneRequired");
+    if (!form.supporterType.trim()) errors.supporterType = t("donorsContributions.validation.supporterTypeRequired");
+    if (!form.relationshipType.trim()) errors.relationshipType = t("donorsContributions.validation.relationshipTypeRequired");
+    if (!form.region.trim()) errors.region = t("donorsContributions.validation.regionRequired");
+    if (!form.country.trim()) errors.country = t("donorsContributions.validation.countryRequired");
+    if (!form.status.trim()) errors.status = t("donorsContributions.validation.statusRequired");
+    if (!form.acquisitionChannel.trim()) errors.acquisitionChannel = t("donorsContributions.validation.acquisitionChannelRequired");
     return errors;
   };
 
   const validateContributionForm = () => {
     const errors: Record<string, string> = {};
-    if (!contributionForm.supporterId) errors.supporterId = "Supporter is required.";
-    if (!contributionForm.donationType) errors.donationType = "Donation type is required.";
-    if (!contributionForm.donationDate) errors.donationDate = "Donation date is required.";
-    if (!contributionForm.estimatedValue) errors.estimatedValue = "Estimated value is required.";
-    if (!contributionForm.programArea) errors.programArea = "Program area is required.";
-    if (!contributionForm.safehouseId) errors.safehouseId = "Safehouse is required.";
+    if (!contributionForm.supporterId) errors.supporterId = t("donorsContributions.validation.supporterRequired");
+    if (!contributionForm.donationType) errors.donationType = t("donorsContributions.validation.donationTypeRequired");
+    if (!contributionForm.donationDate) errors.donationDate = t("donorsContributions.validation.donationDateRequired");
+    if (!contributionForm.estimatedValue) errors.estimatedValue = t("donorsContributions.validation.estimatedValueRequired");
+    if (!contributionForm.programArea) errors.programArea = t("donorsContributions.validation.programAreaRequired");
+    if (!contributionForm.safehouseId) errors.safehouseId = t("donorsContributions.validation.safehouseRequired");
     return errors;
   };
 
@@ -416,11 +450,12 @@ const Donations = () => {
       status: (donor.status as DonorProfile["status"]) ?? "Active",
       lastContribution: donor.lastDonationDate
         ? dateFormatter.format(new Date(donor.lastDonationDate))
-        : "No recent donations",
+        : t("donorsContributions.common.noRecentDonations"),
       totalValue: formatCurrency(donor.totalEstimatedValue),
+      churnRisk: donor.churnRiskBand,
       supporterId: donor.supporterId,
     }));
-  }, [donationsQuery.data]);
+  }, [donationsQuery.data, t]);
 
   const contributions: Contribution[] = useMemo(() => {
     if (!donationsQuery.data) return [];
@@ -443,7 +478,12 @@ const Donations = () => {
   );
 
   const handleLogout = async () => {
-    await auth.logout();
+    setSignOutPending(true);
+    try {
+      await auth.logout();
+    } finally {
+      setSignOutPending(false);
+    }
   };
 
   const isLoading = donationsQuery.isLoading;
@@ -460,30 +500,29 @@ const Donations = () => {
   );
 
   return (
-    <AdminWorkspace items={navigationItems} signOutPending={false} onSignOut={handleLogout}>
+    <AdminWorkspace items={navigationItems} signOutPending={signOutPending} onSignOut={handleLogout}>
       <div className="flex flex-col gap-8">
         <header className="rounded-none border border-border bg-card px-6 py-6 shadow-none">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Donations
+                {t("donorsContributions.header.kicker")}
               </p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                Donors & Contributions
+                {t("donorsContributions.header.title")}
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Track donor profiles, contribution activity, and how gifts are allocated across
-                safehouses and program areas.
+                {t("donorsContributions.header.description")}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" className="gap-2" onClick={() => setIsCreateOpen(true)}>
                 <Plus className="h-4 w-4" />
-                Add donor
+                {t("donorsContributions.actions.addDonor")}
               </Button>
               <Button className="gap-2" onClick={() => setIsContributionOpen(true)}>
                 <Plus className="h-4 w-4" />
-                Record contribution
+                {t("donorsContributions.actions.recordContribution")}
               </Button>
             </div>
           </div>
@@ -492,7 +531,7 @@ const Donations = () => {
         <Card className="rounded-none border border-border shadow-none">
           <CardHeader className="border-b border-border">
             <CardTitle className="text-base font-semibold text-foreground">
-              Search & filters
+              {t("donorsContributions.filters.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 p-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
@@ -501,44 +540,44 @@ const Donations = () => {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search donors or contributions"
+                placeholder={t("donorsContributions.filters.searchPlaceholder")}
                 className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
               />
             </div>
             <Select value={donorType} onValueChange={setDonorType}>
               <SelectTrigger>
-                <SelectValue placeholder="Donor type" />
+                <SelectValue placeholder={t("donorsContributions.filters.donorType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All donor types</SelectItem>
-                <SelectItem value="Monetary">Monetary</SelectItem>
-                <SelectItem value="Volunteer">Volunteer</SelectItem>
-                <SelectItem value="In-kind">In-kind</SelectItem>
-                <SelectItem value="Skills">Skills</SelectItem>
-                <SelectItem value="Social Media">Social Media</SelectItem>
+                <SelectItem value="all">{t("donorsContributions.filters.allDonorTypes")}</SelectItem>
+                <SelectItem value="Monetary">{t("donorsContributions.options.donationTypes.monetary")}</SelectItem>
+                <SelectItem value="Volunteer">{t("donorsContributions.options.donationTypes.volunteer")}</SelectItem>
+                <SelectItem value="In-kind">{t("donorsContributions.options.donationTypes.inKind")}</SelectItem>
+                <SelectItem value="Skills">{t("donorsContributions.options.donationTypes.skills")}</SelectItem>
+                <SelectItem value="Social Media">{t("donorsContributions.options.donationTypes.socialMedia")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("donorsContributions.filters.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t("donorsContributions.filters.allStatuses")}</SelectItem>
+                <SelectItem value="Active">{t("donorsContributions.options.status.active")}</SelectItem>
+                <SelectItem value="Inactive">{t("donorsContributions.options.status.inactive")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={contributionType} onValueChange={setContributionType}>
               <SelectTrigger>
-                <SelectValue placeholder="Contribution type" />
+                <SelectValue placeholder={t("donorsContributions.filters.contributionType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All contributions</SelectItem>
-                <SelectItem value="Monetary">Monetary</SelectItem>
-                <SelectItem value="In-kind">In-kind</SelectItem>
-                <SelectItem value="Time">Time</SelectItem>
-                <SelectItem value="Skills">Skills</SelectItem>
-                <SelectItem value="Social Media">Social Media</SelectItem>
+                <SelectItem value="all">{t("donorsContributions.filters.allContributions")}</SelectItem>
+                <SelectItem value="Monetary">{t("donorsContributions.options.donationTypes.monetary")}</SelectItem>
+                <SelectItem value="In-kind">{t("donorsContributions.options.donationTypes.inKind")}</SelectItem>
+                <SelectItem value="Time">{t("donorsContributions.options.donationTypes.time")}</SelectItem>
+                <SelectItem value="Skills">{t("donorsContributions.options.donationTypes.skills")}</SelectItem>
+                <SelectItem value="Social Media">{t("donorsContributions.options.donationTypes.socialMedia")}</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -549,30 +588,31 @@ const Donations = () => {
             <Card className="rounded-none border border-border shadow-none">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-base font-semibold text-foreground">
-                  Donor profiles
+                  {t("donorsContributions.donorProfiles.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last contribution</TableHead>
-                      <TableHead>Total value</TableHead>
+                      <TableHead>{t("donorsContributions.donorProfiles.columns.name")}</TableHead>
+                      <TableHead>{t("donorsContributions.donorProfiles.columns.status")}</TableHead>
+                      <TableHead>{t("donorsContributions.donorProfiles.columns.lastContribution")}</TableHead>
+                      <TableHead>{t("donorsContributions.donorProfiles.columns.totalValue")}</TableHead>
+                      <TableHead>{t("donorsContributions.donorProfiles.columns.churnRisk")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        Loading donors…
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        {t("donorsContributions.donorProfiles.loading")}
                       </TableCell>
                       </TableRow>
                     ) : donors.length === 0 ? (
                       <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No donor records found yet.
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        {t("donorsContributions.donorProfiles.empty")}
                       </TableCell>
                       </TableRow>
                     ) : (
@@ -587,11 +627,14 @@ const Donations = () => {
                         <TableCell className="font-medium">{donor.name}</TableCell>
                         <TableCell>
                           <Badge variant={donor.status === "Active" ? "default" : "secondary"}>
-                            {donor.status}
+                            {donor.status === "Active"
+                              ? t("donorsContributions.options.status.active")
+                              : t("donorsContributions.options.status.inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell>{donor.lastContribution}</TableCell>
                         <TableCell>{donor.totalValue}</TableCell>
+                        <TableCell>{donor.churnRisk ?? t("donorsContributions.common.noPrediction")}</TableCell>
                       </TableRow>
                       ))
                     )}
@@ -599,7 +642,7 @@ const Donations = () => {
                 </Table>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Rows per page</span>
+                    <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                     <Select value={pageSize} onValueChange={setPageSize}>
                       <SelectTrigger className="h-8 w-[90px]">
                         <SelectValue />
@@ -618,10 +661,10 @@ const Donations = () => {
                       disabled={currentPage <= 1 || isLoading}
                       onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                     >
-                      Previous
+                      {t("donorsContributions.pagination.previous")}
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
+                      {t("donorsContributions.pagination.pageOf", { page: currentPage, total: totalPages })}
                     </span>
                     <Button
                       variant="outline"
@@ -629,7 +672,7 @@ const Donations = () => {
                       disabled={currentPage >= totalPages || isLoading}
                       onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                     >
-                      Next
+                      {t("donorsContributions.pagination.next")}
                     </Button>
                   </div>
                 </div>
@@ -639,15 +682,15 @@ const Donations = () => {
             <Card className="rounded-none border border-border shadow-none">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-base font-semibold text-foreground">
-                  Allocation coverage
+                  {t("donorsContributions.allocation.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 p-6">
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading allocation coverage…</p>
+                  <p className="text-sm text-muted-foreground">{t("donorsContributions.allocation.loading")}</p>
                 ) : allocations.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No allocation records found yet.
+                    {t("donorsContributions.allocation.empty")}
                   </p>
                 ) : (
                   allocations.map((allocation) => (
@@ -667,30 +710,30 @@ const Donations = () => {
           <Card className="rounded-none border border-border shadow-none">
             <CardHeader className="border-b border-border">
               <CardTitle className="text-base font-semibold text-foreground">
-                Contribution activity
+                {t("donorsContributions.contributions.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Contributor</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Allocation</TableHead>
+                    <TableHead>{t("donorsContributions.contributions.columns.date")}</TableHead>
+                    <TableHead>{t("donorsContributions.contributions.columns.contributor")}</TableHead>
+                    <TableHead>{t("donorsContributions.contributions.columns.type")}</TableHead>
+                    <TableHead>{t("donorsContributions.contributions.columns.allocation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        Loading contributions…
+                        {t("donorsContributions.contributions.loading")}
                       </TableCell>
                     </TableRow>
                   ) : contributions.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No contributions recorded yet.
+                        {t("donorsContributions.contributions.empty")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -698,7 +741,9 @@ const Donations = () => {
                       <TableRow key={`${contribution.date}-${contribution.contributor}`}>
                         <TableCell>{contribution.date}</TableCell>
                         <TableCell className="font-medium">{contribution.contributor}</TableCell>
-                        <TableCell>{contribution.type}</TableCell>
+                        <TableCell>
+                          {translateDonationType(t, contribution.type)}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm text-foreground">{contribution.allocation}</div>
                           <div className="text-xs text-muted-foreground">{contribution.value}</div>
@@ -710,7 +755,7 @@ const Donations = () => {
               </Table>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Rows per page</span>
+                  <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                   <Select value={contributionsPageSize} onValueChange={setContributionsPageSize}>
                     <SelectTrigger className="h-8 w-[90px]">
                       <SelectValue />
@@ -729,10 +774,13 @@ const Donations = () => {
                     disabled={contributionsPage <= 1 || isLoading}
                     onClick={() => setContributionsPage((page) => Math.max(1, page - 1))}
                   >
-                    Previous
+                    {t("donorsContributions.pagination.previous")}
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Page {contributionsPage} of {contributionPages}
+                    {t("donorsContributions.pagination.pageOf", {
+                      page: contributionsPage,
+                      total: contributionPages,
+                    })}
                   </span>
                   <Button
                     variant="outline"
@@ -742,7 +790,7 @@ const Donations = () => {
                       setContributionsPage((page) => Math.min(contributionPages, page + 1))
                     }
                   >
-                    Next
+                    {t("donorsContributions.pagination.next")}
                   </Button>
                 </div>
               </div>
@@ -752,15 +800,14 @@ const Donations = () => {
       </div>
       {hasNoData && (
         <p className="text-sm text-muted-foreground">
-          No donation data has been recorded yet. Once contributions are added, they will appear
-          here.
+          {t("donorsContributions.emptyState")}
         </p>
       )}
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add donor</DialogTitle>
+            <DialogTitle>{t("donorsContributions.createDonor.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {createError ? (
@@ -769,7 +816,7 @@ const Donations = () => {
               </div>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="First name">
+              <Field label={t("donorsContributions.createDonor.fields.firstName")}>
                 <Input
                   value={createForm.firstName}
                   onChange={(event) => {
@@ -783,7 +830,7 @@ const Donations = () => {
                   <p className="text-xs text-destructive">{fieldErrors.firstName}</p>
                 ) : null}
               </Field>
-              <Field label="Last name">
+              <Field label={t("donorsContributions.createDonor.fields.lastName")}>
                 <Input
                   value={createForm.lastName}
                   onChange={(event) => {
@@ -798,7 +845,7 @@ const Donations = () => {
                 ) : null}
               </Field>
             </div>
-            <Field label="Display name">
+            <Field label={t("donorsContributions.createDonor.fields.displayName")}>
               <Input
                 value={createForm.displayName}
                 onChange={(event) => {
@@ -813,7 +860,7 @@ const Donations = () => {
                 <p className="text-xs text-destructive">{fieldErrors.displayName}</p>
               ) : null}
             </Field>
-            <Field label="Email">
+            <Field label={t("donorsContributions.createDonor.fields.email")}>
               <Input
                 value={createForm.email}
                 onChange={(event) => {
@@ -827,7 +874,7 @@ const Donations = () => {
                 <p className="text-xs text-destructive">{fieldErrors.email}</p>
               ) : null}
             </Field>
-            <Field label="Phone">
+            <Field label={t("donorsContributions.createDonor.fields.phone")}>
               <Input
                 value={createForm.phone}
                 onChange={(event) => {
@@ -841,7 +888,7 @@ const Donations = () => {
                 <p className="text-xs text-destructive">{fieldErrors.phone}</p>
               ) : null}
             </Field>
-            <Field label="Supporter type">
+            <Field label={t("donorsContributions.createDonor.fields.supporterType")}>
               <Select
                 value={createForm.supporterType}
                 onValueChange={(value) => {
@@ -855,15 +902,15 @@ const Donations = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MonetaryDonor">Monetary</SelectItem>
-                  <SelectItem value="InKindDonor">In-kind</SelectItem>
-                  <SelectItem value="SkillsContributor">Skills</SelectItem>
-                  <SelectItem value="SocialMediaAdvocate">Social Media</SelectItem>
-                  <SelectItem value="Volunteer">Volunteer</SelectItem>
+                  <SelectItem value="MonetaryDonor">{t("donorsContributions.options.donationTypes.monetary")}</SelectItem>
+                  <SelectItem value="InKindDonor">{t("donorsContributions.options.donationTypes.inKind")}</SelectItem>
+                  <SelectItem value="SkillsContributor">{t("donorsContributions.options.donationTypes.skills")}</SelectItem>
+                  <SelectItem value="SocialMediaAdvocate">{t("donorsContributions.options.donationTypes.socialMedia")}</SelectItem>
+                  <SelectItem value="Volunteer">{t("donorsContributions.options.donationTypes.volunteer")}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Organization name (optional)">
+            <Field label={t("donorsContributions.createDonor.fields.organizationNameOptional")}>
               <Input
                 value={createForm.organizationName}
                 onChange={(event) =>
@@ -872,7 +919,7 @@ const Donations = () => {
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Relationship type">
+              <Field label={t("donorsContributions.createDonor.fields.relationshipType")}>
                 <Select
                   value={createForm.relationshipType}
                   onValueChange={(value) => {
@@ -883,7 +930,7 @@ const Donations = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select relationship type" />
+                    <SelectValue placeholder={t("donorsContributions.createDonor.placeholders.relationshipType")} />
                   </SelectTrigger>
                   <SelectContent>
                   {metadataQuery.data?.relationshipTypes?.length ? (
@@ -905,7 +952,7 @@ const Donations = () => {
                   <p className="text-xs text-destructive">{fieldErrors.relationshipType}</p>
                 ) : null}
               </Field>
-              <Field label="Region">
+              <Field label={t("donorsContributions.createDonor.fields.region")}>
                 <Input
                   value={createForm.region}
                   onChange={(event) => {
@@ -921,7 +968,7 @@ const Donations = () => {
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Country">
+              <Field label={t("donorsContributions.createDonor.fields.country")}>
                 <Input
                   value={createForm.country}
                   onChange={(event) => {
@@ -935,7 +982,7 @@ const Donations = () => {
                   <p className="text-xs text-destructive">{fieldErrors.country}</p>
                 ) : null}
               </Field>
-              <Field label="Status">
+              <Field label={t("donorsContributions.createDonor.fields.status")}>
                 <Select
                   value={createForm.status}
                   onValueChange={(value) => {
@@ -949,8 +996,8 @@ const Donations = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Active">{t("donorsContributions.options.status.active")}</SelectItem>
+                    <SelectItem value="Inactive">{t("donorsContributions.options.status.inactive")}</SelectItem>
                   </SelectContent>
                 </Select>
                 {fieldErrors.status ? (
@@ -958,7 +1005,7 @@ const Donations = () => {
                 ) : null}
               </Field>
             </div>
-            <Field label="Acquisition channel">
+            <Field label={t("donorsContributions.createDonor.fields.acquisitionChannel")}>
               <Select
                 value={createForm.acquisitionChannel}
                 onValueChange={(value) => {
@@ -969,7 +1016,7 @@ const Donations = () => {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select acquisition channel" />
+                  <SelectValue placeholder={t("donorsContributions.createDonor.placeholders.acquisitionChannel")} />
                 </SelectTrigger>
                 <SelectContent>
                   {metadataQuery.data?.acquisitionChannels?.length ? (
@@ -993,7 +1040,7 @@ const Donations = () => {
             </Field>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
+                {t("donorsContributions.actions.cancel")}
               </Button>
               <Button
                 type="button"
@@ -1007,7 +1054,7 @@ const Donations = () => {
                   createDonorMutation.mutate(createForm);
                 }}
               >
-                Save donor
+                {t("donorsContributions.actions.saveDonor")}
               </Button>
             </div>
           </div>
@@ -1017,7 +1064,7 @@ const Donations = () => {
       <Dialog open={isContributionOpen} onOpenChange={setIsContributionOpen}>
         <DialogContent className="sm:max-w-[640px]">
           <DialogHeader>
-            <DialogTitle>Record contribution</DialogTitle>
+            <DialogTitle>{t("donorsContributions.createContribution.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {contributionError ? (
@@ -1025,7 +1072,7 @@ const Donations = () => {
                 {contributionError}
               </div>
             ) : null}
-            <Field label="Supporter">
+            <Field label={t("donorsContributions.createContribution.fields.supporter")}>
               <Select
                 value={contributionForm.supporterId}
                 onValueChange={(value) => {
@@ -1036,12 +1083,12 @@ const Donations = () => {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a supporter" />
+                  <SelectValue placeholder={t("donorsContributions.createContribution.placeholders.supporter")} />
                 </SelectTrigger>
                 <SelectContent>
                   <div className="px-3 py-2">
                     <Input
-                      placeholder="Search supporters"
+                      placeholder={t("donorsContributions.createContribution.placeholders.searchSupporters")}
                       value={supporterSearch}
                       onChange={(event) => setSupporterSearch(event.target.value)}
                     />
@@ -1054,7 +1101,7 @@ const Donations = () => {
                     ))
                   ) : (
                     <SelectItem value="none" disabled>
-                      No supporters found
+                      {t("donorsContributions.createContribution.emptySupporters")}
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -1063,7 +1110,7 @@ const Donations = () => {
                 <p className="text-xs text-destructive">{contributionFieldErrors.supporterId}</p>
               ) : null}
             </Field>
-            <Field label="Donation type">
+            <Field label={t("donorsContributions.createContribution.fields.donationType")}>
               <Select
                 value={contributionForm.donationType}
                 onValueChange={(value) => {
@@ -1077,11 +1124,11 @@ const Donations = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Monetary">Monetary</SelectItem>
-                  <SelectItem value="InKind">In-kind</SelectItem>
-                  <SelectItem value="Skills">Skills</SelectItem>
-                  <SelectItem value="SocialMedia">Social Media</SelectItem>
-                  <SelectItem value="Time">Time</SelectItem>
+                  <SelectItem value="Monetary">{t("donorsContributions.options.donationTypes.monetary")}</SelectItem>
+                  <SelectItem value="InKind">{t("donorsContributions.options.donationTypes.inKind")}</SelectItem>
+                  <SelectItem value="Skills">{t("donorsContributions.options.donationTypes.skills")}</SelectItem>
+                  <SelectItem value="SocialMedia">{t("donorsContributions.options.donationTypes.socialMedia")}</SelectItem>
+                  <SelectItem value="Time">{t("donorsContributions.options.donationTypes.time")}</SelectItem>
                 </SelectContent>
               </Select>
               {contributionFieldErrors.donationType ? (
@@ -1089,7 +1136,7 @@ const Donations = () => {
               ) : null}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Program area">
+              <Field label={t("donorsContributions.createContribution.fields.programArea")}>
                 <Select
                   value={contributionForm.programArea}
                   onValueChange={(value) => {
@@ -1100,7 +1147,7 @@ const Donations = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select program area" />
+                    <SelectValue placeholder={t("donorsContributions.createContribution.placeholders.programArea")} />
                   </SelectTrigger>
                   <SelectContent>
                     {metadataQuery.data?.programAreas?.length ? (
@@ -1118,7 +1165,7 @@ const Donations = () => {
                   <p className="text-xs text-destructive">{contributionFieldErrors.programArea}</p>
                 ) : null}
               </Field>
-              <Field label="Safehouse">
+              <Field label={t("donorsContributions.createContribution.fields.safehouse")}>
                 <Select
                   value={contributionForm.safehouseId}
                   onValueChange={(value) => {
@@ -1129,7 +1176,7 @@ const Donations = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select safehouse" />
+                    <SelectValue placeholder={t("donorsContributions.createContribution.placeholders.safehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {metadataQuery.data?.safehouses?.length ? (
@@ -1151,7 +1198,7 @@ const Donations = () => {
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Donation date">
+              <Field label={t("donorsContributions.createContribution.fields.donationDate")}>
                 <Input
                   type="date"
                   value={contributionForm.donationDate}
@@ -1166,7 +1213,7 @@ const Donations = () => {
                   <p className="text-xs text-destructive">{contributionFieldErrors.donationDate}</p>
                 ) : null}
               </Field>
-              <Field label="Estimated value (DR$)">
+              <Field label={t("donorsContributions.createContribution.fields.estimatedValue")}>
                 <Input
                   type="number"
                   min="0"
@@ -1183,7 +1230,7 @@ const Donations = () => {
                 ) : null}
               </Field>
             </div>
-            <Field label="Impact unit">
+            <Field label={t("donorsContributions.createContribution.fields.impactUnit")}>
               <Input
                 value={contributionForm.impactUnit}
                 onChange={(event) =>
@@ -1193,7 +1240,7 @@ const Donations = () => {
             </Field>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsContributionOpen(false)}>
-                Cancel
+                {t("donorsContributions.actions.cancel")}
               </Button>
               <Button
                 type="button"
@@ -1213,7 +1260,7 @@ const Donations = () => {
                   });
                 }}
               >
-                Save contribution
+                {t("donorsContributions.actions.saveContribution")}
               </Button>
             </div>
           </div>
