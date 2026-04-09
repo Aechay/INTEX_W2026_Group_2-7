@@ -788,7 +788,7 @@ const Caseload = () => {
       </Dialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[640px]">
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>{t("dialogs.createTitle")}</DialogTitle>
           </DialogHeader>
