@@ -1061,19 +1061,14 @@ export const resources = {
         noSubcategories: "No sub-categories",
         predictedRiskBadge: "Predicted Risk Level: {{level}}",
         noPredictionBadge: "Predicted Risk Level: No prediction",
-        predictedReadinessBadge: "Predicted Reintegration Readiness: {{category}} ({{score}}%)",
-        noReadinessPredictionBadge: "Predicted Reintegration Readiness: No prediction",
+        predictedReadinessBadge: "Readiness: {{score}}%",
+        noReadinessPredictionBadge: "Readiness: N/A",
       },
       riskLevels: {
         low: "Low",
         medium: "Medium",
         high: "High",
         critical: "Critical",
-      },
-      readinessCategories: {
-        strongReadiness: "Strong Readiness",
-        monitorClosely: "Monitor Closely",
-        continuedCare: "Continued Care",
       },
       pagination: {
         previous: "Previous",
@@ -2493,19 +2488,14 @@ export const resources = {
         noSubcategories: "Sin subcategorias",
         predictedRiskBadge: "Nivel de Riesgo Previsto: {{level}}",
         noPredictionBadge: "Nivel de Riesgo Previsto: Sin predicción",
-        predictedReadinessBadge: "Preparación de Reintegración Prevista: {{category}} ({{score}}%)",
-        noReadinessPredictionBadge: "Preparación de Reintegración Prevista: Sin predicción",
+        predictedReadinessBadge: "Preparación: {{score}}%",
+        noReadinessPredictionBadge: "Preparación: N/D",
       },
       riskLevels: {
         low: "Bajo",
         medium: "Medio",
         high: "Alto",
         critical: "Crítico",
-      },
-      readinessCategories: {
-        strongReadiness: "Alta Preparación",
-        monitorClosely: "Monitorear de Cerca",
-        continuedCare: "Continuar Atención",
       },
       pagination: {
         previous: "Anterior",
