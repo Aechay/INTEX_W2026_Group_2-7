@@ -181,6 +181,31 @@ const translateDonationType = (t: (key: string) => string, value: string) => {
   return key ? t(key) : value;
 };
 
+const churnRiskBadgeClass = (risk: string | null) => {
+  if (!risk) {
+    return "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200";
+  }
+
+  const normalizedRisk = risk.trim().toLowerCase();
+  if (normalizedRisk === "critical") {
+    return "border-red-500/40 bg-red-500/20 text-red-900 dark:text-red-200";
+  }
+  if (normalizedRisk === "high") {
+    return "border-orange-500/40 bg-orange-500/20 text-orange-900 dark:text-orange-200";
+  }
+  if (normalizedRisk === "medium") {
+    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+  }
+  return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+};
+
+const churnRiskLabel = (risk: string | null, noPredictionLabel: string) => {
+  if (!risk) return noPredictionLabel;
+  const normalizedRisk = risk.trim();
+  if (!normalizedRisk) return noPredictionLabel;
+  return normalizedRisk.charAt(0).toUpperCase() + normalizedRisk.slice(1).toLowerCase();
+};
+
 const getImpactUnitForDonationType = (value: string) => {
   switch (value) {
     case "Monetary":
@@ -634,7 +659,11 @@ const Donations = () => {
                         </TableCell>
                         <TableCell>{donor.lastContribution}</TableCell>
                         <TableCell>{donor.totalValue}</TableCell>
-                        <TableCell>{donor.churnRisk ?? t("donorsContributions.common.noPrediction")}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={churnRiskBadgeClass(donor.churnRisk)}>
+                            {churnRiskLabel(donor.churnRisk, t("donorsContributions.common.noPrediction"))}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                       ))
                     )}
