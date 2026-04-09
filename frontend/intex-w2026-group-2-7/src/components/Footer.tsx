@@ -83,6 +83,7 @@ const Footer = () => {
             © {new Date().getFullYear()} {t('brand.name')}. {t('footer.rights')}
           </p>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher triggerClassName="h-9 w-[100px] bg-background/80" />
             <button
               onClick={toggleTheme}
               aria-label={isDark ? t('nav.lightMode') : t('nav.darkMode')}
@@ -95,7 +96,7 @@ const Footer = () => {
                 <Moon className="h-4 w-4" />
               )}
             </button>
-            <LanguageSwitcher triggerClassName="h-9 w-[100px] bg-background/80" />
+
             <Button
               asChild
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"

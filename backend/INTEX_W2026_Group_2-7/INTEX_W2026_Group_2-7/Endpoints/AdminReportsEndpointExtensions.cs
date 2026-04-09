@@ -11,19 +11,19 @@ public static class AdminReportsEndpointExtensions
     {
         endpoints.MapGet("/api/admin/reports/donation-trends", GetDonationTrendsAsync)
             .WithName("GetAdminReportsDonationTrends")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/resident-outcomes", GetResidentOutcomesAsync)
             .WithName("GetAdminReportsResidentOutcomes")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/safehouse-performance", GetSafehousePerformanceAsync)
             .WithName("GetAdminReportsSafehousePerformance")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/service-activity", GetServiceActivityAsync)
             .WithName("GetAdminReportsServiceActivity")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         return endpoints;
     }
@@ -46,35 +46,29 @@ public static class AdminReportsEndpointExtensions
             query = query.Where(d => d.DonationDate <= endDate.Value);
         }
 
-        var monthlyTotals = await query
+        var rawDonations = await query
+            .Select(d => new { d.DonationDate, d.EstimatedValue, d.DonationType, d.CampaignName })
+            .ToArrayAsync(cancellationToken);
+
+        var monthlyTotals = rawDonations
             .GroupBy(d => new { d.DonationDate.Year, d.DonationDate.Month })
-            .Select(g => new DonationMonthlyTotalDto(
-                g.Key.Year,
-                g.Key.Month,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationMonthlyTotalDto(g.Key.Year, g.Key.Month, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderBy(m => m.Year)
             .ThenBy(m => m.Month)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byType = await query
+        var byType = rawDonations
             .GroupBy(d => d.DonationType)
-            .Select(g => new DonationByTypeDto(
-                g.Key,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationByTypeDto(g.Key, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderByDescending(t => t.TotalEstimatedValue)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byCampaign = await query
-            .Where(d => d.CampaignName != null && d.CampaignName != string.Empty)
+        var byCampaign = rawDonations
+            .Where(d => !string.IsNullOrEmpty(d.CampaignName))
             .GroupBy(d => d.CampaignName!)
-            .Select(g => new DonationByCampaignDto(
-                g.Key,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationByCampaignDto(g.Key, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderByDescending(c => c.TotalEstimatedValue)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         return TypedResults.Ok(new DonationTrendsReportDto(monthlyTotals, byType, byCampaign));
     }
@@ -83,43 +77,53 @@ public static class AdminReportsEndpointExtensions
         OperationalDbContext dbContext,
         CancellationToken cancellationToken)
     {
-        var byCaseStatus = await dbContext.Residents
+        var rawResidents = await dbContext.Residents
             .AsNoTracking()
+            .Select(r => new { r.CaseStatus, r.CurrentRiskLevel, r.ReintegrationStatus })
+            .ToArrayAsync(cancellationToken);
+
+        var byCaseStatus = rawResidents
             .GroupBy(r => r.CaseStatus)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byRiskLevel = await dbContext.Residents
-            .AsNoTracking()
-            .Where(r => r.CurrentRiskLevel != string.Empty)
+        var byRiskLevel = rawResidents
+            .Where(r => !string.IsNullOrEmpty(r.CurrentRiskLevel))
             .GroupBy(r => r.CurrentRiskLevel)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byReintegrationStatus = await dbContext.Residents
-            .AsNoTracking()
-            .Where(r => r.ReintegrationStatus != null && r.ReintegrationStatus != string.Empty)
+        var byReintegrationStatus = rawResidents
+            .Where(r => !string.IsNullOrEmpty(r.ReintegrationStatus))
             .GroupBy(r => r.ReintegrationStatus!)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
+            .ToArray();
+
+        var educationValues = await dbContext.EducationRecords
+            .AsNoTracking()
+            .Select(e => (decimal?)e.ProgressPercent)
             .ToArrayAsync(cancellationToken);
+        var avgEducationProgress = educationValues.Length > 0
+            ? educationValues.Where(v => v.HasValue).Average(v => v!.Value)
+            : (decimal?)null;
 
-        var avgEducationProgress = await dbContext.EducationRecords
+        var healthValues = await dbContext.HealthWellbeingRecords
             .AsNoTracking()
-            .AverageAsync(e => (double?)e.ProgressPercent, cancellationToken);
-
-        var avgHealthScore = await dbContext.HealthWellbeingRecords
-            .AsNoTracking()
-            .AverageAsync(h => (double?)h.GeneralHealthScore, cancellationToken);
+            .Select(h => (decimal?)h.GeneralHealthScore)
+            .ToArrayAsync(cancellationToken);
+        var avgHealthScore = healthValues.Length > 0
+            ? healthValues.Where(v => v.HasValue).Average(v => v!.Value)
+            : (decimal?)null;
 
         return TypedResults.Ok(new ResidentOutcomesReportDto(
             byCaseStatus,
             byRiskLevel,
             byReintegrationStatus,
-            avgEducationProgress.HasValue ? (decimal)avgEducationProgress.Value : null,
-            avgHealthScore.HasValue ? (decimal)avgHealthScore.Value : null));
+            avgEducationProgress,
+            avgHealthScore));
     }
 
     private static async Task<Ok<SafehousePerformanceRowDto[]>> GetSafehousePerformanceAsync(
@@ -140,18 +144,34 @@ public static class AdminReportsEndpointExtensions
             metricsQuery = metricsQuery.Where(m => m.MonthEnd <= endDate.Value);
         }
 
-        var aggregated = await metricsQuery
+        var rawMetrics = await metricsQuery
+            .Select(m => new
+            {
+                m.SafehouseId,
+                m.AvgEducationProgress,
+                m.AvgHealthScore,
+                m.ProcessRecordingCount,
+                m.HomeVisitationCount,
+                m.IncidentCount
+            })
+            .ToArrayAsync(cancellationToken);
+
+        var aggregated = rawMetrics
             .GroupBy(m => m.SafehouseId)
             .Select(g => new
             {
                 SafehouseId = g.Key,
-                AvgEducationProgress = g.Average(m => m.AvgEducationProgress),
-                AvgHealthScore = g.Average(m => m.AvgHealthScore),
+                AvgEducationProgress = g.Any(m => m.AvgEducationProgress.HasValue)
+                    ? (decimal?)g.Where(m => m.AvgEducationProgress.HasValue).Average(m => m.AvgEducationProgress!.Value)
+                    : null,
+                AvgHealthScore = g.Any(m => m.AvgHealthScore.HasValue)
+                    ? (decimal?)g.Where(m => m.AvgHealthScore.HasValue).Average(m => m.AvgHealthScore!.Value)
+                    : null,
                 TotalProcessRecordings = g.Sum(m => m.ProcessRecordingCount),
                 TotalHomeVisitations = g.Sum(m => m.HomeVisitationCount),
                 TotalIncidents = g.Sum(m => m.IncidentCount)
             })
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         var safehouseNames = await dbContext.Safehouses
             .AsNoTracking()
@@ -197,23 +217,35 @@ public static class AdminReportsEndpointExtensions
             incidentReportsQuery = incidentReportsQuery.Where(i => i.IncidentDate <= endDate.Value);
         }
 
-        var processRecordingsByMonth = await processRecordingsQuery
-            .GroupBy(r => new { r.SessionDate.Year, r.SessionDate.Month })
-            .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
-            .OrderBy(m => m.Year).ThenBy(m => m.Month)
+        var rawProcessRecordings = await processRecordingsQuery
+            .Select(r => r.SessionDate)
             .ToArrayAsync(cancellationToken);
 
-        var homeVisitationsByMonth = await homeVisitationsQuery
-            .GroupBy(v => new { v.VisitDate.Year, v.VisitDate.Month })
+        var processRecordingsByMonth = rawProcessRecordings
+            .GroupBy(d => new { d.Year, d.Month })
             .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
             .OrderBy(m => m.Year).ThenBy(m => m.Month)
+            .ToArray();
+
+        var rawHomeVisitations = await homeVisitationsQuery
+            .Select(v => v.VisitDate)
             .ToArrayAsync(cancellationToken);
 
-        var incidentsByType = await incidentReportsQuery
-            .GroupBy(i => i.IncidentType)
+        var homeVisitationsByMonth = rawHomeVisitations
+            .GroupBy(d => new { d.Year, d.Month })
+            .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
+            .OrderBy(m => m.Year).ThenBy(m => m.Month)
+            .ToArray();
+
+        var rawIncidents = await incidentReportsQuery
+            .Select(i => i.IncidentType)
+            .ToArrayAsync(cancellationToken);
+
+        var incidentsByType = rawIncidents
+            .GroupBy(t => t)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         return TypedResults.Ok(new ServiceActivityReportDto(
             processRecordingsByMonth,
