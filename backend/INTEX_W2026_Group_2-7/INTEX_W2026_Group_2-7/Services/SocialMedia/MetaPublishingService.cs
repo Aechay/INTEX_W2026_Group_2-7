@@ -363,6 +363,7 @@ public sealed class MetaPublishingService : IMetaPublishingService
             FacebookGraphApiBaseUrl(),
             "me/accounts",
             providedToken,
+            Array.Empty<KeyValuePair<string, string>>(),
             cancellationToken);
 
         var pages = document.RootElement.GetProperty("data");
