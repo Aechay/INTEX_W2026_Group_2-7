@@ -48,7 +48,8 @@ SELECT
     CAST(resident.FamilyInformalSettler AS bit) AS family_informal_settler,
     resident.InitialRiskLevel AS initial_risk_level,
     resident.CurrentRiskLevel AS current_risk_level,
-    resident.ReintegrationStatus AS reintegration_status
+    resident.ReintegrationStatus AS reintegration_status,
+    resident.ReintegrationType AS reintegration_type
 FROM dbo.Residents AS resident;
 GO
 
@@ -82,7 +83,8 @@ SELECT
     education.ResidentId AS resident_id,
     education.RecordDate AS record_date,
     education.ProgressPercent AS progress_percent,
-    education.AttendanceRate AS attendance_rate
+    education.AttendanceRate AS attendance_rate,
+    education.CompletionStatus AS completion_status
 FROM dbo.EducationRecords AS education;
 GO
 
