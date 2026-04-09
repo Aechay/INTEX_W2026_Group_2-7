@@ -49,10 +49,6 @@ public sealed class MetaPublishingService : IMetaPublishingService
         var pageId = context.PageId;
         var accessToken = context.AccessToken;
 
-        // Safety check: Ensure we aren't using a User ID. 
-        // Posting to a User ID via /{id}/feed triggers the deprecated 'publish_actions' error.
-        await ValidateNotUserIdAsync(pageId, accessToken, cancellationToken);
-
         var mediaUrls = NormalizeMediaUrls(request.MediaUrls);
         var caption = BuildCaptionWithCallToAction(request.Caption, request.CallToActionUrl);
         var normalizedMediaType = request.MediaType.Trim().ToLowerInvariant();
@@ -357,34 +353,6 @@ public sealed class MetaPublishingService : IMetaPublishingService
     }
 
     private sealed record FacebookPageContext(string PageId, string AccessToken);
-
-    private async Task ValidateNotUserIdAsync(string id, string token, CancellationToken cancellationToken)
-    {
-        try
-        {
-            // Call /me to get the ID of the entity represented by the token
-            using var document = await SendGraphGetAsync(
-                FacebookGraphApiBaseUrl(),
-                "me",
-                token,
-                new[] { new KeyValuePair<string, string>("fields", "id") },
-                cancellationToken);
-
-            var meId = TryGetString(document.RootElement, "id");
-            if (id == meId)
-            {
-                // We are attempting to post to the User's own ID, which requires the deprecated publish_actions.
-                // This means the 'pageId' we resolved is actually a User ID.
-                throw new InvalidOperationException(
-                    $"Identity Conflict: The target ID '{id}' is recognized as a User ID, not a Page ID. Facebook Page posting requires a numeric Page ID (e.g., from your Page's About section). Ensure MetaPublishing__FacebookPageId is correct.");
-            }
-        }
-        catch (HttpRequestException)
-        {
-            // If /me fails, it might be a Page Token (which doesn't always support /me depending on version)
-            // We'll proceed and let the actual publish call fail if needed.
-        }
-    }
 
     private async Task<FacebookPageContext> ResolveFacebookPageContextAsync(
         string providedToken,
