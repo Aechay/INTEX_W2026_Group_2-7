@@ -171,3 +171,39 @@ class SqlDatabase:
             """,
             rows,
         )
+
+    def append_reintegration_readiness_predictions(
+        self,
+        connection: pyodbc.Connection,
+        *,
+        run_id: str,
+        model_version: str,
+        scored_at: datetime,
+        predictions: pd.DataFrame,
+    ) -> None:
+        rows = [
+            (
+                int(row.resident_id),
+                float(row.readiness_score),
+                str(row.readiness_category),
+                bool(row.predicted_ready),
+                model_version,
+                scored_at,
+                run_id,
+            )
+            for row in predictions.itertuples(index=False)
+        ]
+
+        if not rows:
+            return
+
+        cursor = connection.cursor()
+        cursor.fast_executemany = True
+        cursor.executemany(
+            """
+            INSERT INTO ReintegrationReadinessPredictions
+                (ResidentId, ReadinessScore, ReadinessCategory, PredictedReady, ModelVersion, ScoredAt, RunId)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )

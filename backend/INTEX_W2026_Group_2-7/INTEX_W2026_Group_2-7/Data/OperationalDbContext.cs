@@ -29,6 +29,7 @@ public class OperationalDbContext : DbContext
     public DbSet<MlModelRun> MlModelRuns => Set<MlModelRun>();
     public DbSet<DonorChurnPrediction> DonorChurnPredictions => Set<DonorChurnPrediction>();
     public DbSet<ResidentRiskPrediction> ResidentRiskPredictions => Set<ResidentRiskPrediction>();
+    public DbSet<ReintegrationReadinessPrediction> ReintegrationReadinessPredictions => Set<ReintegrationReadinessPrediction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -417,6 +418,24 @@ public class OperationalDbContext : DbContext
             entity.ToTable("ResidentRiskPredictions");
             entity.HasKey(prediction => new { prediction.RunId, prediction.ResidentId });
             entity.Property(prediction => prediction.PredictedRisk).HasMaxLength(16);
+            entity.Property(prediction => prediction.ModelVersion).HasMaxLength(100);
+            entity.HasIndex(prediction => prediction.ScoredAt);
+            entity.HasIndex(prediction => prediction.ResidentId);
+            entity.HasOne<MlModelRun>()
+                .WithMany()
+                .HasForeignKey(prediction => prediction.RunId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Resident>()
+                .WithMany()
+                .HasForeignKey(prediction => prediction.ResidentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ReintegrationReadinessPrediction>(entity =>
+        {
+            entity.ToTable("ReintegrationReadinessPredictions");
+            entity.HasKey(prediction => new { prediction.RunId, prediction.ResidentId });
+            entity.Property(prediction => prediction.ReadinessCategory).HasMaxLength(32);
             entity.Property(prediction => prediction.ModelVersion).HasMaxLength(100);
             entity.HasIndex(prediction => prediction.ScoredAt);
             entity.HasIndex(prediction => prediction.ResidentId);

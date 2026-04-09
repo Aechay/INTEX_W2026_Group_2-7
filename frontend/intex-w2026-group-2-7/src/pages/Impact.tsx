@@ -180,7 +180,7 @@ const Impact = () => {
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-6">
               <FadeInSection>
-                <Card className="shadow-sm">
+                <Card className="shadow-sm min-h-[320px]">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -189,7 +189,7 @@ const Impact = () => {
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground leading-relaxed">
                     {t("cards.outcomes.description")}
-                    <div className="mt-5 space-y-2">
+                    <div className="mt-5 pt-6 space-y-2">
                       {previewMetrics.outcomes.map((metric) => (
                         <div key={metric.label} className="flex items-center justify-between rounded-md bg-muted px-3 py-2">
                           <span>{metric.label}</span>
@@ -202,7 +202,7 @@ const Impact = () => {
               </FadeInSection>
 
               <FadeInSection delayMs={120}>
-                <Card className="shadow-sm">
+                <Card className="shadow-sm min-h-[320px]">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="h-5 w-5 text-primary" />
@@ -224,7 +224,7 @@ const Impact = () => {
               </FadeInSection>
 
               <FadeInSection delayMs={240}>
-                <Card className="shadow-sm">
+                <Card className="shadow-sm min-h-[320px]">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Heart className="h-5 w-5 text-primary" />

@@ -10,6 +10,10 @@ import pandas as pd
 from .blob_store import BlobArtifactStore, publish_bundle_locally
 from .common import utcnow
 from .donor_churn import DonorChurnTrainingResult, train_donor_churn_model
+from .reintegration_readiness import (
+    ReintegrationReadinessTrainingResult,
+    train_reintegration_readiness_model,
+)
 from .resident_risk import ResidentRiskTrainingResult, train_resident_risk_model
 from .settings import RuntimeSettings, load_runtime_settings
 from .social_media import SocialMediaTrainingResult, train_social_media_model
@@ -20,6 +24,7 @@ from .sql import SqlDatabase
 class TrainingRunResult:
     donor_churn: DonorChurnTrainingResult
     resident_risk: ResidentRiskTrainingResult
+    reintegration_readiness: ReintegrationReadinessTrainingResult
     social_media: SocialMediaTrainingResult
 
 
@@ -71,10 +76,20 @@ def run_training(settings: RuntimeSettings | None = None) -> TrainingRunResult:
         frames["intervention_plans"],
     )
     social_media = train_social_media_model(frames["social_media_posts"])
+    reintegration_readiness = train_reintegration_readiness_model(
+        frames["residents"],
+        frames["process_recordings"],
+        frames["home_visitations"],
+        frames["education_records"],
+        frames["health_records"],
+        frames["incident_reports"],
+        frames["intervention_plans"],
+    )
 
     return TrainingRunResult(
         donor_churn=donor_churn,
         resident_risk=resident_risk,
+        reintegration_readiness=reintegration_readiness,
         social_media=social_media,
     )
 
@@ -91,12 +106,17 @@ def publish_training_run(
     if output_dir is not None:
         manifests["donor_churn"] = publish_bundle_locally(result.donor_churn.bundle, output_dir)
         manifests["resident_risk"] = publish_bundle_locally(result.resident_risk.bundle, output_dir)
+        manifests["reintegration_readiness"] = publish_bundle_locally(
+            result.reintegration_readiness.bundle,
+            output_dir,
+        )
         manifests["social_media"] = publish_bundle_locally(result.social_media.bundle, output_dir)
         return manifests
 
     store = BlobArtifactStore(runtime_settings.blob)
     manifests["donor_churn"] = store.publish_bundle(result.donor_churn.bundle)
     manifests["resident_risk"] = store.publish_bundle(result.resident_risk.bundle)
+    manifests["reintegration_readiness"] = store.publish_bundle(result.reintegration_readiness.bundle)
     manifests["social_media"] = store.publish_bundle(result.social_media.bundle)
     return manifests
 
@@ -110,6 +130,7 @@ def persist_batch_predictions(
     sql = SqlDatabase(runtime_settings.sql)
     donor_run_id = str(uuid4())
     resident_run_id = str(uuid4())
+    reintegration_run_id = str(uuid4())
     social_media_run_id = str(uuid4())
     run_started_at = utcnow()
     run_completed_at = utcnow()
@@ -118,6 +139,7 @@ def persist_batch_predictions(
         for training_result, artifact_key, run_id in [
             (result.donor_churn, "donor-churn", donor_run_id),
             (result.resident_risk, "resident-risk", resident_run_id),
+            (result.reintegration_readiness, "reintegration-readiness", reintegration_run_id),
             (result.social_media, "social-media", social_media_run_id),
         ]:
             sql.append_model_run(
@@ -145,4 +167,11 @@ def persist_batch_predictions(
             model_version=result.resident_risk.bundle.model_version,
             scored_at=run_completed_at,
             predictions=result.resident_risk.predictions,
+        )
+        sql.append_reintegration_readiness_predictions(
+            connection,
+            run_id=reintegration_run_id,
+            model_version=result.reintegration_readiness.bundle.model_version,
+            scored_at=run_completed_at,
+            predictions=result.reintegration_readiness.predictions,
         )

@@ -6,13 +6,11 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Megaphone,
   Plus,
   Save,
   Search,
-  Settings,
   UsersRound,
   X,
 } from "lucide-react";
@@ -87,6 +85,8 @@ type Resident = {
   notesRestricted: string | null;
   predictedRisk: string | null;
   predictedRiskNum: number | null;
+  predictedReintegrationReadiness: number | null;
+  predictedReintegrationCategory: string | null;
 };
 
 type CaseloadResponse = {
@@ -102,7 +102,15 @@ type CaseloadResponse = {
   };
 };
 
-type ResidentForm = Omit<Resident, "residentId" | "safehouseName" | "predictedRisk" | "predictedRiskNum">;
+type ResidentForm = Omit<
+  Resident,
+  | "residentId"
+  | "safehouseName"
+  | "predictedRisk"
+  | "predictedRiskNum"
+  | "predictedReintegrationReadiness"
+  | "predictedReintegrationCategory"
+>;
 type RiskLevel = "Low" | "Medium" | "High" | "Critical";
 const RISK_LEVEL_OPTIONS: RiskLevel[] = ["Low", "Medium", "High", "Critical"];
 
@@ -156,12 +164,23 @@ const predictedRiskBadgeClass = (risk: string) => {
     return "border-orange-500/40 bg-orange-500/20 text-orange-900 dark:text-orange-200";
   }
   if (normalizedRisk === "medium") {
-    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+    return "border-0 bg-amber-500/15 text-yellow-900 dark:text-amber-200";
   }
   return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
 };
 
 const noPredictionBadgeClass = "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200";
+
+const predictedReadinessBadgeClass = (category: string) => {
+  const normalized = category.trim().toLowerCase();
+  if (normalized === "strong readiness") {
+    return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+  }
+  if (normalized === "monitor closely") {
+    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+  }
+  return "border-red-500/40 bg-red-500/20 text-red-900 dark:text-red-200";
+};
 
 const predictedRiskTranslationKey = (risk: string) => {
   const normalizedRisk = risk.trim().toLowerCase();
@@ -365,12 +384,9 @@ const Caseload = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const caseloadQuery = useQuery({
@@ -496,7 +512,9 @@ const Caseload = () => {
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+      <Card className="rounded-none border border-border bg-card shadow-none">
+        <CardContent className="p-5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <div className="xl:col-span-2">
           <Label htmlFor="search">{t("filters.search")}</Label>
           <div className="relative mt-1">
@@ -508,7 +526,7 @@ const Caseload = () => {
                 setCurrentPage(1);
                 setSearch(event.target.value);
               }}
-              className="pl-9"
+              className="rounded-none pl-9"
               placeholder={t("filters.searchPlaceholder")}
             />
           </div>
@@ -516,7 +534,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseStatus")}</Label>
           <Select value={caseStatus} onValueChange={(value) => { setCurrentPage(1); setCaseStatus(value); }}>
-            <SelectTrigger className="mt-1" aria-label={t("filters.caseStatus")}>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.caseStatus")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -530,7 +548,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.safehouse")}</Label>
           <Select value={safehouseId} onValueChange={(value) => { setCurrentPage(1); setSafehouseId(value); }}>
-            <SelectTrigger className="mt-1" aria-label={t("filters.safehouse")}>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.safehouse")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -544,7 +562,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseCategory")}</Label>
           <Select value={caseCategory} onValueChange={(value) => { setCurrentPage(1); setCaseCategory(value); }}>
-            <SelectTrigger className="mt-1" aria-label={t("filters.caseCategory")}>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.caseCategory")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -564,10 +582,10 @@ const Caseload = () => {
               setAssignedSocialWorker(value);
             }}
           >
-            <SelectTrigger className="mt-1" aria-label={t("filters.socialWorker")}>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.socialWorker")}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-40">
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.assignedSocialWorkers ?? []).map((value) => (
                 <SelectItem key={value} value={value}>{value}</SelectItem>
@@ -575,7 +593,9 @@ const Caseload = () => {
             </SelectContent>
           </Select>
         </div>
-      </section>
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">{t("list.residentCount", { count: totalResidents })}</div>
@@ -588,7 +608,7 @@ const Caseload = () => {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[110px]" aria-label={t("list.perPage")}>
+            <SelectTrigger className="w-[110px] rounded-none" aria-label={t("list.perPage")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -608,7 +628,7 @@ const Caseload = () => {
           ))}
         </div>
       ) : caseloadQuery.isError ? (
-        <Card className="border-destructive/20">
+        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
           <CardContent className="flex items-start gap-3 p-5">
             <CircleAlert className="mt-0.5 h-5 w-5 text-destructive" />
             <div className="text-sm text-muted-foreground">
@@ -627,7 +647,7 @@ const Caseload = () => {
                 onClick={() => openResident(resident)}
                 className="text-left"
               >
-                <Card className="h-full transition-shadow hover:shadow-md">
+                <Card className="h-full rounded-none border border-border bg-card shadow-none transition-colors hover:border-primary/40">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">{getResidentDisplayName(resident)}</CardTitle>
                     <p className="text-xs text-muted-foreground">
@@ -635,10 +655,10 @@ const Caseload = () => {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline">{resident.caseStatus || t("cards.noStatus")}</Badge>
-                      <Badge variant="secondary">{resident.safehouseName}</Badge>
+                      <Badge variant="outline" className="bg-muted text-muted-foreground">{resident.safehouseName}</Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="relative space-y-3 pb-12 text-sm">
+                  <CardContent className="relative space-y-3 pb-20 text-sm">
                     <div className="text-muted-foreground">
                       {resident.sex} • {dateInputValue(resident.dateOfBirth) || t("cards.dobNotSet")}
                     </div>
@@ -650,19 +670,35 @@ const Caseload = () => {
                         {subcategories.length > 0 ? subcategories.join(", ") : t("cards.noSubcategories")}
                       </div>
                     </div>
-                    <Badge
-                      className={`absolute bottom-4 right-4 border ${
-                        resident.predictedRisk
-                          ? predictedRiskBadgeClass(resident.predictedRisk)
-                          : noPredictionBadgeClass
-                      }`}
-                    >
-                      {resident.predictedRisk
-                        ? t("cards.predictedRiskBadge", {
-                            level: t(predictedRiskTranslationKey(resident.predictedRisk)),
-                          })
-                        : t("cards.noPredictionBadge")}
-                    </Badge>
+                    <div className="absolute bottom-4 right-4 flex flex-col items-end gap-2">
+                      <Badge
+                        className={`border ${
+                          resident.predictedRisk
+                            ? predictedRiskBadgeClass(resident.predictedRisk)
+                            : noPredictionBadgeClass
+                        }`}
+                      >
+                        {resident.predictedRisk
+                          ? t("cards.predictedRiskBadge", {
+                              level: t(predictedRiskTranslationKey(resident.predictedRisk)),
+                            })
+                          : t("cards.noPredictionBadge")}
+                      </Badge>
+                      <Badge
+                        className={`border ${
+                          resident.predictedReintegrationCategory
+                            ? predictedReadinessBadgeClass(resident.predictedReintegrationCategory)
+                            : noPredictionBadgeClass
+                        } text-[11px]`}
+                      >
+                        {resident.predictedReintegrationCategory &&
+                        resident.predictedReintegrationReadiness !== null
+                          ? t("cards.predictedReadinessBadge", {
+                              score: Math.round(resident.predictedReintegrationReadiness * 100),
+                            })
+                          : t("cards.noReadinessPredictionBadge")}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               </button>

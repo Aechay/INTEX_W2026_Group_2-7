@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, ShieldCheck, ShieldOff } from "lucide-react";
-import QRCode from "qrcode";
+import QRCode from "react-qr-code";
 import { useTranslation } from "react-i18next";
 import {
   getErrorMessage,
@@ -124,13 +124,8 @@ const Security = () => {
     setIsLoadingSetup(true);
     try {
       const setup = await auth.authenticatedJson<TotpSetup>("/auth/security/mfa/setup");
-      const qrDataUrl = await QRCode.toDataURL(setup.otpAuthUri, {
-        errorCorrectionLevel: "M",
-        margin: 1,
-        width: 220,
-      });
       setTotpSetup(setup);
-      setTotpQrUrl(qrDataUrl);
+      setTotpQrUrl(setup.otpAuthUri);
     } catch (error) {
       setMfaError(getErrorMessage(error, t("errors.mfaSetupFailed")));
     } finally {
@@ -312,11 +307,9 @@ const Security = () => {
                         <div className="rounded-md border border-border/60 p-4">
                           <p className="text-sm font-medium text-foreground">{t("mfa.scanQr")}</p>
                           {totpQrUrl ? (
-                            <img
-                              src={totpQrUrl}
-                              alt={t("mfa.qrAlt")}
-                              className="mt-3 h-[220px] w-[220px] rounded border border-border/60"
-                            />
+                            <div className="mt-3 h-[220px] w-[220px] rounded border border-border/60 flex items-center justify-center">
+                              <QRCode value={totpQrUrl} size={200} />
+                            </div>
                           ) : null}
                         </div>
 

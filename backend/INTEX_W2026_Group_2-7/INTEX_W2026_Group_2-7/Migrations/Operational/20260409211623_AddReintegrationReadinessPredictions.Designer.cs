@@ -4,6 +4,7 @@ using INTEX_W2026_Group_2_7.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace INTEX_W2026_Group_2_7.Migrations.Operational
 {
     [DbContext(typeof(OperationalDbContext))]
-    partial class OperationalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409211623_AddReintegrationReadinessPredictions")]
+    partial class AddReintegrationReadinessPredictions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

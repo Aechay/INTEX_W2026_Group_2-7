@@ -119,6 +119,23 @@ public static class AdminCaseloadEndpointExtensions
                 .ToDictionaryAsync(prediction => prediction.ResidentId, cancellationToken);
         }
 
+        var latestReadinessScoredAt = await dbContext.ReintegrationReadinessPredictions
+            .MaxAsync(prediction => (DateTimeOffset?)prediction.ScoredAt, cancellationToken);
+
+        Dictionary<int, ReintegrationReadinessPrediction> readinessPredictionByResidentId = new();
+        if (latestReadinessScoredAt is not null)
+        {
+            readinessPredictionByResidentId = await dbContext.ReintegrationReadinessPredictions
+                .AsNoTracking()
+                .Where(prediction => prediction.ScoredAt == latestReadinessScoredAt)
+                .GroupBy(prediction => prediction.ResidentId)
+                .Select(group => group
+                    .OrderByDescending(prediction => prediction.ReadinessScore)
+                    .ThenByDescending(prediction => prediction.ScoredAt)
+                    .First())
+                .ToDictionaryAsync(prediction => prediction.ResidentId, cancellationToken);
+        }
+
         var residentRows = await residentQuery
             .OrderByDescending(r => r.resident.DateOfAdmission)
             .ThenBy(r => r.resident.InternalCode)
@@ -188,6 +205,19 @@ public static class AdminCaseloadEndpointExtensions
                 {
                     PredictedRisk = prediction.PredictedRisk,
                     PredictedRiskNum = prediction.PredictedRiskNum
+                };
+            })
+            .Select(row =>
+            {
+                if (!readinessPredictionByResidentId.TryGetValue(row.ResidentId, out var prediction))
+                {
+                    return row;
+                }
+
+                return row with
+                {
+                    PredictedReintegrationReadiness = prediction.ReadinessScore,
+                    PredictedReintegrationCategory = prediction.ReadinessCategory
                 };
             })
             .OrderBy(row => row.PredictedRiskNum.HasValue ? 1 : 0)
@@ -539,7 +569,9 @@ public sealed record ResidentCardDto(
     DateTime? DateClosed,
     string? NotesRestricted,
     string? PredictedRisk = null,
-    int? PredictedRiskNum = null);
+    int? PredictedRiskNum = null,
+    double? PredictedReintegrationReadiness = null,
+    string? PredictedReintegrationCategory = null);
 
 public sealed record ResidentUpsertRequest(
     string? CaseControlNo,
