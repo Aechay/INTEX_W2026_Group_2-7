@@ -103,14 +103,8 @@ public sealed class FileSystemSocialMediaAssetStorage : ISocialMediaAssetStorage
 
     private string EnsureStorageDirectory()
     {
-        var webRootPath = _environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
-            _environment.WebRootPath = webRootPath;
-        }
-
-        var storageDirectory = Path.Combine(webRootPath, RelativeDirectory.Replace('/', Path.DirectorySeparatorChar));
+        // Use ContentRootPath/wwwroot/social-media-assets/temp to be consistent with the explicit StaticFileProvider mapping in Program.cs
+        var storageDirectory = Path.Combine(_environment.ContentRootPath, "wwwroot", RelativeDirectory.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(storageDirectory);
         return storageDirectory;
     }
