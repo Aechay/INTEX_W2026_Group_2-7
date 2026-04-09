@@ -9,6 +9,7 @@ namespace INTEX_W2026_Group_2_7.Endpoints;
 public static class AdminDashboardEndpointExtensions
 {
     private const int RecentDonationWindowDays = 90;
+    private const int RecentIncidentWindowDays = 30;
 
     public static IEndpointRouteBuilder MapAdminDashboardEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -26,6 +27,7 @@ public static class AdminDashboardEndpointExtensions
     {
         var today = DateTime.UtcNow.Date;
         var recentDonationStart = today.AddDays(-(RecentDonationWindowDays - 1));
+        var recentIncidentStart = today.AddDays(-(RecentIncidentWindowDays - 1));
 
         var safehouseRows = await dbContext.Safehouses
             .AsNoTracking()
@@ -62,8 +64,8 @@ public static class AdminDashboardEndpointExtensions
                     utilizationRate,
                     availableBeds);
             })
-            .OrderByDescending(safehouse => safehouse.UtilizationRate)
-            .ThenBy(safehouse => safehouse.Name)
+            .OrderBy(safehouse => safehouse.Name)
+            .ThenBy(safehouse => safehouse.SafehouseId)
             .ToArray();
 
         var progressTrendRows = await dbContext.SafehouseMonthlyMetrics
@@ -103,6 +105,7 @@ public static class AdminDashboardEndpointExtensions
                 {
                     donation.DonationId,
                     SupporterName = supporter.DisplayName,
+                    SupporterEmail = supporter.Email,
                     donation.DonationType,
                     donation.ChannelSource,
                     donation.DonationDate,
@@ -118,12 +121,19 @@ public static class AdminDashboardEndpointExtensions
             .Select(donation => new DashboardRecentDonationResponse(
                 donation.DonationId,
                 donation.SupporterName,
+                donation.SupporterEmail,
                 donation.DonationType,
                 donation.ChannelSource,
                 donation.DonationDate,
                 decimal.Round(donation.EstimatedValue, 2),
                 donation.ImpactUnit))
             .ToArray();
+
+        var recentIncidentCount = await dbContext.IncidentReports
+            .AsNoTracking()
+            .CountAsync(
+                report => report.IncidentDate >= recentIncidentStart && report.IncidentDate <= today,
+                cancellationToken);
 
         var conferenceRows = await dbContext.InterventionPlans
             .AsNoTracking()
@@ -192,6 +202,7 @@ public static class AdminDashboardEndpointExtensions
                 safehouses.Length,
                 decimal.Round(recentDonationRows.Sum(donation => donation.EstimatedValue), 2),
                 recentDonationRows.Count,
+                recentIncidentCount,
                 upcomingConferenceRows.Count,
                 overdueConferenceRows.Count),
             new DashboardProgressSnapshotResponse(

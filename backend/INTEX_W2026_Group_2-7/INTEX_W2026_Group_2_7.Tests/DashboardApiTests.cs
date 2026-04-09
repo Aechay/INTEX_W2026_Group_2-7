@@ -181,6 +181,38 @@ public class DashboardApiTests
                     IncidentCount = 0
                 });
 
+            dbContext.IncidentReports.AddRange(
+                new IncidentReport
+                {
+                    IncidentId = 1,
+                    ResidentId = 1,
+                    SafehouseId = 1,
+                    IncidentDate = today.AddDays(-4),
+                    IncidentType = "Behavioral",
+                    Severity = "Moderate",
+                    Description = "Incident report in active 30-day window.",
+                    ResponseTaken = "Counseling",
+                    Resolved = true,
+                    ResolutionDate = today.AddDays(-3),
+                    ReportedBy = "SW-01",
+                    FollowUpRequired = false
+                },
+                new IncidentReport
+                {
+                    IncidentId = 2,
+                    ResidentId = 1,
+                    SafehouseId = 1,
+                    IncidentDate = today.AddDays(-35),
+                    IncidentType = "Safety",
+                    Severity = "Low",
+                    Description = "Incident report outside 30-day window.",
+                    ResponseTaken = "Documented",
+                    Resolved = true,
+                    ResolutionDate = today.AddDays(-34),
+                    ReportedBy = "SW-01",
+                    FollowUpRequired = false
+                });
+
             dbContext.InterventionPlans.AddRange(
                 new InterventionPlan
                 {
@@ -226,6 +258,7 @@ public class DashboardApiTests
         Assert.Equal(2, payload.Summary.ActiveSafehouses);
         Assert.Equal(1200m, payload.Summary.RecentDonationTotal);
         Assert.Equal(1, payload.Summary.RecentDonationCount);
+        Assert.Equal(1, payload.Summary.RecentIncidentCount);
         Assert.Equal(1, payload.Summary.UpcomingCaseConferenceCount);
         Assert.Equal(1, payload.Summary.OverdueCaseConferenceCount);
 
@@ -239,6 +272,7 @@ public class DashboardApiTests
         Assert.Equal(2, payload.Safehouses.Count);
         var donation = Assert.Single(payload.RecentDonations);
         Assert.Equal("Ana Rivera", donation.SupporterName);
+        Assert.Equal("ana@test.local", donation.SupporterEmail);
         Assert.Equal(1, payload.ConferenceQueue.UpcomingCount);
         Assert.Equal(1, payload.ConferenceQueue.OverdueCount);
         Assert.Single(payload.ConferenceQueue.Highlights);

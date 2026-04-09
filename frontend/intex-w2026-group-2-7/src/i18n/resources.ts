@@ -604,6 +604,11 @@ export const resources = {
           detail_one: "{{count}} gift in the last 90 days",
           detail_other: "{{count}} gifts in the last 90 days",
         },
+        recentIncidents: {
+          title: "Recent incidents",
+          detail_one: "{{count}} incident in the last 30 days",
+          detail_other: "{{count}} incidents in the last 30 days",
+        },
         upcomingConferences: {
           title: "Upcoming conferences",
           detailOverdue: "{{count}} need rescheduling",
@@ -656,6 +661,13 @@ export const resources = {
         totalBadge: "{{count}} total",
         empty: "No recent donations are available for this reporting window.",
         via: "{{type}} via {{channel}}",
+        sendThankYou: "Send thank you",
+        emailUnavailable: "No donor email",
+        thankYou: {
+          subject: "Thank you, {{name}}",
+          body:
+            "Hi {{name}},\n\nThank you for your recent {{donationType}} contribution on {{donationDate}}.\n\nYour support of {{value}} {{impactUnit}} helps Hope Shelter continue serving girls and families who need safety and care.\n\nWith gratitude,\nHope Shelter Team",
+        },
       },
     },
     login: {
@@ -1859,6 +1871,11 @@ export const resources = {
           detail_one: "{{count}} donacion en los ultimos 90 dias",
           detail_other: "{{count}} donaciones en los ultimos 90 dias",
         },
+        recentIncidents: {
+          title: "Incidentes recientes",
+          detail_one: "{{count}} incidente en los ultimos 30 dias",
+          detail_other: "{{count}} incidentes en los ultimos 30 dias",
+        },
         upcomingConferences: {
           title: "Conferencias proximas",
           detailOverdue: "{{count}} requieren reprogramacion",
@@ -1912,6 +1929,13 @@ export const resources = {
         totalBadge: "{{count}} total",
         empty: "No hay donaciones recientes disponibles para este periodo.",
         via: "{{type}} via {{channel}}",
+        sendThankYou: "Enviar agradecimiento",
+        emailUnavailable: "Sin correo del donante",
+        thankYou: {
+          subject: "Gracias, {{name}}",
+          body:
+            "Hola {{name}},\n\nGracias por tu contribucion reciente de tipo {{donationType}} via {{channel}} el {{donationDate}}.\n\nTu apoyo de {{value}} {{impactUnit}} ayuda a Hope Shelter a seguir atendiendo a ninas y familias que necesitan seguridad y cuidado.\n\nCon gratitud,\nEquipo de Hope Shelter",
+        },
       },
     },
     login: {
