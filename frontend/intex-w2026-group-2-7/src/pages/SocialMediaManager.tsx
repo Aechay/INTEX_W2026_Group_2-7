@@ -6,6 +6,7 @@ import {
   ArrowUp,
   CalendarClock,
   CheckCircle2,
+  ClipboardList,
   CircleAlert,
   CloudUpload,
   ExternalLink,
@@ -392,18 +393,22 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
   const [composerFeedback, setComposerFeedback] = useState<ComposerFeedback | null>(null);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
-  const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
+  const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
   const socialMediaComposerPath = withPathLanguage("/dashboard/social-media/new", i18n.resolvedLanguage);
 
   const navigationItems: AdminNavItem[] = [
     { label: dashboardT("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
-    { label: dashboardT("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: dashboardT("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath, active: true },
+    { label: dashboardT("sidebar.residents"), icon: UsersRound, to: caseloadPath },
+    { label: dashboardT("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
+    { label: dashboardT("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
     { label: dashboardT("sidebar.donations"), icon: HeartHandshake, disabled: true },
-    { label: dashboardT("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: dashboardT("sidebar.safehouses"), icon: Home, disabled: true },
-    { label: dashboardT("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: dashboardT("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: dashboardT("sidebar.settings"), icon: Settings, disabled: true },
   ];
 

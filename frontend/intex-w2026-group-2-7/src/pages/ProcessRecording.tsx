@@ -8,6 +8,7 @@ import {
   HeartHandshake,
   Home,
   LayoutDashboard,
+  Megaphone,
   Pencil,
   Plus,
   Settings,
@@ -151,6 +152,7 @@ const ProcessRecording = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
+  const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
   const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
@@ -158,6 +160,7 @@ const ProcessRecording = () => {
 
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
+    { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath, active: true },
     { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
