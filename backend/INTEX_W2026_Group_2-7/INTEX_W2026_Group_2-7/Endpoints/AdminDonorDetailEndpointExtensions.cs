@@ -25,7 +25,22 @@ public static class AdminDonorDetailEndpointExtensions
         var supporter = await dbContext.Supporters
             .AsNoTracking()
             .Where(row => row.SupporterId == supporterId)
-            .Select(row => new { row.SupporterId, row.DisplayName })
+            .Select(row => new
+            {
+                row.SupporterId,
+                row.DisplayName,
+                row.SupporterType,
+                row.OrganizationName,
+                row.FirstName,
+                row.LastName,
+                row.RelationshipType,
+                row.Region,
+                row.Country,
+                row.Email,
+                row.Phone,
+                row.Status,
+                row.AcquisitionChannel
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (supporter is null)
@@ -59,6 +74,17 @@ public static class AdminDonorDetailEndpointExtensions
         return TypedResults.Ok(new AdminDonorDetailResponse(
             supporter.SupporterId,
             supporter.DisplayName,
+            supporter.SupporterType,
+            supporter.OrganizationName,
+            supporter.FirstName,
+            supporter.LastName,
+            supporter.RelationshipType,
+            supporter.Region,
+            supporter.Country,
+            supporter.Email,
+            supporter.Phone,
+            supporter.Status,
+            supporter.AcquisitionChannel,
             totalDonationCount,
             decimal.Round(totalByDonor, 2),
             decimal.Round(totalAll, 2),
@@ -68,6 +94,17 @@ public static class AdminDonorDetailEndpointExtensions
     private sealed record AdminDonorDetailResponse(
         int SupporterId,
         string DisplayName,
+        string SupporterType,
+        string? OrganizationName,
+        string? FirstName,
+        string? LastName,
+        string RelationshipType,
+        string Region,
+        string Country,
+        string Email,
+        string Phone,
+        string Status,
+        string AcquisitionChannel,
         int TotalDonationCount,
         decimal TotalByDonor,
         decimal TotalAllDonations,
