@@ -60,13 +60,9 @@ const Index = () => {
               size="lg"
               className="bg-secondary hover:bg-secondary/90 text-secondary-foreground text-lg px-8"
             >
-              <a
-                href="https://donate.hopeshelter.org"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link to={withPathLanguage("/donate", i18n.resolvedLanguage)}>
                 <Heart className="mr-2 h-5 w-5" /> {t("hero.secondaryAction")}
-              </a>
+              </Link>
             </Button>
             <Button
               asChild
