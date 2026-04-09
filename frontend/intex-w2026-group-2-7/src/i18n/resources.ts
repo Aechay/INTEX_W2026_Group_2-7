@@ -584,6 +584,8 @@ export const resources = {
       filters: {
         resident: "Resident",
         allResidents: "All Residents",
+        socialWorker: "Social Worker",
+        allSocialWorkers: "All Social Workers",
       },
       table: {
         sessionDate: "Session Date",
@@ -1355,6 +1357,8 @@ export const resources = {
       filters: {
         resident: "Residente",
         allResidents: "Todas las residentes",
+        socialWorker: "Trabajadora social",
+        allSocialWorkers: "Todas las trabajadoras sociales",
       },
       table: {
         sessionDate: "Fecha de sesion",

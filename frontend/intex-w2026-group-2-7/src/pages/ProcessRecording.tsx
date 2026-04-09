@@ -50,6 +50,27 @@ type ResidentOption = {
   residentId: number;
   internalCode: string;
   caseControlNo: string;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+type ProcessRecordingDetail = {
+  recordingId: number;
+  residentId: number;
+  residentDisplayName: string;
+  sessionDate: string;
+  socialWorker: string;
+  sessionType: string;
+  sessionDurationMinutes: number;
+  emotionalStateObserved: string;
+  emotionalStateEnd: string;
+  sessionNarrative: string;
+  interventionsApplied: string;
+  followUpActions: string;
+  progressNoted: boolean;
+  concernsFlagged: boolean;
+  referralMade: boolean;
+  notesRestricted: string | null;
 };
 
 type ProcessRecordingCard = {
@@ -144,6 +165,7 @@ const ProcessRecording = () => {
   const queryClient = useQueryClient();
   const [signOutPending, setSignOutPending] = useState(false);
   const [residentFilter, setResidentFilter] = useState("all");
+  const [socialWorkerFilter, setSocialWorkerFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -177,11 +199,20 @@ const ProcessRecording = () => {
     select: (data) => data.residents,
   });
 
+  const socialWorkersQuery = useQuery({
+    queryKey: ["admin-process-recording-social-workers"],
+    queryFn: () =>
+      auth.authenticatedJson<string[]>("/api/admin/process-recordings/social-workers"),
+  });
+
   const recordingsQuery = useQuery({
-    queryKey: ["admin-process-recordings", residentFilter],
+    queryKey: ["admin-process-recordings", residentFilter, socialWorkerFilter],
     queryFn: () => {
-      const params = residentFilter !== "all" ? `?residentId=${residentFilter}` : "";
-      return auth.authenticatedJson<ProcessRecordingCard[]>(`/api/admin/process-recordings${params}`);
+      const params = new URLSearchParams();
+      if (residentFilter !== "all") params.set("residentId", residentFilter);
+      if (socialWorkerFilter !== "all") params.set("socialWorker", socialWorkerFilter);
+      const qs = params.toString();
+      return auth.authenticatedJson<ProcessRecordingCard[]>(`/api/admin/process-recordings${qs ? `?${qs}` : ""}`);
     },
   });
 
@@ -195,12 +226,12 @@ const ProcessRecording = () => {
       if (id) {
         return auth.authenticatedJson<ProcessRecordingCard>(`/api/admin/process-recordings/${id}`, {
           method: "PUT",
-          body: JSON.stringify(payload),
+          body: payload,
         });
       }
       return auth.authenticatedJson<ProcessRecordingCard>("/api/admin/process-recordings", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: payload,
       });
     },
     onSuccess: () => {
@@ -238,7 +269,7 @@ const ProcessRecording = () => {
     setDialogOpen(true);
   };
 
-  const openEdit = (recording: ProcessRecordingCard) => {
+  const openEdit = async (recording: ProcessRecordingCard) => {
     setEditingId(recording.recordingId);
     setSaveError(null);
     setForm({
@@ -258,6 +289,21 @@ const ProcessRecording = () => {
       notesRestricted: "",
     });
     setDialogOpen(true);
+    try {
+      const detail = await auth.authenticatedJson<ProcessRecordingDetail>(
+        `/api/admin/process-recordings/${recording.recordingId}`,
+      );
+      setForm((f) => ({
+        ...f,
+        sessionDurationMinutes: detail.sessionDurationMinutes,
+        sessionNarrative: detail.sessionNarrative,
+        interventionsApplied: detail.interventionsApplied,
+        followUpActions: detail.followUpActions,
+        notesRestricted: detail.notesRestricted ?? "",
+      }));
+    } catch {
+      // Non-critical: basic fields already populated from card data
+    }
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -325,7 +371,31 @@ const ProcessRecording = () => {
                   <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
                   {(residentsQuery.data ?? []).map((r) => (
                     <SelectItem key={r.residentId} value={String(r.residentId)}>
-                      {r.internalCode} — {r.caseControlNo}
+                      {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                {t("filters.socialWorker")}
+              </Label>
+              <Select
+                value={socialWorkerFilter}
+                onValueChange={(value) => {
+                  setSocialWorkerFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue placeholder={t("filters.allSocialWorkers")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.allSocialWorkers")}</SelectItem>
+                  {(socialWorkersQuery.data ?? []).map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -504,7 +574,7 @@ const ProcessRecording = () => {
                   <SelectContent>
                     {(residentsQuery.data ?? []).map((r) => (
                       <SelectItem key={r.residentId} value={String(r.residentId)}>
-                        {r.internalCode} — {r.caseControlNo}
+                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
                       </SelectItem>
                     ))}
                   </SelectContent>

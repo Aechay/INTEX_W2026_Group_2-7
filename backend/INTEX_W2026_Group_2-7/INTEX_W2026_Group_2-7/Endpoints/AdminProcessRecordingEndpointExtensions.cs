@@ -13,6 +13,10 @@ public static class AdminProcessRecordingEndpointExtensions
             .WithName("GetAdminProcessRecordings")
             .RequireAuthorization(AppPolicies.AdminOnly);
 
+        endpoints.MapGet("/api/admin/process-recordings/social-workers", GetDistinctSocialWorkersAsync)
+            .WithName("GetAdminProcessRecordingSocialWorkers")
+            .RequireAuthorization(AppPolicies.AdminOnly);
+
         endpoints.MapGet("/api/admin/process-recordings/{id:int}", GetProcessRecordingAsync)
             .WithName("GetAdminProcessRecording")
             .RequireAuthorization(AppPolicies.AdminOnly);
@@ -32,9 +36,25 @@ public static class AdminProcessRecordingEndpointExtensions
         return endpoints;
     }
 
+    private static async Task<Ok<string[]>> GetDistinctSocialWorkersAsync(
+        OperationalDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var workers = await dbContext.ProcessRecordings
+            .AsNoTracking()
+            .Select(r => r.SocialWorker)
+            .Where(s => s != null && s != "")
+            .Distinct()
+            .OrderBy(s => s)
+            .ToArrayAsync(cancellationToken);
+
+        return TypedResults.Ok(workers);
+    }
+
     private static async Task<Ok<ProcessRecordingCardDto[]>> GetProcessRecordingsAsync(
         OperationalDbContext dbContext,
         int? residentId,
+        string? socialWorker,
         CancellationToken cancellationToken)
     {
         var query = dbContext.ProcessRecordings
@@ -50,12 +70,17 @@ public static class AdminProcessRecordingEndpointExtensions
             query = query.Where(r => r.recording.ResidentId == residentId.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(socialWorker))
+        {
+            query = query.Where(r => r.recording.SocialWorker == socialWorker);
+        }
+
         var results = await query
             .OrderByDescending(r => r.recording.SessionDate)
             .Select(r => new ProcessRecordingCardDto(
                 r.recording.RecordingId,
                 r.recording.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.recording.SessionDate,
                 r.recording.SocialWorker,
                 r.recording.SessionType,
@@ -85,7 +110,7 @@ public static class AdminProcessRecordingEndpointExtensions
             .Select(r => new ProcessRecordingDetailDto(
                 r.recording.RecordingId,
                 r.recording.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.recording.SessionDate,
                 r.recording.SocialWorker,
                 r.recording.SessionType,
@@ -158,11 +183,13 @@ public static class AdminProcessRecordingEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == recording.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Created(
@@ -212,11 +239,13 @@ public static class AdminProcessRecordingEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == recording.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Ok(ToCardDto(recording, displayName));
