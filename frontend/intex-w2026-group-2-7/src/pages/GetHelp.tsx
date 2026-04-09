@@ -25,20 +25,20 @@ const GetHelp = () => {
   const emergencyContacts = [
     {
       label: "911",
-      title: "Emergency Services",
-      subtitle: "Police / Ambulance",
+      title: t("emergencyContacts.emergencyServices.title"),
+      subtitle: t("emergencyContacts.emergencyServices.subtitle"),
       href: "tel:911",
     },
     {
       label: "+1 (809) 200-2020",
-      title: "Hope Shelter Hotline",
-      subtitle: "24/7 Crisis Support",
+      title: t("emergencyContacts.hopeHotline.title"),
+      subtitle: t("emergencyContacts.hopeHotline.subtitle"),
       href: "tel:+18092002020",
     },
     {
       label: "+1 (809) 200-NINA",
-      title: "National Child Helpline",
-      subtitle: "CONANI Dominican Republic",
+      title: t("emergencyContacts.childHelpline.title"),
+      subtitle: t("emergencyContacts.childHelpline.subtitle"),
       href: "tel:+18092006462",
     },
   ];
@@ -94,22 +94,21 @@ const GetHelp = () => {
           <div className="relative z-10 container mx-auto px-4 py-16 text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-semibold backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-secondary" />
-              You Are Not Alone
+              {t("heroBanner.badge")}
+            </div>
+            <h1 className="mt-6 text-4xl md:text-5xl font-semibold tracking-tight">
+              {t("heroBanner.title")}
+            </h1>
+            <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-primary-foreground/90 leading-relaxed">
+              {t("heroBanner.description")}
+            </p>
           </div>
-          <h1 className="mt-6 text-4xl md:text-5xl font-semibold tracking-tight">
-            We Are Here to Help
-          </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-primary-foreground/90 leading-relaxed">
-            If you are in danger or have been hurt, please reach out. Everything you share is
-            confidential and safe.
-          </p>
-        </div>
         </div>
 
         <div className="bg-background text-foreground">
           <div className="container mx-auto px-4 py-16 min-h-[42vh] flex flex-col justify-center">
             <h2 className="text-center text-2xl md:text-3xl font-semibold text-foreground">
-              Emergency Contacts
+              {t("emergencyContacts.title")}
             </h2>
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {emergencyContacts.map((contact) => (
