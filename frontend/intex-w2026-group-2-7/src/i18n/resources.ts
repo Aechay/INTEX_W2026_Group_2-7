@@ -493,7 +493,8 @@ export const resources = {
         dobNotSet: "DOB not set",
         noCategory: "No category",
         noSubcategories: "No sub-categories",
-        predictedRiskLabel: "Predicted",
+        predictedRiskBadge: "Predicted Risk Level: {{level}}",
+        noPredictionBadge: "Predicted Risk Level: No prediction",
       },
       riskLevels: {
         low: "Low",
@@ -1275,7 +1276,8 @@ export const resources = {
         dobNotSet: "Fecha de nacimiento no definida",
         noCategory: "Sin categoria",
         noSubcategories: "Sin subcategorias",
-        predictedRiskLabel: "Predicción",
+        predictedRiskBadge: "Nivel de Riesgo Previsto: {{level}}",
+        noPredictionBadge: "Nivel de Riesgo Previsto: Sin predicción",
       },
       riskLevels: {
         low: "Bajo",

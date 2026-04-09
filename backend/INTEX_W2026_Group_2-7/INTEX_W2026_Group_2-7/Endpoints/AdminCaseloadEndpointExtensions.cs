@@ -190,6 +190,10 @@ public static class AdminCaseloadEndpointExtensions
                     PredictedRiskNum = prediction.PredictedRiskNum
                 };
             })
+            .OrderBy(row => row.PredictedRiskNum.HasValue ? 1 : 0)
+            .ThenByDescending(row => row.PredictedRiskNum ?? int.MinValue)
+            .ThenByDescending(row => row.DateOfAdmission)
+            .ThenBy(row => row.InternalCode)
             .ToArray();
 
         var filterOptions = new CaseloadFilterOptionsDto(
