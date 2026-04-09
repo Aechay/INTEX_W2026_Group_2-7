@@ -13,6 +13,10 @@ public static class AdminProcessRecordingEndpointExtensions
             .WithName("GetAdminProcessRecordings")
             .RequireAuthorization(AppPolicies.AdminOnly);
 
+        endpoints.MapGet("/api/admin/process-recordings/social-workers", GetDistinctSocialWorkersAsync)
+            .WithName("GetAdminProcessRecordingSocialWorkers")
+            .RequireAuthorization(AppPolicies.AdminOnly);
+
         endpoints.MapGet("/api/admin/process-recordings/{id:int}", GetProcessRecordingAsync)
             .WithName("GetAdminProcessRecording")
             .RequireAuthorization(AppPolicies.AdminOnly);
@@ -32,9 +36,25 @@ public static class AdminProcessRecordingEndpointExtensions
         return endpoints;
     }
 
+    private static async Task<Ok<string[]>> GetDistinctSocialWorkersAsync(
+        OperationalDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var workers = await dbContext.ProcessRecordings
+            .AsNoTracking()
+            .Select(r => r.SocialWorker)
+            .Where(s => s != null && s != "")
+            .Distinct()
+            .OrderBy(s => s)
+            .ToArrayAsync(cancellationToken);
+
+        return TypedResults.Ok(workers);
+    }
+
     private static async Task<Ok<ProcessRecordingCardDto[]>> GetProcessRecordingsAsync(
         OperationalDbContext dbContext,
         int? residentId,
+        string? socialWorker,
         CancellationToken cancellationToken)
     {
         var query = dbContext.ProcessRecordings
@@ -48,6 +68,11 @@ public static class AdminProcessRecordingEndpointExtensions
         if (residentId.HasValue)
         {
             query = query.Where(r => r.recording.ResidentId == residentId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(socialWorker))
+        {
+            query = query.Where(r => r.recording.SocialWorker == socialWorker);
         }
 
         var results = await query
