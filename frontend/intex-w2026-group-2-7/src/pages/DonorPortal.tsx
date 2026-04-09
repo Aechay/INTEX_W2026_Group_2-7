@@ -147,6 +147,54 @@ const DonorPortal = () => {
     [t, history?.totalDonated, donations.length, yearsSupporting],
   );
 
+  const donationTypeLabel = (value: string) => {
+    const labels: Record<string, string> = {
+      Monetary: t('labels.donationTypes.monetary'),
+      InKind: t('labels.donationTypes.inKind'),
+      'In-kind': t('labels.donationTypes.inKind'),
+      SocialMedia: t('labels.donationTypes.socialMedia'),
+      'Social Media': t('labels.donationTypes.socialMedia'),
+      Skills: t('labels.donationTypes.skills'),
+      Time: t('labels.donationTypes.time'),
+      Volunteer: t('labels.donationTypes.time'),
+    };
+    return labels[value] ?? value;
+  };
+
+  const channelLabel = (value: string) => {
+    const labels: Record<string, string> = {
+      Manual: t('labels.channels.manual'),
+      Online: t('labels.channels.online'),
+      Email: t('labels.channels.email'),
+      Phone: t('labels.channels.phone'),
+      Event: t('labels.channels.event'),
+      Referral: t('labels.channels.referral'),
+      SocialMedia: t('labels.channels.socialMedia'),
+      'Social Media': t('labels.channels.socialMedia'),
+    };
+    return labels[value] ?? value;
+  };
+
+  const programAreaLabel = (value: string) => {
+    const labels: Record<string, string> = {
+      wellbeing: t('labels.programAreas.wellbeing'),
+      operations: t('labels.programAreas.operations'),
+      transport: t('labels.programAreas.transport'),
+      education: t('labels.programAreas.education'),
+    };
+    return labels[value.toLowerCase()] ?? value;
+  };
+
+  const safehouseLabel = (value: string) => {
+    const normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
+    const baseLabel = t('labels.safehouses.lighthouse');
+    if (normalized.startsWith("lighthouse safehouse")) {
+      const suffix = value.slice("lighthouse safehouse".length).trim();
+      return suffix ? `${baseLabel} ${suffix}` : baseLabel;
+    }
+    return value;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -230,7 +278,9 @@ const DonorPortal = () => {
                     <TableBody>
                       {allocationsByProgramArea.map((item) => (
                         <TableRow key={item.programArea}>
-                          <TableCell className="font-medium text-foreground">{item.programArea}</TableCell>
+                          <TableCell className="font-medium text-foreground">
+                            {programAreaLabel(item.programArea)}
+                          </TableCell>
                           <TableCell className="text-right tabular-nums text-foreground">
                             {formatDop(item.amount)}
                           </TableCell>
@@ -266,7 +316,10 @@ const DonorPortal = () => {
                           {dateFormatter.format(new Date(donation.donationDate))}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {t('history.via', { type: donation.donationType, channel: donation.channelSource })}
+                          {t('history.via', {
+                            type: donationTypeLabel(donation.donationType),
+                            channel: channelLabel(donation.channelSource),
+                          })}
                           {donation.campaignName ? ` — ${donation.campaignName}` : ''}
                         </p>
                       </div>
@@ -276,17 +329,17 @@ const DonorPortal = () => {
                     </div>
                     {donation.allocations.length > 0 && (
                       <div className="mt-3 space-y-1">
-                        {donation.allocations.map((allocation, index) => (
-                          <p key={`${donation.donationId}-${index}`} className="text-sm text-muted-foreground">
-                            {t('history.toSafehouse', {
-                              program: allocation.programArea,
-                              amount: formatDop(allocation.amountAllocated),
-                              safehouse: allocation.safehouseName,
-                              city: allocation.city,
-                              country: allocation.country,
-                            })}
-                          </p>
-                        ))}
+                    {donation.allocations.map((allocation, index) => (
+                      <p key={`${donation.donationId}-${index}`} className="text-sm text-muted-foreground">
+                        {t('history.toSafehouse', {
+                          program: programAreaLabel(allocation.programArea),
+                          amount: formatDop(allocation.amountAllocated),
+                          safehouse: safehouseLabel(allocation.safehouseName),
+                          city: allocation.city,
+                          country: allocation.country,
+                        })}
+                      </p>
+                    ))}
                       </div>
                     )}
                   </div>

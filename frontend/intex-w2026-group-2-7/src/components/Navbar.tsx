@@ -17,7 +17,7 @@ const Navbar = () => {
     { to: '/', label: t('nav.home') },
     { to: '/get-help', label: t('nav.getHelp') },
     { to: '/impact', label: t('nav.impact') },
-    { to: '/resources', label: 'Resources' },
+    { to: '/resources', label: t('nav.resources') },
     ...(auth.isAdmin
       ? [{ to: '/dashboard', label: t('nav.dashboard') }]
       : auth.isAuthenticated

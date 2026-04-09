@@ -411,6 +411,7 @@ const createDefaultNewPost = (): SocialMediaPostDetail => ({
 const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
   const auth = useAuth();
   const { i18n } = useTranslation("common");
+  const { t: socialT } = useTranslation("socialMedia");
   const { t: dashboardT } = useTranslation("dashboard");
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1478,21 +1479,29 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               <div className="font-medium">{wizard.platforms.join(", ")}</div>
                             </div>
                             <div className="space-y-1">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">Format</div>
+                              <div className="text-xs font-bold uppercase text-muted-foreground">
+                                {socialT("summary.format")}
+                              </div>
                               <div className="font-medium">{humanizeValue(wizard.postType)} / {humanizeValue(wizard.mediaType)}</div>
                             </div>
                             <div className="space-y-1">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">Topic</div>
+                              <div className="text-xs font-bold uppercase text-muted-foreground">
+                                {socialT("summary.topic")}
+                              </div>
                               <div className="font-medium">{humanizeValue(wizard.contentTopic)}</div>
                             </div>
                             <div className="space-y-1">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">Tone</div>
+                              <div className="text-xs font-bold uppercase text-muted-foreground">
+                                {socialT("summary.tone")}
+                              </div>
                               <div className="font-medium">{humanizeValue(wizard.sentimentTone)}</div>
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <div className="text-xs font-bold uppercase text-muted-foreground">Caption Preview</div>
+                            <div className="text-xs font-bold uppercase text-muted-foreground">
+                              {socialT("summary.captionPreview")}
+                            </div>
                             <div className="rounded-none border border-border bg-muted/20 p-4 text-sm whitespace-pre-wrap leading-relaxed">
                               {wizard.caption}
                             </div>
@@ -1506,7 +1515,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               disabled={predictionMutation.isPending}
                             >
                               <Sparkles className="mr-2 h-4 w-4" />
-                              {predictionMutation.isPending ? "Scoring..." : "Refresh Projection"}
+                              {predictionMutation.isPending
+                                ? socialT("actions.scoring")
+                                : socialT("actions.refreshProjection")}
                             </Button>
                             <Button
                               type="button"
@@ -1519,7 +1530,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               ) : (
                                 <Rocket className="mr-2 h-4 w-4" />
                               )}
-                              {publishMutation.isPending ? "Publishing..." : "Publish Now"}
+                              {publishMutation.isPending
+                                ? socialT("actions.publishing")
+                                : socialT("actions.publishNow")}
                             </Button>
                             <Button
                               type="button"
@@ -1529,7 +1542,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               disabled={recordMutation.isPending || wizard.platforms.length === 0}
                             >
                               <ClipboardList className="mr-2 h-4 w-4" />
-                              {recordMutation.isPending ? "Saving..." : "Save Record Only"}
+                              {recordMutation.isPending
+                                ? socialT("actions.saving")
+                                : socialT("actions.saveRecordOnly")}
                             </Button>
                           </div>
                         </CardContent>
@@ -1539,7 +1554,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                     <div className="space-y-5">
                       <Card className="rounded-none border border-border bg-background shadow-none">
                         <CardHeader className="border-b border-border bg-muted/10">
-                          <CardTitle className="text-lg">Donation Projection</CardTitle>
+                          <CardTitle className="text-lg">
+                            {socialT("projection.title")}
+                          </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-4">
                           {predictionMutation.data ? (
@@ -1548,12 +1565,12 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                                 {formatCurrency(predictionMutation.data.predictedDonationPhp)}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Predicted based on historical signals
+                                {socialT("projection.caption")}
                               </div>
                             </div>
                           ) : (
                             <div className="py-4 text-center text-sm text-muted-foreground">
-                              Run projection to see expected performance.
+                              {socialT("projection.empty")}
                             </div>
                           )}
                           
@@ -1581,7 +1598,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                       className="min-w-40 rounded-none mr-3"
                       onClick={() => moveStep(-1)}
                     >
-                      Back
+                      {socialT("actions.back")}
                     </Button>
                   </div>
                 </div>
@@ -1596,24 +1613,24 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
           <CardHeader className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <CardTitle className="text-xl">Post Library</CardTitle>
+                <CardTitle className="text-xl">{socialT("library.title")}</CardTitle>
                 <CardDescription>
-                  Paginated historical social posts ordered with the newest records first.
+                  {socialT("library.subtitle")}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild className="rounded-none">
                   <Link to={socialMediaComposerPath}>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Interactive Post Builder
+                    {socialT("library.interactiveBuilder")}
                   </Link>
                 </Button>
                 <Button variant="outline" className="rounded-none" onClick={openCreateDialog}>
                   <ClipboardList className="mr-2 h-4 w-4" />
-                  Record Other Post
+                  {socialT("library.recordOtherPost")}
                 </Button>
                 <Button type="button" variant="outline" className="rounded-none" onClick={() => void postsQuery.refetch()}>
-                  Refresh
+                  {socialT("actions.refresh")}
                 </Button>
               </div>
             </div>
@@ -1621,7 +1638,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_0.8fr_0.8fr_0.8fr_0.5fr]">
               <Input
                 className="rounded-none"
-                placeholder="Search caption, campaign, topic, or post id"
+                placeholder={socialT("filters.searchPlaceholder")}
                 value={search}
                 onChange={(event) => {
                   setSearch(event.target.value);
@@ -1636,10 +1653,10 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 }}
               >
                 <SelectTrigger className="rounded-none">
-                  <SelectValue placeholder="Platform" />
+                  <SelectValue placeholder={socialT("filters.platform")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All platforms</SelectItem>
+                  <SelectItem value="all">{socialT("filters.allPlatforms")}</SelectItem>
                   {filterOptions?.platforms.map((option) => (
                     <SelectItem key={option} value={option}>
                       {humanizeValue(option)}
@@ -1655,10 +1672,10 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 }}
               >
                 <SelectTrigger className="rounded-none">
-                  <SelectValue placeholder="Media type" />
+                  <SelectValue placeholder={socialT("filters.mediaType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All media</SelectItem>
+                  <SelectItem value="all">{socialT("filters.allMedia")}</SelectItem>
                   {filterOptions?.mediaTypes.map((option) => (
                     <SelectItem key={option} value={option}>
                       {humanizeValue(option)}
@@ -1674,10 +1691,10 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 }}
               >
                 <SelectTrigger className="rounded-none">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={socialT("filters.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="all">{socialT("filters.allStatuses")}</SelectItem>
                   {filterOptions?.publishStatuses.map((option) => (
                     <SelectItem key={option} value={option}>
                       {humanizeValue(option)}
@@ -1698,7 +1715,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 <SelectContent>
                   {["8", "12", "24"].map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option} / page
+                      {socialT("filters.perPage", { count: option })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1715,7 +1732,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
             ) : postsQuery.isError ? (
               <div className="flex items-start gap-3 rounded-none border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
                 <CircleAlert className="mt-0.5 h-5 w-5" />
-                <div>{getErrorMessage(postsQuery.error, "The social media library could not be loaded.")}</div>
+                <div>
+                  {getErrorMessage(postsQuery.error, socialT("library.loadError"))}
+                </div>
               </div>
             ) : (
               <>
@@ -1723,21 +1742,21 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Posted</TableHead>
-                        <TableHead>Platform</TableHead>
-                        <TableHead>Format</TableHead>
-                        <TableHead>Campaign</TableHead>
-                        <TableHead>Reach</TableHead>
-                        <TableHead>Donation Value</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{socialT("table.posted")}</TableHead>
+                        <TableHead>{socialT("table.platform")}</TableHead>
+                        <TableHead>{socialT("table.format")}</TableHead>
+                        <TableHead>{socialT("table.campaign")}</TableHead>
+                        <TableHead>{socialT("table.reach")}</TableHead>
+                        <TableHead>{socialT("table.donationValue")}</TableHead>
+                        <TableHead>{socialT("table.status")}</TableHead>
+                        <TableHead className="text-right">{socialT("table.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {posts.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                            No social posts match the current filters.
+                            {socialT("library.empty")}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -1749,7 +1768,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                             </TableCell>
                             <TableCell>
                               <div className="font-medium text-foreground">{post.platform}</div>
-                              <div className="text-xs text-muted-foreground">{post.platformPostId ?? "Local Record"}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {post.platformPostId ?? socialT("table.localRecord")}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="font-medium text-foreground">{humanizeValue(post.mediaType)}</div>

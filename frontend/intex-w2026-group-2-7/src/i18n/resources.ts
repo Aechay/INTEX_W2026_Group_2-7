@@ -18,6 +18,7 @@ export const resources = {
         signIn: "Sign In",
         signOut: "Sign Out",
         myDonations: "My Donations",
+        resources: "Resources",
       },
       language: {
         label: "Language",
@@ -103,6 +104,27 @@ export const resources = {
         prefix: "If you are in immediate danger, call",
         connector: "or",
       },
+      heroBanner: {
+        badge: "You Are Not Alone",
+        title: "We Are Here to Help",
+        description:
+          "If you are in danger or have been hurt, please reach out. Everything you share is confidential and safe.",
+      },
+      emergencyContacts: {
+        title: "Emergency Contacts",
+        emergencyServices: {
+          title: "Emergency Services",
+          subtitle: "Police / Ambulance",
+        },
+        hopeHotline: {
+          title: "Hope Shelter Hotline",
+          subtitle: "24/7 Crisis Support",
+        },
+        childHelpline: {
+          title: "National Child Helpline",
+          subtitle: "CONANI Dominican Republic",
+        },
+      },
       safetyNotice: {
         emphasis: "Your safety matters.",
         beforeQuickExit: "Use the",
@@ -159,6 +181,241 @@ export const resources = {
         },
       },
     },
+    resources: {
+      hero: {
+        title: "Resources & Safety",
+        description:
+          "You are not alone. This page shares trusted resources, information about sexual abuse, and simple ways to stay safe.",
+        imageAlt: "Ocean shoreline",
+      },
+      sections: {
+        resourceContactsTitle: "Resource Contacts",
+        faqTitle: "Frequently Asked Questions",
+        safetyTitle: "Simple ways to stay safe",
+      },
+      closing: "You are not alone. Help is available whenever you are ready.",
+      resourceLabel: "Resource:",
+      listLinkSeparator: "or",
+      resourceContacts: [
+        {
+          name: "Victim Support NGO",
+          phone: "+1 809-565-5151",
+          type: "24/7 Crisis Support",
+        },
+        {
+          name: "CONANI",
+          phone: "+1 (809) 567-2233",
+          type: "National Child Helpline",
+        },
+        {
+          name: "Hope Shelter Hotline",
+          phone: "+1 (809) 555-7890",
+          type: "Emergency Support",
+        },
+        {
+          name: "Legal Aid Support",
+          phone: "+1 (809) 555-3456",
+          type: "Legal Assistance",
+        },
+      ],
+      safetySteps: [
+        {
+          title: "Trust your feelings",
+          description:
+            "If something feels wrong or unsafe, it is okay to step away and get help.",
+        },
+        {
+          title: "Know safe adults",
+          description:
+            "Identify trusted adults you can talk to—family, teachers, counselors, or shelter staff.",
+        },
+        {
+          title: "Have a safety plan",
+          description:
+            "Plan a safe place to go and a way to contact someone you trust in an emergency.",
+        },
+      ],
+      faqSections: [
+        {
+          title: "Understanding Abuse",
+          items: [
+            {
+              question: "What is sexual abuse?",
+              paragraphs: [
+                "Sexual abuse is any sexual activity that happens without your clear, informed, and freely given consent. It includes acts where someone forces, pressures, manipulates, or coerces you into sexual activity. It also includes situations where you cannot consent, such as being underage, unconscious, asleep, or under the influence of drugs or alcohol.",
+                "Abuse can occur in many settings: within families, in romantic relationships, at work, at school, or in any situation where someone abuses a position of trust or authority. It is never your fault, regardless of the circumstances.",
+              ],
+              resource: {
+                label: "RAINN – What is sexual assault?",
+                href: "https://www.rainn.org/articles/sexual-assault",
+              },
+            },
+            {
+              question: "What are signs to watch for?",
+              paragraphs: [
+                "Abuse can affect people physically, emotionally, and socially. Signs may vary, but common indicators include:",
+                "It is important to remember: not all signs are obvious, and experiencing one or two does not necessarily confirm abuse. Trust your instincts and seek guidance if something feels wrong.",
+              ],
+              list: [
+                "Emotional or behavioral changes: sudden mood swings, anxiety, depression, withdrawal from friends or family, loss of interest in activities.",
+                "Physical signs: unexplained bruises, injuries, or discomfort, frequent stomachaches or headaches.",
+                "Relationship changes: fear of specific people, avoidance of certain places, or extreme shyness.",
+                "Behavioral changes in children: regressions in behavior, nightmares, or difficulty trusting adults.",
+              ],
+              resource: {
+                label: "RAINN – Warning signs of sexual abuse.",
+              },
+            },
+          ],
+        },
+        {
+          title: "Immediate Help & Safety",
+          items: [
+            {
+              question: "I am in danger right now. What should I do?",
+              paragraphs: [
+                "If you are in immediate danger, call 911 (Dominican Republic emergency number) or reach out to a trusted person nearby. Move to a safe location if possible. Do not hesitate—your safety is the priority.",
+                "If you cannot call for help safely, try to find a public space or someone you trust to assist you. You can also contact local organizations for confidential help:",
+                "Tip: Keep a list of emergency contacts and any important documents in a safe place if you are planning to leave an unsafe environment.",
+              ],
+              list: [
+                {
+                  text:
+                    "Ministerio de la Mujer (DR) – offers support and guidance for victims of gender-based violence:",
+                  links: [
+                    { label: "+1 809-689-5888", href: "tel:+18096895888" },
+                    { label: "info@ministeriodelamujer.gob.do", href: "mailto:info@ministeriodelamujer.gob.do" },
+                  ],
+                },
+                "Línea de Emergencia 24/7: *212 – specialized support for victims of abuse",
+              ],
+            },
+            {
+              question: "Can you help me create a safety plan?",
+              paragraphs: [
+                "Yes. A safety plan is a personalized set of strategies to help you protect yourself if you are at risk of harm. Key elements often include:",
+                "You do not have to do this alone. Advocates at helplines can help you create a step-by-step plan that suits your situation.",
+              ],
+              list: [
+                "Identifying safe locations (friend’s house, public places, shelters)",
+                "Listing trusted people you can contact quickly",
+                "Preparing emergency items (ID, phone, money, medications) in a safe place",
+                "Planning exit strategies if you need to leave quickly",
+                "Considering digital safety, such as limiting location sharing or passwords",
+              ],
+              resource: {
+                label: "National Domestic Violence Hotline – Safety planning guide (Spanish available)",
+                href: "https://www.thehotline.org/plan-for-safety/",
+              },
+            },
+          ],
+        },
+        {
+          title: "Contacting the Helpline",
+          items: [
+            {
+              question: "What happens when I call, text, or chat?",
+              paragraphs: [
+                "When you reach out, you will be connected with a trained advocate. They will listen to your experience without judgment, provide emotional support and validation, explain your options clearly, and connect you to local resources in the Dominican Republic if needed.",
+                "You are in control of the conversation. You decide what to share, what steps to take, and how you want the conversation to proceed. Many people contact helplines just to talk, ask questions, or get guidance without any obligation to report.",
+              ],
+            },
+            {
+              question: "Will you tell me what to do?",
+              paragraphs: [
+                "No. The helpline is not there to make decisions for you or pressure you into any action. The advocate’s role is to provide:",
+                "Ultimately, the choices are yours alone, and you can take things at your own pace.",
+              ],
+              list: [
+                "Accurate information about options",
+                "Emotional support and guidance",
+                "Referrals to local resources, counseling, or shelters",
+              ],
+            },
+          ],
+        },
+        {
+          title: "Confidentiality & Privacy",
+          items: [
+            {
+              question: "Is this service confidential?",
+              paragraphs: [
+                "Yes. Your privacy is our priority. Conversations are confidential to the extent allowed by law.",
+                "Certain situations may require reporting, such as:",
+                "Advocates will explain any limits to confidentiality before you share sensitive information.",
+              ],
+              list: [
+                "Abuse involving a minor",
+                "Immediate danger to you or others",
+              ],
+            },
+            {
+              question: "Can I stay anonymous?",
+              paragraphs: [
+                "Absolutely. You can contact the helpline without giving your name, address, or other identifying details. You can still receive guidance, support, and access to resources while remaining anonymous.",
+              ],
+            },
+          ],
+        },
+        {
+          title: "Reporting & Legal Options",
+          items: [
+            {
+              question: "Do I have to report the abuse?",
+              paragraphs: [
+                "No. Reporting is a personal choice. You can receive support and counseling without reporting to authorities. If you choose to report, the helpline can guide you through:",
+              ],
+              list: [
+                "Filing a police report in the Dominican Republic",
+                "Contacting local prosecutors (Ministerio Público)",
+                "Accessing victim protection programs",
+              ],
+              resource: {
+                label: "Ministerio de la Mujer – Violence reporting and support.",
+              },
+            },
+            {
+              question: "What is a mandatory reporter?",
+              paragraphs: [
+                "A mandatory reporter is a person legally required to report suspected abuse, especially when it involves minors or vulnerable people. In the Dominican Republic, this often applies to teachers, doctors, social workers, and certain government employees.",
+                "If mandatory reporting applies, advocates will clearly explain what must be reported so you can make informed decisions safely.",
+              ],
+              resource: {
+                label:
+                  "Child Welfare Information Gateway – Mandatory reporting overview (general guidance; local laws vary).",
+              },
+            },
+          ],
+        },
+        {
+          title: "Emotional Support & Healing",
+          items: [
+            {
+              question: "Is it normal to feel this way?",
+              paragraphs: [
+                "Yes. Experiencing sexual abuse can lead to a wide range of emotions: fear, guilt, shame, anger, confusion, or numbness. These are natural responses to trauma.",
+                "Many survivors struggle with self-blame, but it is important to remember: you are never responsible for someone else’s abuse. Support from trained advocates, counselors, or peer groups can help you process and begin healing.",
+              ],
+            },
+            {
+              question: "Can I talk to someone even if I’m not ready to report?",
+              paragraphs: [
+                "Yes. You do not need to report the abuse to seek support. Many people reach out simply to talk, ask questions, or explore options. Helplines can:",
+              ],
+              list: [
+                "Provide emotional support",
+                "Explain resources and options in the Dominican Republic",
+                "Help connect you with counseling, shelters, or legal support when you are ready",
+              ],
+              resource: {
+                label: "Ministerio de la Mujer – Support and counseling: info@ministeriodelamujer.gob.do",
+                href: "mailto:info@ministeriodelamujer.gob.do",
+              },
+            },
+          ],
+        },
+      ],
+    },
     dashboard: {
       common: {
         noData: "No data",
@@ -173,7 +430,6 @@ export const resources = {
         socialMedia: "Social Media",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
-        donations: "Donations",
         safehouses: "Safehouses",
         reports: "Reports",
         settings: "Settings",
@@ -450,8 +706,87 @@ export const resources = {
         via: "{{type}} via {{channel}}",
         toSafehouse: "{{program}}: {{amount}} to {{safehouse}} ({{city}}, {{country}})",
       },
+      labels: {
+        donationTypes: {
+          monetary: "Monetary",
+          inKind: "In-kind",
+          socialMedia: "Social Media",
+          skills: "Skills",
+          time: "Time",
+        },
+        programAreas: {
+          wellbeing: "Wellbeing",
+          operations: "Operations",
+          transport: "Transport",
+          education: "Education",
+        },
+        safehouses: {
+          lighthouse: "Lighthouse Safehouse",
+        },
+        channels: {
+          manual: "Manual",
+          online: "Online",
+          email: "Email",
+          phone: "Phone",
+          event: "Event",
+          referral: "Referral",
+          socialMedia: "Social Media",
+        },
+      },
       errors: {
         loadFailed: "Unable to load your donation history right now.",
+      },
+    },
+    socialMedia: {
+      summary: {
+        format: "Format",
+        topic: "Topic",
+        tone: "Tone",
+        captionPreview: "Caption Preview",
+      },
+      actions: {
+        scoring: "Scoring...",
+        refreshProjection: "Refresh Projection",
+        publishing: "Publishing...",
+        publishNow: "Publish Now",
+        saving: "Saving...",
+        saveRecordOnly: "Save Record Only",
+        back: "Back",
+        refresh: "Refresh",
+      },
+      projection: {
+        title: "Donation Projection",
+        caption: "Predicted based on historical signals",
+        empty: "Run projection to see expected performance.",
+      },
+      library: {
+        title: "Post Library",
+        subtitle: "Paginated historical social posts ordered with the newest records first.",
+        interactiveBuilder: "Interactive Post Builder",
+        recordOtherPost: "Record Other Post",
+        loadError: "The social media library could not be loaded.",
+        empty: "No social posts match the current filters.",
+      },
+      filters: {
+        searchPlaceholder: "Search caption, campaign, topic, or post id",
+        platform: "Platform",
+        allPlatforms: "All platforms",
+        mediaType: "Media type",
+        allMedia: "All media",
+        status: "Status",
+        allStatuses: "All statuses",
+        perPage: "{{count}} / page",
+      },
+      table: {
+        posted: "Posted",
+        platform: "Platform",
+        format: "Format",
+        campaign: "Campaign",
+        reach: "Reach",
+        donationValue: "Donation Value",
+        status: "Status",
+        actions: "Actions",
+        localRecord: "Local Record",
       },
     },
     caseload: {
@@ -463,7 +798,6 @@ export const resources = {
         socialMedia: "Social Media",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
-        donations: "Donations",
         safehouses: "Safehouses",
         reports: "Reports",
         settings: "Settings",
@@ -795,6 +1129,7 @@ export const resources = {
         signIn: "Iniciar sesión",
         signOut: "Cerrar sesión",
         myDonations: "Mis donaciones",
+        resources: "Recursos",
       },
       language: {
         label: "Idioma",
@@ -880,6 +1215,27 @@ export const resources = {
         prefix: "Si estás en peligro inmediato, llama al",
         connector: "o al",
       },
+      heroBanner: {
+        badge: "No estás sola",
+        title: "Estamos aquí para ayudarte",
+        description:
+          "Si estás en peligro o has sido lastimada, por favor comunícate. Todo lo que compartas es confidencial y seguro.",
+      },
+      emergencyContacts: {
+        title: "Contactos de emergencia",
+        emergencyServices: {
+          title: "Servicios de emergencia",
+          subtitle: "Policía / Ambulancia",
+        },
+        hopeHotline: {
+          title: "Línea de ayuda Hope Shelter",
+          subtitle: "Apoyo en crisis 24/7",
+        },
+        childHelpline: {
+          title: "Línea nacional de ayuda infantil",
+          subtitle: "CONANI República Dominicana",
+        },
+      },
       safetyNotice: {
         emphasis: "Tu seguridad importa.",
         beforeQuickExit: "Usa el botón de",
@@ -938,6 +1294,241 @@ export const resources = {
         },
       },
     },
+    resources: {
+      hero: {
+        title: "Recursos y seguridad",
+        description:
+          "No estás sola. Esta página comparte recursos confiables, información sobre el abuso sexual y formas sencillas de mantenerte segura.",
+        imageAlt: "Orilla del océano",
+      },
+      sections: {
+        resourceContactsTitle: "Contactos de recursos",
+        faqTitle: "Preguntas frecuentes",
+        safetyTitle: "Formas sencillas de mantenerte segura",
+      },
+      closing: "No estás sola. Hay ayuda disponible cuando estés lista.",
+      resourceLabel: "Recurso:",
+      listLinkSeparator: "o",
+      resourceContacts: [
+        {
+          name: "Victim Support NGO",
+          phone: "+1 809-565-5151",
+          type: "Apoyo en crisis 24/7",
+        },
+        {
+          name: "CONANI",
+          phone: "+1 (809) 567-2233",
+          type: "Línea nacional de ayuda infantil",
+        },
+        {
+          name: "Línea de ayuda Hope Shelter",
+          phone: "+1 (809) 555-7890",
+          type: "Apoyo de emergencia",
+        },
+        {
+          name: "Apoyo de asistencia legal",
+          phone: "+1 (809) 555-3456",
+          type: "Asistencia legal",
+        },
+      ],
+      safetySteps: [
+        {
+          title: "Confía en tus sentimientos",
+          description:
+            "Si algo se siente mal o inseguro, está bien alejarte y pedir ayuda.",
+        },
+        {
+          title: "Identifica adultos seguros",
+          description:
+            "Busca adultos de confianza con quienes puedas hablar: familia, maestros, consejeros o personal del refugio.",
+        },
+        {
+          title: "Ten un plan de seguridad",
+          description:
+            "Planifica un lugar seguro y una forma de contactar a alguien de confianza en una emergencia.",
+        },
+      ],
+      faqSections: [
+        {
+          title: "Comprender el abuso",
+          items: [
+            {
+              question: "¿Qué es el abuso sexual?",
+              paragraphs: [
+                "El abuso sexual es cualquier actividad sexual que ocurra sin tu consentimiento claro, informado y libre. Incluye actos en los que alguien fuerza, presiona, manipula o coacciona. También incluye situaciones en las que no puedes consentir, como ser menor de edad, estar inconsciente, dormida o bajo la influencia de drogas o alcohol.",
+                "El abuso puede ocurrir en muchos entornos: dentro de la familia, en relaciones románticas, en el trabajo, en la escuela o cuando alguien abusa de una posición de confianza o autoridad. Nunca es tu culpa, sin importar las circunstancias.",
+              ],
+              resource: {
+                label: "RAINN – ¿Qué es la agresión sexual?",
+                href: "https://www.rainn.org/articles/sexual-assault",
+              },
+            },
+            {
+              question: "¿Qué señales debo observar?",
+              paragraphs: [
+                "El abuso puede afectar a las personas física, emocional y socialmente. Las señales varían, pero algunos indicadores comunes incluyen:",
+                "Es importante recordar: no todas las señales son evidentes, y presentar una o dos no necesariamente confirma abuso. Confía en tus instintos y busca orientación si algo se siente mal.",
+              ],
+              list: [
+                "Cambios emocionales o de conducta: cambios bruscos de ánimo, ansiedad, depresión, aislamiento de amigos o familia, pérdida de interés en actividades.",
+                "Señales físicas: moretones o lesiones sin explicación, molestias o dolores frecuentes de estómago o cabeza.",
+                "Cambios en relaciones: miedo a personas específicas, evitar ciertos lugares o timidez extrema.",
+                "Cambios de conducta en niñas o niños: regresiones, pesadillas o dificultad para confiar en adultos.",
+              ],
+              resource: {
+                label: "RAINN – Señales de advertencia del abuso sexual.",
+              },
+            },
+          ],
+        },
+        {
+          title: "Ayuda inmediata y seguridad",
+          items: [
+            {
+              question: "Estoy en peligro ahora mismo. ¿Qué debo hacer?",
+              paragraphs: [
+                "Si estás en peligro inmediato, llama al 911 (número de emergencia en República Dominicana) o busca a alguien de confianza cercano. Si es posible, muévete a un lugar seguro. No lo dudes: tu seguridad es la prioridad.",
+                "Si no puedes pedir ayuda de forma segura, intenta estar en un lugar público o con alguien de confianza. También puedes contactar organizaciones locales para recibir ayuda confidencial:",
+                "Consejo: guarda una lista de contactos de emergencia y documentos importantes en un lugar seguro si estás planeando salir de un entorno inseguro.",
+              ],
+              list: [
+                {
+                  text:
+                    "Ministerio de la Mujer (RD) – ofrece apoyo y orientación a víctimas de violencia de género:",
+                  links: [
+                    { label: "+1 809-689-5888", href: "tel:+18096895888" },
+                    { label: "info@ministeriodelamujer.gob.do", href: "mailto:info@ministeriodelamujer.gob.do" },
+                  ],
+                },
+                "Línea de Emergencia 24/7: *212 – apoyo especializado para víctimas de abuso",
+              ],
+            },
+            {
+              question: "¿Pueden ayudarme a crear un plan de seguridad?",
+              paragraphs: [
+                "Sí. Un plan de seguridad es un conjunto personalizado de estrategias para ayudarte a protegerte si estás en riesgo. Algunos elementos clave incluyen:",
+                "No tienes que hacerlo sola. Las personas de apoyo en las líneas de ayuda pueden ayudarte a crear un plan paso a paso para tu situación.",
+              ],
+              list: [
+                "Identificar lugares seguros (casa de una amiga, lugares públicos, refugios)",
+                "Hacer una lista de personas de confianza a las que puedas contactar rápido",
+                "Preparar artículos de emergencia (ID, teléfono, dinero, medicinas) en un lugar seguro",
+                "Planificar rutas de salida si necesitas irte rápidamente",
+                "Considerar la seguridad digital, como limitar el uso compartido de ubicación o contraseñas",
+              ],
+              resource: {
+                label: "Línea Nacional de Violencia Doméstica – Guía de plan de seguridad (disponible en español)",
+                href: "https://www.thehotline.org/plan-for-safety/",
+              },
+            },
+          ],
+        },
+        {
+          title: "Contactar la línea de ayuda",
+          items: [
+            {
+              question: "¿Qué pasa cuando llamo, escribo o chateo?",
+              paragraphs: [
+                "Cuando te comunicas, hablarás con una persona capacitada. Escuchará sin juzgar, ofrecerá apoyo emocional y validación, explicará tus opciones con claridad y podrá conectarte con recursos locales en República Dominicana si lo necesitas.",
+                "Tú tienes el control de la conversación. Tú decides qué compartir, qué pasos tomar y cómo quieres continuar. Muchas personas contactan líneas de ayuda solo para hablar, hacer preguntas o buscar orientación sin obligación de reportar.",
+              ],
+            },
+            {
+              question: "¿Me dirán qué hacer?",
+              paragraphs: [
+                "No. La línea de ayuda no está para tomar decisiones por ti ni presionarte. El rol de la persona de apoyo es ofrecer:",
+                "Al final, las decisiones son tuyas y puedes avanzar a tu propio ritmo.",
+              ],
+              list: [
+                "Información clara sobre opciones",
+                "Apoyo emocional y guía",
+                "Referencias a recursos locales, consejería o refugios",
+              ],
+            },
+          ],
+        },
+        {
+          title: "Confidencialidad y privacidad",
+          items: [
+            {
+              question: "¿Este servicio es confidencial?",
+              paragraphs: [
+                "Sí. Tu privacidad es una prioridad. Las conversaciones son confidenciales en la medida que la ley lo permita.",
+                "Algunas situaciones pueden requerir reporte, como:",
+                "Las personas de apoyo explicarán cualquier límite de confidencialidad antes de que compartas información sensible.",
+              ],
+              list: [
+                "Abuso que involucra a una persona menor de edad",
+                "Peligro inmediato para ti o para otras personas",
+              ],
+            },
+            {
+              question: "¿Puedo mantenerme en el anonimato?",
+              paragraphs: [
+                "Sí. Puedes contactar la línea de ayuda sin dar tu nombre, dirección u otros datos identificables. Aun así puedes recibir orientación, apoyo y recursos.",
+              ],
+            },
+          ],
+        },
+        {
+          title: "Reporte y opciones legales",
+          items: [
+            {
+              question: "¿Tengo que reportar el abuso?",
+              paragraphs: [
+                "No. Reportar es una decisión personal. Puedes recibir apoyo y consejería sin reportar a las autoridades. Si decides reportar, la línea de ayuda puede orientarte en:",
+              ],
+              list: [
+                "Presentar una denuncia en República Dominicana",
+                "Contactar fiscales locales (Ministerio Público)",
+                "Acceder a programas de protección a víctimas",
+              ],
+              resource: {
+                label: "Ministerio de la Mujer – Reporte y apoyo ante la violencia.",
+              },
+            },
+            {
+              question: "¿Qué es un reportero obligatorio?",
+              paragraphs: [
+                "Un reportero obligatorio es una persona legalmente obligada a reportar sospechas de abuso, especialmente cuando involucra a menores o personas vulnerables. En República Dominicana, esto suele aplicar a docentes, personal médico, trabajadoras sociales y ciertos empleados públicos.",
+                "Si aplica el reporte obligatorio, las personas de apoyo explicarán qué debe reportarse para que puedas decidir con información clara.",
+              ],
+              resource: {
+                label:
+                  "Child Welfare Information Gateway – Información general sobre reporte obligatorio (las leyes locales pueden variar).",
+              },
+            },
+          ],
+        },
+        {
+          title: "Apoyo emocional y sanación",
+          items: [
+            {
+              question: "¿Es normal sentirme así?",
+              paragraphs: [
+                "Sí. Vivir abuso sexual puede generar muchas emociones: miedo, culpa, vergüenza, enojo, confusión o sentirse desconectada. Son respuestas normales al trauma.",
+                "Muchas sobrevivientes sienten culpa, pero es importante recordar: nunca eres responsable del abuso de otra persona. El apoyo de personas capacitadas, consejería o grupos de apoyo puede ayudarte a procesar y sanar.",
+              ],
+            },
+            {
+              question: "¿Puedo hablar con alguien aunque no esté lista para reportar?",
+              paragraphs: [
+                "Sí. No necesitas reportar para buscar apoyo. Muchas personas se comunican solo para hablar, hacer preguntas o explorar opciones. Las líneas de ayuda pueden:",
+              ],
+              list: [
+                "Brindar apoyo emocional",
+                "Explicar recursos y opciones en República Dominicana",
+                "Ayudar a conectarte con consejería, refugios o apoyo legal cuando estés lista",
+              ],
+              resource: {
+                label: "Ministerio de la Mujer – Apoyo y consejería: info@ministeriodelamujer.gob.do",
+                href: "mailto:info@ministeriodelamujer.gob.do",
+              },
+            },
+          ],
+        },
+      ],
+    },
     dashboard: {
       common: {
         noData: "Sin datos",
@@ -952,7 +1543,6 @@ export const resources = {
         socialMedia: "Redes sociales",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
-        donations: "Donaciones",
         safehouses: "Casas seguras",
         reports: "Reportes",
         settings: "Configuracion",
@@ -1237,8 +1827,87 @@ export const resources = {
         via: "{{type}} a través de {{channel}}",
         toSafehouse: "{{program}}: {{amount}} a {{safehouse}} ({{city}}, {{country}})",
       },
+      labels: {
+        donationTypes: {
+          monetary: "Monetaria",
+          inKind: "En especie",
+          socialMedia: "Redes sociales",
+          skills: "Habilidades",
+          time: "Tiempo",
+        },
+        programAreas: {
+          wellbeing: "Bienestar",
+          operations: "Operaciones",
+          transport: "Transporte",
+          education: "Educación",
+        },
+        safehouses: {
+          lighthouse: "Casa segura Lighthouse",
+        },
+        channels: {
+          manual: "Manual",
+          online: "En línea",
+          email: "Correo",
+          phone: "Teléfono",
+          event: "Evento",
+          referral: "Referencia",
+          socialMedia: "Redes sociales",
+        },
+      },
       errors: {
         loadFailed: "No pudimos cargar tu historial de donaciones en este momento.",
+      },
+    },
+    socialMedia: {
+      summary: {
+        format: "Formato",
+        topic: "Tema",
+        tone: "Tono",
+        captionPreview: "Vista previa del texto",
+      },
+      actions: {
+        scoring: "Calculando...",
+        refreshProjection: "Actualizar proyección",
+        publishing: "Publicando...",
+        publishNow: "Publicar ahora",
+        saving: "Guardando...",
+        saveRecordOnly: "Guardar solo el registro",
+        back: "Volver",
+        refresh: "Actualizar",
+      },
+      projection: {
+        title: "Proyección de donaciones",
+        caption: "Predicho según señales históricas",
+        empty: "Ejecuta la proyección para ver el rendimiento esperado.",
+      },
+      library: {
+        title: "Biblioteca de publicaciones",
+        subtitle: "Publicaciones históricas paginadas, con las más recientes primero.",
+        interactiveBuilder: "Constructor interactivo",
+        recordOtherPost: "Registrar otra publicación",
+        loadError: "No se pudo cargar la biblioteca de redes sociales.",
+        empty: "No hay publicaciones que coincidan con los filtros actuales.",
+      },
+      filters: {
+        searchPlaceholder: "Buscar texto, campaña, tema o id de publicación",
+        platform: "Plataforma",
+        allPlatforms: "Todas las plataformas",
+        mediaType: "Tipo de medio",
+        allMedia: "Todos los medios",
+        status: "Estado",
+        allStatuses: "Todos los estados",
+        perPage: "{{count}} / página",
+      },
+      table: {
+        posted: "Publicado",
+        platform: "Plataforma",
+        format: "Formato",
+        campaign: "Campaña",
+        reach: "Alcance",
+        donationValue: "Valor de donación",
+        status: "Estado",
+        actions: "Acciones",
+        localRecord: "Registro local",
       },
     },
     caseload: {
