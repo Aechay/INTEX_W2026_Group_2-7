@@ -85,6 +85,8 @@ type Resident = {
   dateEnrolled: string;
   dateClosed: string | null;
   notesRestricted: string | null;
+  predictedRisk: string | null;
+  predictedRiskNum: number | null;
 };
 
 type CaseloadResponse = {
@@ -100,7 +102,9 @@ type CaseloadResponse = {
   };
 };
 
-type ResidentForm = Omit<Resident, "residentId" | "safehouseName">;
+type ResidentForm = Omit<Resident, "residentId" | "safehouseName" | "predictedRisk" | "predictedRiskNum">;
+type RiskLevel = "Low" | "Medium" | "High" | "Critical";
+const RISK_LEVEL_OPTIONS: RiskLevel[] = ["Low", "Medium", "High", "Critical"];
 
 const dateInputValue = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
@@ -142,6 +146,34 @@ const familyProfileKeys = [
   "familyParentPwd",
   "familyInformalSettler",
 ] as const;
+
+const predictedRiskBadgeClass = (risk: string) => {
+  const normalizedRisk = risk.trim().toLowerCase();
+  if (normalizedRisk === "critical") {
+    return "border-red-500/40 bg-red-500/20 text-red-900 dark:text-red-200";
+  }
+  if (normalizedRisk === "high") {
+    return "border-orange-500/40 bg-orange-500/20 text-orange-900 dark:text-orange-200";
+  }
+  if (normalizedRisk === "medium") {
+    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+  }
+  return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+};
+
+const predictedRiskTranslationKey = (risk: string) => {
+  const normalizedRisk = risk.trim().toLowerCase();
+  if (normalizedRisk === "critical") {
+    return "riskLevels.critical";
+  }
+  if (normalizedRisk === "high") {
+    return "riskLevels.high";
+  }
+  if (normalizedRisk === "medium") {
+    return "riskLevels.medium";
+  }
+  return "riskLevels.low";
+};
 
 /** Empty string is invalid for `DateTime?` in the API — use null for unset optional dates. */
 function optionalDateIso(iso: string | null | undefined): string | null {
@@ -209,8 +241,8 @@ const buildEmptyResident = (safehouseId: number, internalCode: string): Resident
   dateCaseStudyPrepared: null,
   reintegrationType: "",
   reintegrationStatus: "",
-  initialRiskLevel: "",
-  currentRiskLevel: "",
+  initialRiskLevel: "Low",
+  currentRiskLevel: "Low",
   dateEnrolled: new Date().toISOString(),
   dateClosed: null,
   notesRestricted: "",
@@ -258,6 +290,42 @@ function CaseCategoryControl({
         {mergedOptions.map((cat) => (
           <SelectItem key={cat} value={cat}>
             {cat}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function RiskLevelControl({
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: string[];
+  disabled?: boolean;
+  placeholder: string;
+}) {
+  const selectValue = options.includes(value) ? value : "__none__";
+
+  return (
+    <Select
+      value={selectValue}
+      onValueChange={(next) => onChange(next === "__none__" ? "" : next)}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">{placeholder}</SelectItem>
+        {options.map((riskLevel) => (
+          <SelectItem key={riskLevel} value={riskLevel}>
+            {riskLevel}
           </SelectItem>
         ))}
       </SelectContent>
@@ -354,6 +422,7 @@ const Caseload = () => {
   const residents = caseloadQuery.data?.residents ?? [];
   const safehouses = caseloadQuery.data?.safehouses ?? [];
   const caseCategoryOptions = caseloadQuery.data?.caseCategoryOptions ?? [];
+  const riskLevelOptions = RISK_LEVEL_OPTIONS;
   const totalResidents = residents.length;
   const effectivePageSize = pageSize === "all" ? totalResidents || 1 : Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(totalResidents / effectivePageSize));
@@ -392,6 +461,10 @@ const Caseload = () => {
     }
     return resident.internalCode || t("cards.unnamedResident");
   };
+
+  const saveValidationMessage = "Initial Risk Level and Current Risk Level are required.";
+  const hasRequiredRiskLevels = (residentForm: ResidentForm) =>
+    residentForm.initialRiskLevel.trim().length > 0 && residentForm.currentRiskLevel.trim().length > 0;
 
   return (
     <AdminWorkspace items={navigationItems} signOutPending={signOutPending} onSignOut={handleLogout}>
@@ -551,7 +624,7 @@ const Caseload = () => {
                       <Badge variant="secondary">{resident.safehouseName}</Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="relative space-y-3 pb-12 text-sm">
                     <div className="text-muted-foreground">
                       {resident.sex} • {dateInputValue(resident.dateOfBirth) || t("cards.dobNotSet")}
                     </div>
@@ -563,6 +636,15 @@ const Caseload = () => {
                         {subcategories.length > 0 ? subcategories.join(", ") : t("cards.noSubcategories")}
                       </div>
                     </div>
+                    {resident.predictedRisk ? (
+                      <Badge
+                        className={`absolute bottom-4 right-4 border ${predictedRiskBadgeClass(
+                          resident.predictedRisk,
+                        )}`}
+                      >
+                        {t("cards.predictedRiskLabel")}: {t(predictedRiskTranslationKey(resident.predictedRisk))}
+                      </Badge>
+                    ) : null}
                   </CardContent>
                 </Card>
               </button>
@@ -613,7 +695,16 @@ const Caseload = () => {
                   <Button
                     type="button"
                     disabled={upsertMutation.isPending || !selected}
-                    onClick={() => selected && upsertMutation.mutate({ residentId: selected.residentId, body: form })}
+                    onClick={() => {
+                      if (!selected) {
+                        return;
+                      }
+                      if (!hasRequiredRiskLevels(form)) {
+                        setSaveErrorMessage(saveValidationMessage);
+                        return;
+                      }
+                      upsertMutation.mutate({ residentId: selected.residentId, body: form });
+                    }}
                   >
                     <Save className="mr-2 h-4 w-4" />
                     {t("actions.save")}
@@ -718,6 +809,24 @@ const Caseload = () => {
                     value={form.reintegrationStatus ?? ""}
                     disabled={!isEditing}
                     onChange={(event) => setForm({ ...form, reintegrationStatus: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.initialRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.initialRiskLevel}
+                    onChange={(next) => setForm({ ...form, initialRiskLevel: next })}
+                    options={riskLevelOptions}
+                    disabled={!isEditing}
+                    placeholder={t("fields.initialRiskLevel")}
+                  />
+                </Field>
+                <Field label={t("fields.currentRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.currentRiskLevel}
+                    onChange={(next) => setForm({ ...form, currentRiskLevel: next })}
+                    options={riskLevelOptions}
+                    disabled={!isEditing}
+                    placeholder={t("fields.currentRiskLevel")}
                   />
                 </Field>
                 <Field label={t("fields.pwdType")}>
@@ -875,6 +984,22 @@ const Caseload = () => {
                     onChange={(event) => setForm({ ...form, reintegrationStatus: event.target.value })}
                   />
                 </Field>
+                <Field label={t("fields.initialRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.initialRiskLevel}
+                    onChange={(next) => setForm({ ...form, initialRiskLevel: next })}
+                    options={riskLevelOptions}
+                    placeholder={t("fields.initialRiskLevel")}
+                  />
+                </Field>
+                <Field label={t("fields.currentRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.currentRiskLevel}
+                    onChange={(next) => setForm({ ...form, currentRiskLevel: next })}
+                    options={riskLevelOptions}
+                    placeholder={t("fields.currentRiskLevel")}
+                  />
+                </Field>
                 <Field label={t("fields.pwdType")}>
                   <Input
                     value={form.pwdType ?? ""}
@@ -938,7 +1063,17 @@ const Caseload = () => {
                   <X className="mr-2 h-4 w-4" />
                   {t("actions.cancel")}
                 </Button>
-                <Button type="button" disabled={upsertMutation.isPending} onClick={() => upsertMutation.mutate({ body: form })}>
+                <Button
+                  type="button"
+                  disabled={upsertMutation.isPending}
+                  onClick={() => {
+                    if (!hasRequiredRiskLevels(form)) {
+                      setSaveErrorMessage(saveValidationMessage);
+                      return;
+                    }
+                    upsertMutation.mutate({ body: form });
+                  }}
+                >
                   <Save className="mr-2 h-4 w-4" />
                   {t("actions.save")}
                 </Button>
