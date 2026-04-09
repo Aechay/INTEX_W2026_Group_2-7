@@ -16,6 +16,7 @@ public sealed record DashboardSummaryResponse(
     int ActiveSafehouses,
     decimal RecentDonationTotal,
     int RecentDonationCount,
+    int RecentIncidentCount,
     int UpcomingCaseConferenceCount,
     int OverdueCaseConferenceCount);
 
@@ -45,6 +46,7 @@ public sealed record DashboardProgressTrendPointResponse(
 public sealed record DashboardRecentDonationResponse(
     int DonationId,
     string SupporterName,
+    string? SupporterEmail,
     string DonationType,
     string ChannelSource,
     DateTime DonationDate,
