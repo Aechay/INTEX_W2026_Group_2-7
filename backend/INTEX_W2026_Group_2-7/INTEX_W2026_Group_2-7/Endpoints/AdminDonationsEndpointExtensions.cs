@@ -63,10 +63,25 @@ public static class AdminDonationsEndpointExtensions
             .RequireAuthorization(AppPolicies.AdminOnly)
             .Produces<IReadOnlyList<SupporterLookupResponse>>();
 
+        endpoints.MapGet("/api/admin/donations/metadata", GetDonationMetadataAsync)
+            .WithName("GetAdminDonationMetadata")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<AdminDonationMetadataResponse>();
+
         endpoints.MapPost("/api/admin/donations/contributions", CreateContributionAsync)
             .WithName("CreateAdminContribution")
             .RequireAuthorization(AppPolicies.AdminOnly)
             .Produces<AdminContributionCreatedResponse>();
+
+        endpoints.MapPut("/api/admin/donations/contributions/{donationId:int}", UpdateContributionAsync)
+            .WithName("UpdateAdminContribution")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<AdminContributionUpdatedResponse>();
+
+        endpoints.MapDelete("/api/admin/donations/contributions/{donationId:int}", DeleteContributionAsync)
+            .WithName("DeleteAdminContribution")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces(StatusCodes.Status204NoContent);
 
         return endpoints;
     }
@@ -378,9 +393,29 @@ public static class AdminDonationsEndpointExtensions
         bool? IsRecurring,
         string? ChannelSource,
         decimal? Amount,
-        string? CurrencyCode);
+        string? CurrencyCode,
+        int? SafehouseId,
+        string? ProgramArea);
 
     private sealed record AdminContributionCreatedResponse(int DonationId, int SupporterId);
+
+    private sealed record AdminContributionUpdateRequest(
+        string DonationType,
+        DateTime DonationDate,
+        decimal EstimatedValue,
+        string? ImpactUnit,
+        int? SafehouseId,
+        string? ProgramArea);
+
+    private sealed record AdminContributionUpdatedResponse(int DonationId);
+
+    private sealed record AdminDonationMetadataResponse(
+        IReadOnlyList<string> RelationshipTypes,
+        IReadOnlyList<string> AcquisitionChannels,
+        IReadOnlyList<SafehouseLookupResponse> Safehouses,
+        IReadOnlyList<string> ProgramAreas);
+
+    private sealed record SafehouseLookupResponse(int SafehouseId, string Name);
 
     private static async Task<Ok<IReadOnlyList<SupporterLookupResponse>>> GetSupportersAsync(
         OperationalDbContext dbContext,
@@ -404,6 +439,47 @@ public static class AdminDonationsEndpointExtensions
             .ToListAsync(cancellationToken);
 
         return TypedResults.Ok<IReadOnlyList<SupporterLookupResponse>>(supporters);
+    }
+
+    private static async Task<Ok<AdminDonationMetadataResponse>> GetDonationMetadataAsync(
+        OperationalDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var relationshipTypes = await dbContext.Supporters
+            .AsNoTracking()
+            .Where(s => !string.IsNullOrWhiteSpace(s.RelationshipType))
+            .Select(s => s.RelationshipType)
+            .Distinct()
+            .OrderBy(value => value)
+            .ToListAsync(cancellationToken);
+
+        var acquisitionChannels = await dbContext.Supporters
+            .AsNoTracking()
+            .Where(s => !string.IsNullOrWhiteSpace(s.AcquisitionChannel))
+            .Select(s => s.AcquisitionChannel)
+            .Distinct()
+            .OrderBy(value => value)
+            .ToListAsync(cancellationToken);
+
+        var safehouses = await dbContext.Safehouses
+            .AsNoTracking()
+            .OrderBy(s => s.Name)
+            .Select(s => new SafehouseLookupResponse(s.SafehouseId, s.Name))
+            .ToListAsync(cancellationToken);
+
+        var programAreas = await dbContext.DonationAllocations
+            .AsNoTracking()
+            .Where(a => !string.IsNullOrWhiteSpace(a.ProgramArea))
+            .Select(a => a.ProgramArea)
+            .Distinct()
+            .OrderBy(value => value)
+            .ToListAsync(cancellationToken);
+
+        return TypedResults.Ok(new AdminDonationMetadataResponse(
+            relationshipTypes,
+            acquisitionChannels,
+            safehouses,
+            programAreas));
     }
 
     private static async Task<Results<Created<AdminContributionCreatedResponse>, ValidationProblem>> CreateContributionAsync(
@@ -433,6 +509,26 @@ public static class AdminDonationsEndpointExtensions
             errors["estimatedValue"] = ["Estimated value must be greater than 0."];
         }
 
+        if (request.SafehouseId is null || request.SafehouseId <= 0)
+        {
+            errors["safehouseId"] = ["Safehouse is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ProgramArea))
+        {
+            errors["programArea"] = ["Program area is required."];
+        }
+
+        if (request.SafehouseId is null || request.SafehouseId <= 0)
+        {
+            errors["safehouseId"] = ["Safehouse is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ProgramArea))
+        {
+            errors["programArea"] = ["Program area is required."];
+        }
+
         if (errors.Count > 0)
         {
             return TypedResults.ValidationProblem(errors);
@@ -456,9 +552,133 @@ public static class AdminDonationsEndpointExtensions
         dbContext.Donations.Add(donation);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        dbContext.DonationAllocations.Add(new DonationAllocation
+        {
+            DonationId = donation.DonationId,
+            SafehouseId = request.SafehouseId!.Value,
+            ProgramArea = request.ProgramArea!.Trim(),
+            AmountAllocated = donation.EstimatedValue,
+            AllocationDate = donation.DonationDate,
+            AllocationNotes = null
+        });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         return TypedResults.Created(
             $"/api/admin/donations/contributions/{donation.DonationId}",
             new AdminContributionCreatedResponse(donation.DonationId, donation.SupporterId));
+    }
+
+    private static async Task<Results<Ok<AdminContributionUpdatedResponse>, ValidationProblem, NotFound>> UpdateContributionAsync(
+        OperationalDbContext dbContext,
+        int donationId,
+        AdminContributionUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.DonationType))
+        {
+            errors["donationType"] = ["Donation type is required."];
+        }
+
+        if (request.DonationDate == default)
+        {
+            errors["donationDate"] = ["Donation date is required."];
+        }
+
+        if (request.EstimatedValue <= 0)
+        {
+            errors["estimatedValue"] = ["Estimated value must be greater than 0."];
+        }
+
+        if (request.SafehouseId is null || request.SafehouseId <= 0)
+        {
+            errors["safehouseId"] = ["Safehouse is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ProgramArea))
+        {
+            errors["programArea"] = ["Program area is required."];
+        }
+
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        var donation = await dbContext.Donations.FirstOrDefaultAsync(
+            row => row.DonationId == donationId,
+            cancellationToken);
+
+        if (donation is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        donation.DonationType = request.DonationType.Trim();
+        donation.DonationDate = request.DonationDate;
+        donation.EstimatedValue = request.EstimatedValue;
+        donation.ImpactUnit = string.IsNullOrWhiteSpace(request.ImpactUnit) ? donation.ImpactUnit : request.ImpactUnit.Trim();
+
+        var allocations = await dbContext.DonationAllocations
+            .Where(row => row.DonationId == donation.DonationId)
+            .ToListAsync(cancellationToken);
+
+        if (allocations.Count == 0)
+        {
+            dbContext.DonationAllocations.Add(new DonationAllocation
+            {
+                DonationId = donation.DonationId,
+                SafehouseId = request.SafehouseId!.Value,
+                ProgramArea = request.ProgramArea!.Trim(),
+                AmountAllocated = donation.EstimatedValue,
+                AllocationDate = donation.DonationDate,
+                AllocationNotes = null
+            });
+        }
+        else
+        {
+            foreach (var allocation in allocations)
+            {
+                allocation.SafehouseId = request.SafehouseId!.Value;
+                allocation.ProgramArea = request.ProgramArea!.Trim();
+                allocation.AmountAllocated = donation.EstimatedValue;
+                allocation.AllocationDate = donation.DonationDate;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(new AdminContributionUpdatedResponse(donation.DonationId));
+    }
+
+    private static async Task<Results<NoContent, NotFound>> DeleteContributionAsync(
+        OperationalDbContext dbContext,
+        int donationId,
+        CancellationToken cancellationToken)
+    {
+        var donation = await dbContext.Donations
+            .FirstOrDefaultAsync(row => row.DonationId == donationId, cancellationToken);
+
+        if (donation is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        var allocations = await dbContext.DonationAllocations
+            .Where(row => row.DonationId == donationId)
+            .ToListAsync(cancellationToken);
+
+        if (allocations.Count > 0)
+        {
+            dbContext.DonationAllocations.RemoveRange(allocations);
+        }
+
+        dbContext.Donations.Remove(donation);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.NoContent();
     }
 
     private sealed record AdminDonorSummaryResponse(

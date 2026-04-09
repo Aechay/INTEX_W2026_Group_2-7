@@ -33,15 +33,21 @@ public static class AdminDonorDetailEndpointExtensions
             return TypedResults.NotFound();
         }
 
-        var donations = await dbContext.Donations
-            .AsNoTracking()
-            .Where(donation => donation.SupporterId == supporterId)
-            .OrderByDescending(donation => donation.DonationDate)
-            .Select(donation => new DonorDonationItem(
-                donation.DonationId,
-                donation.DonationDate,
-                donation.DonationType,
-                decimal.Round(donation.EstimatedValue, 2)))
+        var donations = await (
+                from donation in dbContext.Donations.AsNoTracking()
+                where donation.SupporterId == supporterId
+                join allocation in dbContext.DonationAllocations.AsNoTracking()
+                    on donation.DonationId equals allocation.DonationId into allocationGroup
+                from allocation in allocationGroup.DefaultIfEmpty()
+                orderby donation.DonationDate descending
+                select new DonorDonationItem(
+                    donation.DonationId,
+                    donation.DonationDate,
+                    donation.DonationType,
+                    decimal.Round(donation.EstimatedValue, 2),
+                    allocation == null ? null : allocation.ProgramArea,
+                    allocation == null ? null : allocation.SafehouseId)
+            )
             .ToListAsync(cancellationToken);
 
         var totalByDonor = donations.Sum(item => item.EstimatedValue);
@@ -71,5 +77,7 @@ public static class AdminDonorDetailEndpointExtensions
         int DonationId,
         DateTime DonationDate,
         string DonationType,
-        decimal EstimatedValue);
+        decimal EstimatedValue,
+        string? ProgramArea,
+        int? SafehouseId);
 }

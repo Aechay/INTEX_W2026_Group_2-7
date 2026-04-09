@@ -152,6 +152,32 @@ const formatContributionType = (value: string): Contribution["type"] => {
   }
 };
 
+const formatDisplayLabel = (value: string) =>
+  value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\s+/g, " ").trim();
+
+const getImpactUnitForDonationType = (value: string) => {
+  switch (value) {
+    case "Monetary":
+    case "MonetaryDonor":
+      return "Pesos";
+    case "Time":
+    case "Volunteer":
+      return "Hours";
+    case "InKind":
+    case "InKindDonation":
+    case "InKindDonor":
+      return "Items";
+    case "SocialMedia":
+    case "SocialMediaAdvocate":
+      return "Campaigns";
+    case "Skills":
+    case "SkillsContributor":
+      return "Hours";
+    default:
+      return "Pesos";
+  }
+};
+
 const Donations = () => {
   const { t, i18n } = useTranslation("dashboard");
   const auth = useAuth();
@@ -183,11 +209,11 @@ const Donations = () => {
     organizationName: "",
     firstName: "",
     lastName: "",
-    relationshipType: "Supporter",
+    relationshipType: "",
     region: "National",
     country: "Dominican Republic",
     status: "Active",
-    acquisitionChannel: "Manual",
+    acquisitionChannel: "",
   });
   const [contributionForm, setContributionForm] = useState({
     supporterId: "",
@@ -195,6 +221,8 @@ const Donations = () => {
     donationDate: "",
     estimatedValue: "",
     impactUnit: "Pesos",
+    programArea: "",
+    safehouseId: "",
   });
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
@@ -214,6 +242,13 @@ const Donations = () => {
     setCurrentPage(1);
     setContributionsPage(1);
   }, [search, donorType, status, contributionType, pageSize, contributionsPageSize]);
+
+  useEffect(() => {
+    setContributionForm((current) => ({
+      ...current,
+      impactUnit: getImpactUnitForDonationType(current.donationType),
+    }));
+  }, [contributionForm.donationType]);
 
   const createDonorMutation = useMutation({
     mutationFn: (payload: DonorCreateForm) =>
@@ -238,6 +273,17 @@ const Donations = () => {
     },
   });
 
+  const metadataQuery = useQuery({
+    queryKey: ["admin-donations-metadata"],
+    queryFn: () =>
+      auth.authenticatedJson<{
+        relationshipTypes: string[];
+        acquisitionChannels: string[];
+        safehouses: Array<{ safehouseId: number; name: string }>;
+        programAreas: string[];
+      }>("/api/admin/donations/metadata"),
+  });
+
   const supportersQuery = useQuery({
     queryKey: ["admin-donation-supporters", supporterSearch],
     queryFn: () => {
@@ -258,6 +304,8 @@ const Donations = () => {
       donationDate: string;
       estimatedValue: number;
       impactUnit: string;
+      programArea: string;
+      safehouseId: number;
     }) =>
       auth.authenticatedJson<{ donationId: number; supporterId: number }>(
         "/api/admin/donations/contributions",
@@ -269,6 +317,8 @@ const Donations = () => {
             donationDate: payload.donationDate,
             estimatedValue: payload.estimatedValue,
             impactUnit: payload.impactUnit,
+            programArea: payload.programArea,
+            safehouseId: payload.safehouseId,
           },
         },
       ),
@@ -281,7 +331,9 @@ const Donations = () => {
         donationType: "Monetary",
         donationDate: "",
         estimatedValue: "",
-        impactUnit: "General",
+        impactUnit: "Pesos",
+        programArea: "",
+        safehouseId: "",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-donations-overview"] });
     },
@@ -314,6 +366,8 @@ const Donations = () => {
     if (!contributionForm.donationType) errors.donationType = "Donation type is required.";
     if (!contributionForm.donationDate) errors.donationDate = "Donation date is required.";
     if (!contributionForm.estimatedValue) errors.estimatedValue = "Estimated value is required.";
+    if (!contributionForm.programArea) errors.programArea = "Program area is required.";
+    if (!contributionForm.safehouseId) errors.safehouseId = "Safehouse is required.";
     return errors;
   };
 
@@ -819,15 +873,34 @@ const Donations = () => {
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Relationship type">
-                <Input
+                <Select
                   value={createForm.relationshipType}
-                  onChange={(event) => {
-                    setCreateForm({ ...createForm, relationshipType: event.target.value });
+                  onValueChange={(value) => {
+                    setCreateForm({ ...createForm, relationshipType: value });
                     if (fieldErrors.relationshipType) {
                       setFieldErrors((current) => ({ ...current, relationshipType: "" }));
                     }
                   }}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                  {metadataQuery.data?.relationshipTypes?.length ? (
+                    metadataQuery.data.relationshipTypes
+                      .filter((option) => option !== "Supporter")
+                      .map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatDisplayLabel(option)}
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <SelectItem value={createForm.relationshipType}>
+                      {formatDisplayLabel(createForm.relationshipType)}
+                    </SelectItem>
+                  )}
+                  </SelectContent>
+                </Select>
                 {fieldErrors.relationshipType ? (
                   <p className="text-xs text-destructive">{fieldErrors.relationshipType}</p>
                 ) : null}
@@ -886,15 +959,34 @@ const Donations = () => {
               </Field>
             </div>
             <Field label="Acquisition channel">
-              <Input
+              <Select
                 value={createForm.acquisitionChannel}
-                onChange={(event) => {
-                  setCreateForm({ ...createForm, acquisitionChannel: event.target.value });
+                onValueChange={(value) => {
+                  setCreateForm({ ...createForm, acquisitionChannel: value });
                   if (fieldErrors.acquisitionChannel) {
                     setFieldErrors((current) => ({ ...current, acquisitionChannel: "" }));
                   }
                 }}
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select acquisition channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  {metadataQuery.data?.acquisitionChannels?.length ? (
+                    metadataQuery.data.acquisitionChannels
+                      .filter((option) => option !== "Manual")
+                      .map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {formatDisplayLabel(option)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={createForm.acquisitionChannel}>
+                      {formatDisplayLabel(createForm.acquisitionChannel)}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
               {fieldErrors.acquisitionChannel ? (
                 <p className="text-xs text-destructive">{fieldErrors.acquisitionChannel}</p>
               ) : null}
@@ -997,6 +1089,68 @@ const Donations = () => {
               ) : null}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Program area">
+                <Select
+                  value={contributionForm.programArea}
+                  onValueChange={(value) => {
+                    setContributionForm({ ...contributionForm, programArea: value });
+                    if (contributionFieldErrors.programArea) {
+                      setContributionFieldErrors((current) => ({ ...current, programArea: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select program area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metadataQuery.data?.programAreas?.length ? (
+                      metadataQuery.data.programAreas.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatDisplayLabel(option)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="General">General</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {contributionFieldErrors.programArea ? (
+                  <p className="text-xs text-destructive">{contributionFieldErrors.programArea}</p>
+                ) : null}
+              </Field>
+              <Field label="Safehouse">
+                <Select
+                  value={contributionForm.safehouseId}
+                  onValueChange={(value) => {
+                    setContributionForm({ ...contributionForm, safehouseId: value });
+                    if (contributionFieldErrors.safehouseId) {
+                      setContributionFieldErrors((current) => ({ ...current, safehouseId: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select safehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metadataQuery.data?.safehouses?.length ? (
+                      metadataQuery.data.safehouses.map((option) => (
+                        <SelectItem key={option.safehouseId} value={option.safehouseId.toString()}>
+                          {option.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="0" disabled>
+                        No safehouses found
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {contributionFieldErrors.safehouseId ? (
+                  <p className="text-xs text-destructive">{contributionFieldErrors.safehouseId}</p>
+                ) : null}
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Donation date">
                 <Input
                   type="date"
@@ -1054,6 +1208,8 @@ const Donations = () => {
                     donationDate: contributionForm.donationDate,
                     estimatedValue: Number(contributionForm.estimatedValue),
                     impactUnit: contributionForm.impactUnit,
+                    programArea: contributionForm.programArea,
+                    safehouseId: Number(contributionForm.safehouseId),
                   });
                 }}
               >
