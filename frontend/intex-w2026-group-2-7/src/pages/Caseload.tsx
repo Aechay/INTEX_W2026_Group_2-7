@@ -85,6 +85,8 @@ type Resident = {
   notesRestricted: string | null;
   predictedRisk: string | null;
   predictedRiskNum: number | null;
+  predictedReintegrationReadiness: number | null;
+  predictedReintegrationCategory: string | null;
 };
 
 type CaseloadResponse = {
@@ -100,7 +102,15 @@ type CaseloadResponse = {
   };
 };
 
-type ResidentForm = Omit<Resident, "residentId" | "safehouseName" | "predictedRisk" | "predictedRiskNum">;
+type ResidentForm = Omit<
+  Resident,
+  | "residentId"
+  | "safehouseName"
+  | "predictedRisk"
+  | "predictedRiskNum"
+  | "predictedReintegrationReadiness"
+  | "predictedReintegrationCategory"
+>;
 type RiskLevel = "Low" | "Medium" | "High" | "Critical";
 const RISK_LEVEL_OPTIONS: RiskLevel[] = ["Low", "Medium", "High", "Critical"];
 
@@ -160,6 +170,17 @@ const predictedRiskBadgeClass = (risk: string) => {
 };
 
 const noPredictionBadgeClass = "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200";
+
+const predictedReadinessBadgeClass = (category: string) => {
+  const normalized = category.trim().toLowerCase();
+  if (normalized === "strong readiness") {
+    return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+  }
+  if (normalized === "monitor closely") {
+    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+  }
+  return "border-red-500/40 bg-red-500/20 text-red-900 dark:text-red-200";
+};
 
 const predictedRiskTranslationKey = (risk: string) => {
   const normalizedRisk = risk.trim().toLowerCase();
@@ -627,7 +648,7 @@ const Caseload = () => {
                       <Badge variant="outline" className="bg-muted text-muted-foreground">{resident.safehouseName}</Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="relative space-y-3 pb-12 text-sm">
+                  <CardContent className="relative space-y-3 pb-20 text-sm">
                     <div className="text-muted-foreground">
                       {resident.sex} • {dateInputValue(resident.dateOfBirth) || t("cards.dobNotSet")}
                     </div>
@@ -639,19 +660,35 @@ const Caseload = () => {
                         {subcategories.length > 0 ? subcategories.join(", ") : t("cards.noSubcategories")}
                       </div>
                     </div>
-                    <Badge
-                      className={`absolute bottom-4 right-4 border ${
-                        resident.predictedRisk
-                          ? predictedRiskBadgeClass(resident.predictedRisk)
-                          : noPredictionBadgeClass
-                      }`}
-                    >
-                      {resident.predictedRisk
-                        ? t("cards.predictedRiskBadge", {
-                            level: t(predictedRiskTranslationKey(resident.predictedRisk)),
-                          })
-                        : t("cards.noPredictionBadge")}
-                    </Badge>
+                    <div className="absolute bottom-4 right-4 flex flex-col items-end gap-2">
+                      <Badge
+                        className={`border ${
+                          resident.predictedRisk
+                            ? predictedRiskBadgeClass(resident.predictedRisk)
+                            : noPredictionBadgeClass
+                        }`}
+                      >
+                        {resident.predictedRisk
+                          ? t("cards.predictedRiskBadge", {
+                              level: t(predictedRiskTranslationKey(resident.predictedRisk)),
+                            })
+                          : t("cards.noPredictionBadge")}
+                      </Badge>
+                      <Badge
+                        className={`border ${
+                          resident.predictedReintegrationCategory
+                            ? predictedReadinessBadgeClass(resident.predictedReintegrationCategory)
+                            : noPredictionBadgeClass
+                        } text-[11px]`}
+                      >
+                        {resident.predictedReintegrationCategory &&
+                        resident.predictedReintegrationReadiness !== null
+                          ? t("cards.predictedReadinessBadge", {
+                              score: Math.round(resident.predictedReintegrationReadiness * 100),
+                            })
+                          : t("cards.noReadinessPredictionBadge")}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               </button>

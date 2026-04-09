@@ -1061,6 +1061,8 @@ export const resources = {
         noSubcategories: "No sub-categories",
         predictedRiskBadge: "Predicted Risk Level: {{level}}",
         noPredictionBadge: "Predicted Risk Level: No prediction",
+        predictedReadinessBadge: "Readiness: {{score}}%",
+        noReadinessPredictionBadge: "Readiness: N/A",
       },
       riskLevels: {
         low: "Low",
@@ -2486,6 +2488,8 @@ export const resources = {
         noSubcategories: "Sin subcategorias",
         predictedRiskBadge: "Nivel de Riesgo Previsto: {{level}}",
         noPredictionBadge: "Nivel de Riesgo Previsto: Sin predicción",
+        predictedReadinessBadge: "Preparación: {{score}}%",
+        noReadinessPredictionBadge: "Preparación: N/D",
       },
       riskLevels: {
         low: "Bajo",

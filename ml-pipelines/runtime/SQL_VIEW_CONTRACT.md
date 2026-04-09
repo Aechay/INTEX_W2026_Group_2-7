@@ -5,6 +5,7 @@ The nightly training job can run in `ML_INPUT_MODE=sql`. In that mode it reads d
 These views are **not** created automatically by the Python runtime or the Bicep template. Create them in the operational database after you decide how your production tables map to the notebook feature engineering.
 
 This repository includes an idempotent Azure SQL script at [`infra/sql/create-ml-training-views.sql`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/infra/sql/create-ml-training-views.sql) that creates the default `ml.*TrainingView` objects against the current operational schema.
+For reintegration-readiness view updates only, use [`infra/sql/create-reintegration-readiness-training-views.sql`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/infra/sql/create-reintegration-readiness-training-views.sql).
 
 ## Required access
 
@@ -14,6 +15,7 @@ The Azure Container Apps Job managed identity needs:
 - `INSERT` on `MlModelRuns`
 - `INSERT` on `DonorChurnPredictions`
 - `INSERT` on `ResidentRiskPredictions`
+- `INSERT` on `ReintegrationReadinessPredictions`
 
 The simplest setup is:
 
@@ -82,6 +84,7 @@ The runtime defaults to these view names unless you override them with `ML_VIEW_
 - `initial_risk_level`
 - `current_risk_level`
 - `reintegration_status`
+- `reintegration_type`
 
 ### `ml.ProcessRecordingsTrainingView`
 
@@ -107,6 +110,7 @@ The runtime defaults to these view names unless you override them with `ML_VIEW_
 - `record_date`
 - `progress_percent`
 - `attendance_rate`
+- `completion_status`
 
 ### `ml.HealthWellbeingRecordsTrainingView`
 
