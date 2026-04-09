@@ -53,6 +53,21 @@ public static class AdminDonationsEndpointExtensions
             .RequireAuthorization(AppPolicies.AdminOnly)
             .Produces<AdminDonationsOverviewResponse>();
 
+        endpoints.MapPost("/api/admin/donations/donors", CreateDonorAsync)
+            .WithName("CreateAdminDonor")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<AdminDonorCreatedResponse>();
+
+        endpoints.MapGet("/api/admin/donations/supporters", GetSupportersAsync)
+            .WithName("GetAdminDonationSupporters")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<IReadOnlyList<SupporterLookupResponse>>();
+
+        endpoints.MapPost("/api/admin/donations/contributions", CreateContributionAsync)
+            .WithName("CreateAdminContribution")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<AdminContributionCreatedResponse>();
+
         return endpoints;
     }
 
@@ -269,6 +284,182 @@ public static class AdminDonationsEndpointExtensions
         int TotalContributions,
         int ContributionsPage,
         int ContributionsPageSize);
+
+    private static async Task<Results<Created<AdminDonorCreatedResponse>, ValidationProblem>> CreateDonorAsync(
+        OperationalDbContext dbContext,
+        AdminDonorCreateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            errors["displayName"] = ["Display name is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            errors["email"] = ["Email is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+        {
+            errors["phone"] = ["Phone is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SupporterType))
+        {
+            errors["supporterType"] = ["Supporter type is required."];
+        }
+
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        var supporter = new Supporter
+        {
+            SupporterType = request.SupporterType.Trim(),
+            DisplayName = request.DisplayName.Trim(),
+            OrganizationName = string.IsNullOrWhiteSpace(request.OrganizationName)
+                ? null
+                : request.OrganizationName.Trim(),
+            FirstName = string.IsNullOrWhiteSpace(request.FirstName) ? null : request.FirstName.Trim(),
+            LastName = string.IsNullOrWhiteSpace(request.LastName) ? null : request.LastName.Trim(),
+            RelationshipType = string.IsNullOrWhiteSpace(request.RelationshipType)
+                ? "Supporter"
+                : request.RelationshipType.Trim(),
+            Region = string.IsNullOrWhiteSpace(request.Region) ? "National" : request.Region.Trim(),
+            Country = string.IsNullOrWhiteSpace(request.Country)
+                ? "Dominican Republic"
+                : request.Country.Trim(),
+            Email = request.Email.Trim(),
+            Phone = request.Phone.Trim(),
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            FirstDonationDate = null,
+            AcquisitionChannel = string.IsNullOrWhiteSpace(request.AcquisitionChannel)
+                ? "Manual"
+                : request.AcquisitionChannel.Trim()
+        };
+
+        dbContext.Supporters.Add(supporter);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Created(
+            $"/api/admin/donations/donors/{supporter.SupporterId}",
+            new AdminDonorCreatedResponse(supporter.SupporterId, supporter.DisplayName));
+    }
+
+    private sealed record AdminDonorCreateRequest(
+        string DisplayName,
+        string Email,
+        string Phone,
+        string SupporterType,
+        string? OrganizationName,
+        string? FirstName,
+        string? LastName,
+        string? RelationshipType,
+        string? Region,
+        string? Country,
+        string? Status,
+        string? AcquisitionChannel);
+
+    private sealed record AdminDonorCreatedResponse(int SupporterId, string DisplayName);
+
+    private sealed record SupporterLookupResponse(int SupporterId, string DisplayName, string Email);
+
+    private sealed record AdminContributionCreateRequest(
+        int SupporterId,
+        string DonationType,
+        DateTime DonationDate,
+        decimal EstimatedValue,
+        string? ImpactUnit,
+        bool? IsRecurring,
+        string? ChannelSource,
+        decimal? Amount,
+        string? CurrencyCode);
+
+    private sealed record AdminContributionCreatedResponse(int DonationId, int SupporterId);
+
+    private static async Task<Ok<IReadOnlyList<SupporterLookupResponse>>> GetSupportersAsync(
+        OperationalDbContext dbContext,
+        string? search,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.Supporters.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(s =>
+                s.DisplayName.ToLower().Contains(term) ||
+                s.Email.ToLower().Contains(term));
+        }
+
+        var supporters = await query
+            .OrderBy(s => s.DisplayName)
+            .Select(s => new SupporterLookupResponse(s.SupporterId, s.DisplayName, s.Email))
+            .Take(200)
+            .ToListAsync(cancellationToken);
+
+        return TypedResults.Ok<IReadOnlyList<SupporterLookupResponse>>(supporters);
+    }
+
+    private static async Task<Results<Created<AdminContributionCreatedResponse>, ValidationProblem>> CreateContributionAsync(
+        OperationalDbContext dbContext,
+        AdminContributionCreateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (request.SupporterId <= 0)
+        {
+            errors["supporterId"] = ["Supporter is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DonationType))
+        {
+            errors["donationType"] = ["Donation type is required."];
+        }
+
+        if (request.DonationDate == default)
+        {
+            errors["donationDate"] = ["Donation date is required."];
+        }
+
+        if (request.EstimatedValue <= 0)
+        {
+            errors["estimatedValue"] = ["Estimated value must be greater than 0."];
+        }
+
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        var donation = new Donation
+        {
+            SupporterId = request.SupporterId,
+            DonationType = request.DonationType.Trim(),
+            DonationDate = request.DonationDate,
+            EstimatedValue = request.EstimatedValue,
+            ImpactUnit = string.IsNullOrWhiteSpace(request.ImpactUnit) ? "General" : request.ImpactUnit.Trim(),
+            IsRecurring = request.IsRecurring ?? false,
+            ChannelSource = string.IsNullOrWhiteSpace(request.ChannelSource)
+                ? "Manual"
+                : request.ChannelSource.Trim(),
+            Amount = request.Amount,
+            CurrencyCode = string.IsNullOrWhiteSpace(request.CurrencyCode) ? null : request.CurrencyCode.Trim()
+        };
+
+        dbContext.Donations.Add(donation);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Created(
+            $"/api/admin/donations/contributions/{donation.DonationId}",
+            new AdminContributionCreatedResponse(donation.DonationId, donation.SupporterId));
+    }
 
     private sealed record AdminDonorSummaryResponse(
         int SupporterId,
