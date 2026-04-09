@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HandHeart, Heart, Landmark, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
@@ -9,6 +9,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { createPublicDonationRequest, getErrorMessage, resolveApiBaseUrl } from "@/auth/auth-api";
+
+const FadeInSection = ({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-fade ${isVisible ? "scroll-fade-visible" : ""}`}
+      style={{ transitionDelay: `${delayMs}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Donate = () => {
   const { t } = useTranslation("donate");
@@ -67,8 +100,10 @@ const Donate = () => {
             alt={t("hero.alt")}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
+            width={1920}
+            height={1080}
           />
-          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4">
               {t("hero.title")}
@@ -81,99 +116,107 @@ const Donate = () => {
 
         <section className="py-14 bg-background">
           <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-8">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HandHeart className="h-5 w-5 text-primary" />
-                  {t("form.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.nameLabel")}
-                    </label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder={t("form.namePlaceholder")}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.emailLabel")}
-                    </label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder={t("form.emailPlaceholder")}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.amountLabel")}
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      placeholder={t("form.amountPlaceholder")}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  >
-                    {isSubmitting ? t("form.submitting") : t("form.submit")}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <FadeInSection>
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HandHeart className="h-5 w-5 text-primary" />
+                    {t("form.title")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.nameLabel")}
+                      </label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder={t("form.namePlaceholder")}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.emailLabel")}
+                      </label>
+                      <Input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder={t("form.emailPlaceholder")}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.amountLabel")}
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        placeholder={t("form.amountPlaceholder")}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                    >
+                      {isSubmitting ? t("form.submitting") : t("form.submit")}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </FadeInSection>
 
             <div className="space-y-6">
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Landmark className="h-5 w-5 text-primary" />
-                    {t("cards.why.title")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
-                  {t("cards.why.description")}
-                </CardContent>
-              </Card>
+              <FadeInSection delayMs={120}>
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Landmark className="h-5 w-5 text-primary" />
+                      {t("cards.why.title")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                    {t("cards.why.description")}
+                  </CardContent>
+                </Card>
+              </FadeInSection>
 
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    {t("cards.operations.title")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
-                  {t("cards.operations.description")}
-                </CardContent>
-              </Card>
+              <FadeInSection delayMs={240}>
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-primary" />
+                      {t("cards.operations.title")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                    {t("cards.operations.description")}
+                  </CardContent>
+                </Card>
+              </FadeInSection>
 
-              <Card className="shadow-sm border-primary/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Heart className="h-5 w-5 text-primary" />
-                    {t("cards.gratitude.title")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
-                  {t("cards.gratitude.description")}
-                </CardContent>
-              </Card>
+              <FadeInSection delayMs={360}>
+                <Card className="shadow-sm border-primary/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-primary" />
+                      {t("cards.gratitude.title")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                    {t("cards.gratitude.description")}
+                  </CardContent>
+                </Card>
+              </FadeInSection>
             </div>
           </div>
         </section>

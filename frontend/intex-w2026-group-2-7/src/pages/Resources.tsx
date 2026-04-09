@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Phone } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
@@ -11,6 +12,39 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import heroImage from "@/assets/hero-beach.jpg";
+
+const FadeInSection = ({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-fade ${isVisible ? "scroll-fade-visible" : ""}`}
+      style={{ transitionDelay: `${delayMs}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Resources = () => {
   const { t } = useTranslation("resources");
@@ -72,24 +106,26 @@ const Resources = () => {
               {t("sections.resourceContactsTitle")}
             </h2>
             <div className="grid gap-8 lg:grid-cols-4">
-              {resourceContacts.map((resource) => (
-                <Card key={resource.name} className="shadow-md">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Phone className="h-5 w-5 text-primary" />
-                      {resource.name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">{resource.type}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <a
-                      href={`tel:${resource.phone.replace(/[^+\d]/g, "")}`}
-                      className="text-primary font-semibold hover:underline"
-                    >
-                      {resource.phone}
-                    </a>
-                  </CardContent>
-                </Card>
+              {resourceContacts.map((resource, index) => (
+                <FadeInSection key={resource.name} delayMs={index * 90}>
+                  <Card className="shadow-md">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <Phone className="h-5 w-5 text-primary" />
+                        {resource.name}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">{resource.type}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <a
+                        href={`tel:${resource.phone.replace(/[^+\d]/g, "")}`}
+                        className="text-primary font-semibold hover:underline"
+                      >
+                        {resource.phone}
+                      </a>
+                    </CardContent>
+                  </Card>
+                </FadeInSection>
               ))}
             </div>
           </div>
@@ -187,15 +223,17 @@ const Resources = () => {
               {t("sections.safetyTitle")}
             </h2>
             <div className="grid gap-6 lg:grid-cols-3">
-              {safetySteps.map((step) => (
-                <Card key={step.title} className="shadow-md">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">{step.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    {step.description}
-                  </CardContent>
-                </Card>
+              {safetySteps.map((step, index) => (
+                <FadeInSection key={step.title} delayMs={index * 120}>
+                  <Card className="shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground">{step.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground">
+                      {step.description}
+                    </CardContent>
+                  </Card>
+                </FadeInSection>
               ))}
             </div>
           </div>

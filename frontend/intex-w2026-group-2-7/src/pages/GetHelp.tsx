@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Phone, MapPin, Shield, AlertTriangle, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import QuickExitButton from "@/components/QuickExitButton";
@@ -10,6 +10,39 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroBeach from "@/assets/hero-beach.jpg";
+
+const FadeInSection = ({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-fade ${isVisible ? "scroll-fade-visible" : ""}`}
+      style={{ transitionDelay: `${delayMs}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const GetHelp = () => {
   const { t } = useTranslation("getHelp");
@@ -111,19 +144,20 @@ const GetHelp = () => {
               {t("emergencyContacts.title")}
             </h2>
             <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {emergencyContacts.map((contact) => (
-                <a
-                  key={contact.title}
-                  href={contact.href}
-                  className="group rounded-2xl border border-primary/30 bg-primary/80 text-primary-foreground px-6 py-6 text-left shadow-lg transition hover:bg-primary/90"
-                >
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-primary-foreground/80" />
-                    <span className="text-lg font-semibold">{contact.label}</span>
-                  </div>
-                  <p className="mt-3 text-base font-semibold">{contact.title}</p>
-                  <p className="text-sm text-primary-foreground/80">{contact.subtitle}</p>
-                </a>
+              {emergencyContacts.map((contact, index) => (
+                <FadeInSection key={contact.title} delayMs={index * 120}>
+                  <a
+                    href={contact.href}
+                    className="group block rounded-2xl border border-primary/30 bg-primary/80 px-6 py-6 text-left text-primary-foreground shadow-lg transition hover:bg-primary/90"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-primary-foreground/80" />
+                      <span className="text-lg font-semibold">{contact.label}</span>
+                    </div>
+                    <p className="mt-3 text-base font-semibold">{contact.title}</p>
+                    <p className="text-sm text-primary-foreground/80">{contact.subtitle}</p>
+                  </a>
+                </FadeInSection>
               ))}
             </div>
           </div>
@@ -142,109 +176,113 @@ const GetHelp = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Send className="h-5 w-5 text-primary" />
-                  {t("form.title")}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">{t("form.subtitle")}</p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.nameLabel")}
-                    </label>
-                    <Input
-                      placeholder={t("form.namePlaceholder")}
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.ageLabel")}
-                    </label>
-                    <Input
-                      placeholder={t("form.agePlaceholder")}
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.locationLabel")}
-                    </label>
-                    <Input
-                      placeholder={t("form.locationPlaceholder")}
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.contactMethodLabel")}
-                    </label>
-                    <Input
-                      placeholder={t("form.contactMethodPlaceholder")}
-                      value={formData.contactMethod}
-                      onChange={(e) =>
-                        setFormData({ ...formData, contactMethod: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {t("form.messageLabel")}
-                    </label>
-                    <Textarea
-                      placeholder={t("form.messagePlaceholder")}
-                      rows={4}
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    {t("form.submit")}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <FadeInSection>
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Send className="h-5 w-5 text-primary" />
+                    {t("form.title")}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">{t("form.subtitle")}</p>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.nameLabel")}
+                      </label>
+                      <Input
+                        placeholder={t("form.namePlaceholder")}
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.ageLabel")}
+                      </label>
+                      <Input
+                        placeholder={t("form.agePlaceholder")}
+                        value={formData.age}
+                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.locationLabel")}
+                      </label>
+                      <Input
+                        placeholder={t("form.locationPlaceholder")}
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.contactMethodLabel")}
+                      </label>
+                      <Input
+                        placeholder={t("form.contactMethodPlaceholder")}
+                        value={formData.contactMethod}
+                        onChange={(e) =>
+                          setFormData({ ...formData, contactMethod: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">
+                        {t("form.messageLabel")}
+                      </label>
+                      <Textarea
+                        placeholder={t("form.messagePlaceholder")}
+                        rows={4}
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      {t("form.submit")}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </FadeInSection>
 
-            <Card className="shadow-md border-primary/30 h-fit">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Phone className="h-5 w-5 text-primary" />
-                  {t("directContact.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-secondary" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {t("directContact.hotlineLabel")}
-                    </p>
-                    <a href="tel:+18095550HOPE" className="text-primary hover:underline text-sm">
-                      +1 (809) 555-HOPE
-                    </a>
+            <FadeInSection delayMs={120}>
+              <Card className="shadow-md border-primary/30 h-fit">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Phone className="h-5 w-5 text-primary" />
+                    {t("directContact.title")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-secondary" />
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {t("directContact.hotlineLabel")}
+                      </p>
+                      <a href="tel:+18095550HOPE" className="text-primary hover:underline text-sm">
+                        +1 (809) 555-HOPE
+                      </a>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-secondary" />
-                  <div>
-                    <p className="font-medium text-foreground">{t("directContact.visitUs")}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Calle Ricardo Robles Santo Domingo Distrito Nacional Dominican Republic
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-secondary" />
+                    <div>
+                      <p className="font-medium text-foreground">{t("directContact.visitUs")}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Calle Ricardo Robles Santo Domingo Distrito Nacional Dominican Republic
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </FadeInSection>
           </div>
         </div>
       </main>
