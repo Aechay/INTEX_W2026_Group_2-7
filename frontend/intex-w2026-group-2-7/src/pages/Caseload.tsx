@@ -793,55 +793,147 @@ const Caseload = () => {
             <DialogTitle>{t("dialogs.createTitle")}</DialogTitle>
           </DialogHeader>
           {form ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {saveErrorMessage ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                   {saveErrorMessage}
                 </div>
               ) : null}
-              <Field label={t("fields.internalCode")}>
-                <Input
-                  value={form.internalCode}
-                  readOnly
-                  className="cursor-not-allowed bg-muted/50"
-                  aria-readonly="true"
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={t("fields.internalCode")}>
+                  <Input
+                    value={form.internalCode}
+                    readOnly
+                    className="cursor-not-allowed bg-muted/50"
+                    aria-readonly="true"
+                  />
+                </Field>
+                <Field label={t("fields.firstName")}>
+                  <Input value={form.firstName ?? ""} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
+                </Field>
+                <Field label={t("fields.lastName")}>
+                  <Input value={form.lastName ?? ""} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseControlNo")}>
+                  <Input value={form.caseControlNo} onChange={(event) => setForm({ ...form, caseControlNo: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseStatus")}>
+                  <Input value={form.caseStatus} onChange={(event) => setForm({ ...form, caseStatus: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseCategory")}>
+                  <CaseCategoryControl
+                    value={form.caseCategory}
+                    onChange={(next) => setForm({ ...form, caseCategory: next })}
+                    options={caseCategoryOptions}
+                    placeholder={t("fields.caseCategoryPlaceholder")}
+                  />
+                </Field>
+                <Field label={t("fields.safehouse")}>
+                  <Select
+                    value={form.safehouseId.toString()}
+                    onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {safehouses.map((safehouse) => (
+                        <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
+                          {safehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={t("fields.assignedSocialWorker")}>
+                  <Input
+                    value={form.assignedSocialWorker}
+                    onChange={(event) => setForm({ ...form, assignedSocialWorker: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.dateOfBirth")}>
+                  <Input
+                    type="date"
+                    value={dateInputValue(form.dateOfBirth)}
+                    onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.dateOfAdmission")}>
+                  <Input
+                    type="date"
+                    value={dateInputValue(form.dateOfAdmission)}
+                    onChange={(event) => setForm({ ...form, dateOfAdmission: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.referralSource")}>
+                  <Input
+                    value={form.referralSource}
+                    onChange={(event) => setForm({ ...form, referralSource: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.reintegrationStatus")}>
+                  <Input
+                    value={form.reintegrationStatus ?? ""}
+                    onChange={(event) => setForm({ ...form, reintegrationStatus: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.pwdType")}>
+                  <Input
+                    value={form.pwdType ?? ""}
+                    onChange={(event) => setForm({ ...form, pwdType: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.specialNeedsDiagnosis")}>
+                  <Input
+                    value={form.specialNeedsDiagnosis ?? ""}
+                    onChange={(event) => setForm({ ...form, specialNeedsDiagnosis: event.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("sections.caseSubcategories")}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                  {subCategoryKeys.map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form[key])}
+                        onChange={(event) => setForm({ ...form, [key]: event.target.checked })}
+                      />
+                      {t(`subCategories.${key}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("sections.familyProfile")}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                  {familyProfileKeys.map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form[key])}
+                        onChange={(event) => setForm({ ...form, [key]: event.target.checked })}
+                      />
+                      {t(`familyProfile.${key}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <Field label={t("fields.restrictedNotes")}>
+                <textarea
+                  className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.notesRestricted ?? ""}
+                  onChange={(event) => setForm({ ...form, notesRestricted: event.target.value })}
                 />
               </Field>
-              <Field label={t("fields.firstName")}>
-                <Input value={form.firstName ?? ""} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
-              </Field>
-              <Field label={t("fields.lastName")}>
-                <Input value={form.lastName ?? ""} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseControlNo")}>
-                <Input value={form.caseControlNo} onChange={(event) => setForm({ ...form, caseControlNo: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseStatus")}>
-                <Input value={form.caseStatus} onChange={(event) => setForm({ ...form, caseStatus: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseCategory")}>
-                <CaseCategoryControl
-                  value={form.caseCategory}
-                  onChange={(next) => setForm({ ...form, caseCategory: next })}
-                  options={caseCategoryOptions}
-                  placeholder={t("fields.caseCategoryPlaceholder")}
-                />
-              </Field>
-              <Field label={t("fields.safehouse")}>
-                <Select
-                  value={form.safehouseId.toString()}
-                  onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {safehouses.map((safehouse) => (
-                      <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
-                        {safehouse.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                   <X className="mr-2 h-4 w-4" />
