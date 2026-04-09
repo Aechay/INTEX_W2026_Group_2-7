@@ -145,7 +145,7 @@ const emptyVisitForm = (): HomeVisitationUpsertForm => ({
 const getOutcomeBadgeClass = (outcome: string) => {
   switch (outcome) {
     case "Favorable": return "border-0 bg-primary/10 text-primary";
-    case "Needs Improvement": return "border-0 bg-accent/20 text-foreground";
+    case "Needs Improvement": return "border-0 bg-amber-500/15 text-yellow-900";
     case "Unfavorable": return "border-0 bg-destructive/10 text-destructive";
     default: return "border-0 bg-muted text-muted-foreground";
   }
@@ -453,7 +453,14 @@ const HomeVisitation = () => {
   const paginatedVisitations = visitations.slice((visitPage - 1) * ITEMS_PER_PAGE, visitPage * ITEMS_PER_PAGE);
 
   const allPlans = plansQuery.data ?? [];
-  const upcomingPlans = allPlans.filter((p) => !p.caseConferenceDate || p.caseConferenceDate.slice(0, 10) >= today);
+  const upcomingPlans = allPlans
+    .filter((p) => !p.caseConferenceDate || p.caseConferenceDate.slice(0, 10) >= today)
+    .sort((a, b) => {
+      const dateA = a.caseConferenceDate ? new Date(a.caseConferenceDate).getTime() : Infinity;
+      const dateB = b.caseConferenceDate ? new Date(b.caseConferenceDate).getTime() : Infinity;
+      return dateA - dateB;
+    })
+    .slice(0, 10);
   const pastPlans = allPlans.filter((p) => p.caseConferenceDate && p.caseConferenceDate.slice(0, 10) < today);
   const planTotalPages = Math.max(1, Math.ceil(pastPlans.length / ITEMS_PER_PAGE));
   const paginatedPastPlans = pastPlans.slice((planPage - 1) * ITEMS_PER_PAGE, planPage * ITEMS_PER_PAGE);
@@ -729,10 +736,9 @@ const HomeVisitation = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Conference Date</TableHead>
+                        <TableHead>Target Date</TableHead>
                         <TableHead>Resident</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Target Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -740,12 +746,9 @@ const HomeVisitation = () => {
                     <TableBody>
                       {upcomingPlans.map((plan) => (
                         <TableRow key={plan.planId} className="cursor-pointer" onClick={() => void openViewPlan(plan)}>
-                          <TableCell className="whitespace-nowrap text-sm">
-                            {plan.caseConferenceDate ? formatDate(plan.caseConferenceDate) : <span className="italic text-muted-foreground">TBD</span>}
-                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-sm">{formatDate(plan.targetDate)}</TableCell>
                           <TableCell className="text-sm font-medium">{plan.residentDisplayName}</TableCell>
                           <TableCell className="text-sm">{plan.planCategory}</TableCell>
-                          <TableCell className="whitespace-nowrap text-sm">{formatDate(plan.targetDate)}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={cn("rounded-none text-xs", getStatusBadgeClass(plan.status))}>{plan.status}</Badge>
                           </TableCell>

@@ -1608,14 +1608,14 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
       {!isComposerMode ? (
         <Card className="rounded-none border border-border bg-card shadow-none">
           <CardHeader className="space-y-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <CardTitle className="text-xl">{socialT("library.title")}</CardTitle>
                 <CardDescription>
                   {socialT("library.subtitle")}
                 </CardDescription>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex gap-3">
                 <Button asChild className="rounded-none">
                   <Link to={socialMediaComposerPath}>
                     <Sparkles className="mr-2 h-4 w-4" />

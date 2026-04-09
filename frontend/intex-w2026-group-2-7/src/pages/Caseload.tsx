@@ -164,7 +164,7 @@ const predictedRiskBadgeClass = (risk: string) => {
     return "border-orange-500/40 bg-orange-500/20 text-orange-900 dark:text-orange-200";
   }
   if (normalizedRisk === "medium") {
-    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+    return "border-0 bg-amber-500/15 text-yellow-900 dark:text-amber-200";
   }
   return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
 };
@@ -577,7 +577,7 @@ const Caseload = () => {
             }}
           >
             <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-40">
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.assignedSocialWorkers ?? []).map((value) => (
                 <SelectItem key={value} value={value}>{value}</SelectItem>
