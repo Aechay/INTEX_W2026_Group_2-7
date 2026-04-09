@@ -478,7 +478,15 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
   const callToActionUrl = useMemo(() => (wizard.caption.match(/https?:\/\/[^\s]+/g) ?? [])[0] ?? "", [wizard.caption]);
   const hasCallToAction = useMemo(() => Boolean(callToActionUrl), [callToActionUrl]);
 
-  const captionLength = wizard.caption.trim().length;
+  const captionLength = useMemo(() => {
+    let text = wizard.caption.trim();
+    // Remove hashtags, mentions, and the first URL from the character count
+    text = text.replace(/#\w+/g, "");
+    text = text.replace(/@\w+/g, "");
+    text = text.replace(/https?:\/\/[^\s]+/, "");
+    return text.trim().length;
+  }, [wizard.caption]);
+
   const plannedPostHour = parsePositiveNumber(wizard.plannedPostHour);
   const followerCountAtPost = parsePositiveNumber(wizard.followerCountAtPost);
   const boostBudgetPhp = parseOptionalPositiveNumber(wizard.boostBudgetPhp);
@@ -1418,7 +1426,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                         Ideal Timing Note
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Based on current signal data, publishing between **9:00 AM - 11:00 AM** or **5:00 PM - 8:00 PM** delivers the highest donation engagement.
+                        Based on current signal data, publishing between <strong>9:00 AM - 11:00 AM</strong> or <strong>5:00 PM - 8:00 PM</strong> delivers the highest donation engagement.
                       </p>
                     </div>
                   </div>

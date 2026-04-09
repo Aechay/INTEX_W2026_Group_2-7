@@ -807,7 +807,13 @@ public sealed class MetaPublishingService : IMetaPublishingService
             return trimmedCaption;
         }
 
-        return $"{trimmedCaption}\n\n{callToActionUrl.Trim()}";
+        var normalizedUrl = callToActionUrl.Trim();
+        if (trimmedCaption.Contains(normalizedUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmedCaption;
+        }
+
+        return $"{trimmedCaption}\n\n{normalizedUrl}";
     }
 
     private static string BuildFacebookPostUrl(string postId)
