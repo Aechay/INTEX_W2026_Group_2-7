@@ -51,6 +51,26 @@ type ResidentOption = {
   residentId: number;
   internalCode: string;
   caseControlNo: string;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+type HomeVisitationDetail = {
+  visitationId: number;
+  residentId: number;
+  residentDisplayName: string;
+  visitDate: string;
+  socialWorker: string;
+  visitType: string;
+  locationVisited: string;
+  familyMembersPresent: string;
+  purpose: string;
+  observations: string;
+  familyCooperationLevel: string;
+  safetyConcernsNoted: boolean;
+  followUpNeeded: boolean;
+  followUpNotes: string | null;
+  visitOutcome: string;
 };
 
 type HomeVisitationCard = {
@@ -92,7 +112,7 @@ const emptyForm = (): HomeVisitationUpsertForm => ({
   residentId: 0,
   visitDate: new Date().toISOString().slice(0, 10),
   socialWorker: "",
-  visitType: "Routine",
+  visitType: "Routine Follow-Up",
   locationVisited: "",
   familyMembersPresent: "",
   purpose: "",
@@ -145,6 +165,7 @@ const HomeVisitation = () => {
   const [signOutPending, setSignOutPending] = useState(false);
   const [residentFilter, setResidentFilter] = useState("all");
   const [visitTypeFilter, setVisitTypeFilter] = useState("all");
+  const [outcomeFilter, setOutcomeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -199,12 +220,12 @@ const HomeVisitation = () => {
       if (id) {
         return auth.authenticatedJson<HomeVisitationCard>(`/api/admin/home-visitations/${id}`, {
           method: "PUT",
-          body: JSON.stringify(payload),
+          body: payload,
         });
       }
       return auth.authenticatedJson<HomeVisitationCard>("/api/admin/home-visitations", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: payload,
       });
     },
     onSuccess: () => {
@@ -242,7 +263,7 @@ const HomeVisitation = () => {
     setDialogOpen(true);
   };
 
-  const openEdit = (visitation: HomeVisitationCard) => {
+  const openEdit = async (visitation: HomeVisitationCard) => {
     setEditingId(visitation.visitationId);
     setSaveError(null);
     setForm({
@@ -261,6 +282,21 @@ const HomeVisitation = () => {
       visitOutcome: visitation.visitOutcome,
     });
     setDialogOpen(true);
+    try {
+      const detail = await auth.authenticatedJson<HomeVisitationDetail>(
+        `/api/admin/home-visitations/${visitation.visitationId}`,
+      );
+      setForm((f) => ({
+        ...f,
+        locationVisited: detail.locationVisited,
+        familyMembersPresent: detail.familyMembersPresent,
+        purpose: detail.purpose,
+        observations: detail.observations,
+        followUpNotes: detail.followUpNotes ?? "",
+      }));
+    } catch {
+      // Non-critical: basic fields already populated from card data
+    }
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -268,7 +304,9 @@ const HomeVisitation = () => {
     upsertMutation.mutate({ id: editingId, body: form });
   };
 
-  const visitations = visitationsQuery.data ?? [];
+  const visitations = (visitationsQuery.data ?? []).filter(
+    (v) => outcomeFilter === "all" || v.visitOutcome === outcomeFilter,
+  );
   const totalPages = Math.max(1, Math.ceil(visitations.length / ITEMS_PER_PAGE));
   const paginatedVisitations = visitations.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -324,7 +362,7 @@ const HomeVisitation = () => {
                   <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
                   {(residentsQuery.data ?? []).map((r) => (
                     <SelectItem key={r.residentId} value={String(r.residentId)}>
-                      {r.internalCode} — {r.caseControlNo}
+                      {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -349,6 +387,29 @@ const HomeVisitation = () => {
                   <SelectItem value="all">{t("filters.allTypes")}</SelectItem>
                   {VISIT_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Outcome
+              </Label>
+              <Select
+                value={outcomeFilter}
+                onValueChange={(value) => {
+                  setOutcomeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue placeholder="All Outcomes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Outcomes</SelectItem>
+                  {OUTCOMES.map((outcome) => (
+                    <SelectItem key={outcome} value={outcome}>{outcome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -518,7 +579,7 @@ const HomeVisitation = () => {
                   <SelectContent>
                     {(residentsQuery.data ?? []).map((r) => (
                       <SelectItem key={r.residentId} value={String(r.residentId)}>
-                        {r.internalCode} — {r.caseControlNo}
+                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
                       </SelectItem>
                     ))}
                   </SelectContent>

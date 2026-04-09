@@ -77,28 +77,30 @@ public static class AdminReportsEndpointExtensions
         OperationalDbContext dbContext,
         CancellationToken cancellationToken)
     {
-        var byCaseStatus = await dbContext.Residents
+        var rawResidents = await dbContext.Residents
             .AsNoTracking()
+            .Select(r => new { r.CaseStatus, r.CurrentRiskLevel, r.ReintegrationStatus })
+            .ToArrayAsync(cancellationToken);
+
+        var byCaseStatus = rawResidents
             .GroupBy(r => r.CaseStatus)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byRiskLevel = await dbContext.Residents
-            .AsNoTracking()
-            .Where(r => r.CurrentRiskLevel != string.Empty)
+        var byRiskLevel = rawResidents
+            .Where(r => !string.IsNullOrEmpty(r.CurrentRiskLevel))
             .GroupBy(r => r.CurrentRiskLevel)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byReintegrationStatus = await dbContext.Residents
-            .AsNoTracking()
-            .Where(r => r.ReintegrationStatus != null && r.ReintegrationStatus != string.Empty)
+        var byReintegrationStatus = rawResidents
+            .Where(r => !string.IsNullOrEmpty(r.ReintegrationStatus))
             .GroupBy(r => r.ReintegrationStatus!)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         var educationValues = await dbContext.EducationRecords
             .AsNoTracking()
@@ -235,11 +237,15 @@ public static class AdminReportsEndpointExtensions
             .OrderBy(m => m.Year).ThenBy(m => m.Month)
             .ToArray();
 
-        var incidentsByType = await incidentReportsQuery
-            .GroupBy(i => i.IncidentType)
+        var rawIncidents = await incidentReportsQuery
+            .Select(i => i.IncidentType)
+            .ToArrayAsync(cancellationToken);
+
+        var incidentsByType = rawIncidents
+            .GroupBy(t => t)
             .Select(g => new ResidentCountByLabelDto(g.Key, g.Count()))
             .OrderByDescending(x => x.Count)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         return TypedResults.Ok(new ServiceActivityReportDto(
             processRecordingsByMonth,
