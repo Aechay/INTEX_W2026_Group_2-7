@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   Home,
   LayoutDashboard,
+  Megaphone,
   Plus,
   Save,
   Search,
@@ -192,9 +193,11 @@ const Caseload = () => {
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
+  const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
+    { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
     { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },

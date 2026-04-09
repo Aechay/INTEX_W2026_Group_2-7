@@ -168,6 +168,7 @@ export const resources = {
       sidebar: {
         dashboard: "Dashboard",
         residents: "Residents",
+        socialMedia: "Social Media",
         donations: "Donations",
         caseConferences: "Case Conferences",
         safehouses: "Safehouses",
@@ -418,6 +419,7 @@ export const resources = {
       sidebar: {
         dashboard: "Dashboard",
         residents: "Residents",
+        socialMedia: "Social Media",
         donations: "Donations",
         caseConferences: "Case Conferences",
         safehouses: "Safehouses",
@@ -687,6 +689,7 @@ export const resources = {
       sidebar: {
         dashboard: "Panel",
         residents: "Residentes",
+        socialMedia: "Redes sociales",
         donations: "Donaciones",
         caseConferences: "Conferencias de caso",
         safehouses: "Casas seguras",
@@ -945,6 +948,7 @@ export const resources = {
       sidebar: {
         dashboard: "Panel",
         residents: "Residentes",
+        socialMedia: "Redes sociales",
         donations: "Donaciones",
         caseConferences: "Conferencias de caso",
         safehouses: "Casas seguras",
