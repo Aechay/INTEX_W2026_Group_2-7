@@ -1,15 +1,34 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { consumePendingAuthRedirect, resolvePostAuthRedirect } from "@/auth/auth-redirect";
+import { consumePendingAuthRedirect } from "@/auth/auth-redirect";
 import { getErrorMessage } from "@/auth/auth-api";
+import type { CurrentUser } from "@/auth/auth-types";
 import useAuth from "@/auth/useAuth";
 import AuthPageLayout from "@/components/auth/AuthPageLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { withPathLanguage } from "@/i18n/routing";
 
-const attemptedExchangeCodes = new Set<string>();
+const externalExchangeByCode = new Map<string, Promise<CurrentUser>>();
+
+const exchangeCodeOnce = (
+  code: string,
+  completeExternalLogin: (externalCode: string) => Promise<CurrentUser>,
+) => {
+  const existingExchange = externalExchangeByCode.get(code);
+  if (existingExchange) {
+    return existingExchange;
+  }
+
+  const exchangePromise = completeExternalLogin(code).catch((error) => {
+    externalExchangeByCode.delete(code);
+    throw error;
+  });
+
+  externalExchangeByCode.set(code, exchangePromise);
+  return exchangePromise;
+};
 
 const ExternalAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -33,33 +52,25 @@ const ExternalAuthCallback = () => {
       return;
     }
 
-    if (attemptedExchangeCodes.has(code)) {
-      return;
-    }
-
-    attemptedExchangeCodes.add(code);
-
     let isCancelled = false;
 
     const completeSignIn = async () => {
       try {
-        const user = await auth.completeExternalLogin(code);
+        const user = await exchangeCodeOnce(code, auth.completeExternalLogin);
         if (isCancelled) {
           return;
         }
 
-        const pendingPath = consumePendingAuthRedirect();
-        const isAdmin = user.roles.includes("Admin");
-        const target = resolvePostAuthRedirect({
-          pendingPath,
-          isAdmin,
-          localizedDashboard: withPathLanguage("/dashboard", i18n.resolvedLanguage),
-          localizedDonorPortal: withPathLanguage("/donor-portal", i18n.resolvedLanguage),
-        });
+        // External provider sign-in always lands based on role.
+        consumePendingAuthRedirect();
+        const normalizedRoles = user.roles.map((role) => role.toLowerCase());
+        const isAdmin = normalizedRoles.includes("admin");
+        const target = isAdmin
+          ? withPathLanguage("/dashboard", i18n.resolvedLanguage)
+          : withPathLanguage("/donor-portal", i18n.resolvedLanguage);
 
         navigate(target, { replace: true });
       } catch (error) {
-        attemptedExchangeCodes.delete(code);
         consumePendingAuthRedirect();
         if (!isCancelled) {
           setErrorMessage(getErrorMessage(error, t("externalCallbackError")));
