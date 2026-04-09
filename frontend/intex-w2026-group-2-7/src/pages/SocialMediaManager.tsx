@@ -1387,7 +1387,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 <div className="mx-auto max-w-3xl space-y-8">
                   <div className="space-y-2 text-center">
                     <h2 className="text-2xl font-semibold tracking-tight">Draft Your Story</h2>
-                    <p className="text-sm text-muted-foreground">Include hashtags, mentions, and a clear call-to-action link.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Write your <strong>{humanizeValue(wizard.sentimentTone)} {humanizeValue(wizard.postType)}</strong> about <strong>{humanizeValue(wizard.contentTopic)}</strong> below.
+                    </p>
                   </div>
 
                   <div className="space-y-4">
@@ -1401,22 +1403,26 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
                       <div className={cn("border p-3 text-center transition-colors", captionLength >= 160 && captionLength <= 219 ? "border-primary bg-primary/5" : "border-border bg-muted/20")}>
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">Length</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Length</div>
                         <div className={cn("text-lg font-bold", captionLength >= 160 && captionLength <= 219 ? "text-primary" : "text-foreground")}>{captionLength}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">Ideal: 160-219</div>
                       </div>
                       <div className={cn("border p-3 text-center transition-colors", hashtagCount >= 5 && hashtagCount <= 8 ? "border-primary bg-primary/5" : "border-border bg-muted/20")}>
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">Hashtags</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Hashtags</div>
                         <div className={cn("text-lg font-bold", hashtagCount >= 5 && hashtagCount <= 8 ? "text-primary" : "text-foreground")}>{hashtagCount}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">Ideal: 5-8</div>
                       </div>
-                      <div className={cn("border p-3 text-center transition-colors", mentionsCount >= 1 ? "border-primary bg-primary/5" : "border-border bg-muted/20")}>
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">Mentions</div>
-                        <div className={cn("text-lg font-bold", mentionsCount >= 1 ? "text-primary" : "text-foreground")}>{mentionsCount}</div>
+                      <div className={cn("border p-3 text-center transition-colors", mentionsCount >= 1 && mentionsCount <= 2 ? "border-primary bg-primary/5" : "border-border bg-muted/20")}>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mentions</div>
+                        <div className={cn("text-lg font-bold", mentionsCount >= 1 && mentionsCount <= 2 ? "text-primary" : "text-foreground")}>{mentionsCount}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">Ideal: 1-2</div>
                       </div>
                       <div className={cn("border p-3 text-center transition-colors", hasCallToAction ? "border-primary bg-primary/5" : "border-border bg-muted/20")}>
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">CTA</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">CTA</div>
                         <div className={cn("text-lg font-bold", hasCallToAction ? "text-primary" : "text-foreground")}>
                           {hasCallToAction ? "Present" : "None"}
                         </div>
+                        <div className="text-[10px] text-muted-foreground mt-1">Ideal: Always</div>
                       </div>
                     </div>
 
