@@ -7,8 +7,10 @@ using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
 using INTEX_W2026_Group_2_7.Services.Ml;
 using INTEX_W2026_Group_2_7.Services.SocialMedia;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,7 +38,11 @@ if (builder.Environment.IsDevelopment())
                  "http://localhost:4173",
                  "https://localhost:4173",
                  "http://127.0.0.1:4173",
-                 "https://127.0.0.1:4173"
+                 "https://127.0.0.1:4173",
+                 "http://localhost:8080",
+                 "https://localhost:8080",
+                 "http://127.0.0.1:8080",
+                 "https://127.0.0.1:8080"
              })
     {
         allowedFrontendOrigins.Add(origin);
@@ -55,6 +61,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+});
 
 builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
@@ -186,7 +199,11 @@ app.MapControllers();
 app.MapAdminDashboardEndpoints();
 app.MapAdminCaseloadEndpoints();
 app.MapAdminSocialMediaEndpoints();
+app.MapDonorEndpoints();
 app.MapMlEndpoints();
+app.MapAdminProcessRecordingEndpoints();
+app.MapAdminHomeVisitationEndpoints();
+app.MapAdminReportsEndpoints();
 
 await app.SeedIdentityDataAsync();
 

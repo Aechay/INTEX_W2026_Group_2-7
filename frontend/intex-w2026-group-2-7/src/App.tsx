@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/auth/AuthProvider';
 import RequireAdmin from '@/auth/RequireAdmin';
 import RequireAuth from '@/auth/RequireAuth';
+import RedirectAdminFromDonorPortal from '@/auth/RedirectAdminFromDonorPortal';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -17,6 +18,9 @@ import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
 import Caseload from './pages/Caseload';
 import SocialMediaManager from './pages/SocialMediaManager';
+import ProcessRecording from './pages/ProcessRecording';
+import HomeVisitation from './pages/HomeVisitation';
+import Reports from './pages/Reports';
 import DonorPortal from './pages/DonorPortal';
 import Impact from './pages/Impact';
 import Donate from './pages/Donate';
@@ -76,10 +80,12 @@ const App = () => (
               <Route path="/external-auth/callback" element={<ExternalAuthCallback />} />
               <Route path="/:lang/external-auth/callback" element={<ExternalAuthCallback />} />
 
-              {/* Protected: any authenticated user */}
+              {/* Protected: donors only (admins use /dashboard) */}
               <Route element={<RequireAuth />}>
-                <Route path="/donor-portal" element={<DonorPortal />} />
-                <Route path="/:lang/donor-portal" element={<DonorPortal />} />
+                <Route element={<RedirectAdminFromDonorPortal />}>
+                  <Route path="/donor-portal" element={<DonorPortal />} />
+                  <Route path="/:lang/donor-portal" element={<DonorPortal />} />
+                </Route>
               </Route>
 
               {/* Protected: Admin only */}
@@ -92,6 +98,12 @@ const App = () => (
                 <Route path="/:lang/dashboard/social-media" element={<SocialMediaManager mode="library" />} />
                 <Route path="/dashboard/social-media/new" element={<SocialMediaManager mode="composer" />} />
                 <Route path="/:lang/dashboard/social-media/new" element={<SocialMediaManager mode="composer" />} />
+                <Route path="/dashboard/process-recordings" element={<ProcessRecording />} />
+                <Route path="/:lang/dashboard/process-recordings" element={<ProcessRecording />} />
+                <Route path="/dashboard/home-visitations" element={<HomeVisitation />} />
+                <Route path="/:lang/dashboard/home-visitations" element={<HomeVisitation />} />
+                <Route path="/dashboard/reports" element={<Reports />} />
+                <Route path="/:lang/dashboard/reports" element={<Reports />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

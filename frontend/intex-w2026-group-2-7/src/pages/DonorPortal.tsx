@@ -1,4 +1,6 @@
-import { Heart, LogOut } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Heart, Landmark } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import useAuth from '@/auth/useAuth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -10,44 +12,153 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getErrorMessage } from '@/auth/auth-api';
+
+type DonationAllocationSummary = {
+  programArea: string;
+  amountAllocated: number;
+  allocationDate: string;
+  safehouseName: string;
+  city: string;
+  country: string;
+};
+
+type DonationHistoryItem = {
+  donationId: number;
+  donationDate: string;
+  donationType: string;
+  campaignName?: string | null;
+  channelSource: string;
+  currencyCode?: string | null;
+  amount?: number | null;
+  estimatedValue: number;
+  allocations: DonationAllocationSummary[];
+};
+
+type DonorDonationsResponse = {
+  email: string;
+  totalDonated: number;
+  totalAllocated: number;
+  donations: DonationHistoryItem[];
+};
+
+/** Dominican pesos (DOP); `es-DO` shows amounts with the RD$ symbol. */
+function formatDop(value: number): string {
+  return new Intl.NumberFormat('es-DO', {
+    style: 'currency',
+    currency: 'DOP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 
 const DonorPortal = () => {
+  const { t, i18n } = useTranslation('donorPortal');
   const auth = useAuth();
   const donorName = auth.user?.displayName?.trim() || auth.user?.email?.split('@')[0] || '';
+  const [history, setHistory] = useState<DonorDonationsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language.startsWith('es') ? 'es-DO' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+    [i18n.language],
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadDonationHistory = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await auth.authenticatedJson<DonorDonationsResponse>('/donor/donations');
+        if (!isCancelled) {
+          setHistory(response);
+        }
+      } catch (fetchError) {
+        if (!isCancelled) {
+          setError(getErrorMessage(fetchError, t('errors.loadFailed')));
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadDonationHistory();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [auth, t]);
+
+  const allocationsByProgramArea = useMemo(() => {
+    const totals = new Map<string, number>();
+    history?.donations.forEach((donation) => {
+      donation.allocations.forEach((allocation) => {
+        totals.set(allocation.programArea, (totals.get(allocation.programArea) ?? 0) + allocation.amountAllocated);
+      });
+    });
+    return [...totals.entries()]
+      .map(([programArea, amount]) => ({ programArea, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [history]);
+
+  const uniqueSafehouses = useMemo(() => {
+    const safehouseSet = new Set<string>();
+    history?.donations.forEach((donation) => {
+      donation.allocations.forEach((allocation) => {
+        safehouseSet.add(`${allocation.safehouseName} (${allocation.city}, ${allocation.country})`);
+      });
+    });
+    return [...safehouseSet];
+  }, [history]);
+
+  const firstDonationYear = useMemo(() => {
+    if (!history || history.donations.length === 0) {
+      return null;
+    }
+
+    return history.donations
+      .map((donation) => new Date(donation.donationDate).getFullYear())
+      .reduce((minYear, year) => Math.min(minYear, year), Number.MAX_SAFE_INTEGER);
+  }, [history]);
+
+  const yearsSupporting = firstDonationYear ? Math.max(1, new Date().getFullYear() - firstDonationYear + 1) : 0;
+  const donations = history?.donations ?? [];
+
+  const stats = useMemo(
+    () => [
+      { label: t('stats.totalDonated'), value: formatDop(history?.totalDonated ?? 0) },
+      { label: t('stats.donationsMade'), value: `${donations.length}` },
+      { label: t('stats.yearsSupporting'), value: `${yearsSupporting}` },
+    ],
+    [t, history?.totalDonated, donations.length, yearsSupporting],
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       <main className="flex-1 container mx-auto px-4 py-10 max-w-4xl space-y-8">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome back{donorName ? `, ${donorName}` : ''}
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              Thank you for your continued support of Hope Shelter.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void auth.logout()}
-            className="shrink-0"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            {donorName ? t('header.welcomeBackWithName', { name: donorName }) : t('header.welcomeBack')}
+          </h1>
+          <p className="mt-1 text-muted-foreground">{t('header.subtitle')}</p>
         </div>
 
-        {/* Impact summary */}
         <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { label: 'Total Donated', value: '—' },
-            { label: 'Donations Made', value: '—' },
-            { label: 'Years Supporting', value: '—' },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <Card key={stat.label} className="border-border/60">
               <CardContent className="pt-6">
                 <p className="text-2xl font-bold text-foreground">{stat.value}</p>
@@ -57,37 +168,131 @@ const DonorPortal = () => {
           ))}
         </div>
 
-        {/* Donation history */}
-        <Card className="border-border/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Heart className="h-5 w-5 text-primary" />
-              Donation History
-            </CardTitle>
-            <CardDescription>
-              Your full giving history will appear here once connected to the backend.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Heart className="h-6 w-6 text-primary" />
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">{t('history.loading')}</p>
+        )}
+
+        {!isLoading && error && <p className="text-sm text-destructive">{error}</p>}
+
+        {!isLoading && !error && donations.length === 0 && (
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Heart className="h-5 w-5 text-primary" />
+                {t('history.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <Heart className="h-6 w-6 text-primary" />
+                </div>
+                <p className="text-sm font-medium text-foreground">{t('history.emptyTitle')}</p>
+                <p className="max-w-xs text-sm text-muted-foreground">{t('history.emptyDescription')}</p>
+                <Button
+                  asChild
+                  className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
+                    {t('history.makeDonation')}
+                  </a>
+                </Button>
               </div>
-              <p className="text-sm font-medium text-foreground">No donations yet</p>
-              <p className="max-w-xs text-sm text-muted-foreground">
-                Your donation history will appear here. Every gift makes a difference in the lives of at-risk girls in the Dominican Republic.
-              </p>
-              <Button
-                asChild
-                className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
-                  Make a Donation
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !error && donations.length > 0 && (
+          <>
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Landmark className="h-5 w-5 text-primary" />
+                  {t('allocation.title')}
+                </CardTitle>
+                <CardDescription>
+                  {t('allocation.totalAllocated', { amount: formatDop(history?.totalAllocated ?? 0) })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {allocationsByProgramArea.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('allocation.noAllocations')}</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('allocation.table.programArea')}</TableHead>
+                        <TableHead className="text-right">{t('allocation.table.amount')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allocationsByProgramArea.map((item) => (
+                        <TableRow key={item.programArea}>
+                          <TableCell className="font-medium text-foreground">{item.programArea}</TableCell>
+                          <TableCell className="text-right tabular-nums text-foreground">
+                            {formatDop(item.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                {uniqueSafehouses.length > 0 && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    {t('allocation.supporting', { list: uniqueSafehouses.join(', ') })}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Heart className="h-5 w-5 text-primary" />
+                  {t('history.title')}
+                </CardTitle>
+                <CardDescription>
+                  {t('history.description', { email: auth.user?.email ?? '' })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {donations.map((donation) => (
+                  <div key={donation.donationId} className="rounded-md border border-border/60 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {dateFormatter.format(new Date(donation.donationDate))}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {t('history.via', { type: donation.donationType, channel: donation.channelSource })}
+                          {donation.campaignName ? ` — ${donation.campaignName}` : ''}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        {formatDop(donation.amount ?? donation.estimatedValue)}
+                      </p>
+                    </div>
+                    {donation.allocations.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {donation.allocations.map((allocation, index) => (
+                          <p key={`${donation.donationId}-${index}`} className="text-sm text-muted-foreground">
+                            {t('history.toSafehouse', {
+                              program: allocation.programArea,
+                              amount: formatDop(allocation.amountAllocated),
+                              safehouse: allocation.safehouseName,
+                              city: allocation.city,
+                              country: allocation.country,
+                            })}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </main>
 
       <Footer />

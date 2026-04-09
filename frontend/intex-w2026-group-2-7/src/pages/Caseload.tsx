@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
   CircleAlert,
+  ClipboardList,
   FileBarChart2,
   HeartHandshake,
   Home,
@@ -89,6 +90,8 @@ type Resident = {
 type CaseloadResponse = {
   residents: Resident[];
   safehouses: SafehouseOption[];
+  /** Distinct non-empty case categories in the operational database (for dropdowns). */
+  caseCategoryOptions: string[];
   filterOptions: {
     caseStatuses: string[];
     caseCategories: string[];
@@ -100,6 +103,24 @@ type CaseloadResponse = {
 type ResidentForm = Omit<Resident, "residentId" | "safehouseName">;
 
 const dateInputValue = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
+
+/** Matches codes like LS-0001 … LS-0060 (case-insensitive prefix). */
+const INTERNAL_CODE_LS_PATTERN = /^LS-(\d+)$/i;
+
+/** Next sequential internal code after the highest existing `LS-####` value. */
+function computeNextLsInternalCode(existingCodes: readonly string[]): string {
+  let max = 0;
+  for (const code of existingCodes) {
+    const match = INTERNAL_CODE_LS_PATTERN.exec(code.trim());
+    if (match) {
+      const n = Number.parseInt(match[1], 10);
+      if (!Number.isNaN(n) && n > max) {
+        max = n;
+      }
+    }
+  }
+  return `LS-${String(max + 1).padStart(4, "0")}`;
+}
 
 const subCategoryKeys = [
   "subCatOrphaned",
@@ -122,8 +143,30 @@ const familyProfileKeys = [
   "familyInformalSettler",
 ] as const;
 
-const buildEmptyResident = (safehouseId: number): ResidentForm => ({
-  internalCode: "",
+/** Empty string is invalid for `DateTime?` in the API — use null for unset optional dates. */
+function optionalDateIso(iso: string | null | undefined): string | null {
+  const s = dateInputValue(iso ?? null);
+  return s || null;
+}
+
+/** Request body must match API: exclude UI-only fields like `safehouseName` and `residentId`. */
+function buildResidentUpsertPayload(form: ResidentForm): Record<string, unknown> {
+  const raw = form as ResidentForm & { safehouseName?: string; residentId?: number };
+  const { safehouseName: _s, residentId: _r, ...rest } = raw;
+  return {
+    ...rest,
+    dateOfBirth: dateInputValue(rest.dateOfBirth) || null,
+    dateOfAdmission: dateInputValue(rest.dateOfAdmission) || null,
+    dateEnrolled: dateInputValue(rest.dateEnrolled) || null,
+    dateClosed: optionalDateIso(rest.dateClosed),
+    dateColbRegistered: optionalDateIso(rest.dateColbRegistered),
+    dateColbObtained: optionalDateIso(rest.dateColbObtained),
+    dateCaseStudyPrepared: optionalDateIso(rest.dateCaseStudyPrepared),
+  };
+}
+
+const buildEmptyResident = (safehouseId: number, internalCode: string): ResidentForm => ({
+  internalCode,
   caseControlNo: "",
   firstName: "",
   lastName: "",
@@ -173,6 +216,55 @@ const buildEmptyResident = (safehouseId: number): ResidentForm => ({
   notesRestricted: "",
 });
 
+function CaseCategoryControl({
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: string[];
+  disabled?: boolean;
+  placeholder: string;
+}) {
+  const mergedOptions = useMemo(() => {
+    if (value && !options.includes(value)) {
+      return [...options, value].sort((a, b) => a.localeCompare(b));
+    }
+    return options;
+  }, [options, value]);
+
+  if (mergedOptions.length === 0) {
+    return (
+      <Input value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
+    );
+  }
+
+  const selectValue = value || "__none__";
+
+  return (
+    <Select
+      value={selectValue}
+      onValueChange={(next) => onChange(next === "__none__" ? "" : next)}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">{placeholder}</SelectItem>
+        {mergedOptions.map((cat) => (
+          <SelectItem key={cat} value={cat}>
+            {cat}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 const Caseload = () => {
   const auth = useAuth();
   const { i18n, t } = useTranslation("caseload");
@@ -194,14 +286,18 @@ const Caseload = () => {
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
-    { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
+    { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
+    { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
+    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },
-    { label: t("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
@@ -228,16 +324,7 @@ const Caseload = () => {
 
   const upsertMutation = useMutation({
     mutationFn: async ({ residentId, body }: { residentId?: number; body: ResidentForm }) => {
-      const payload = {
-        ...body,
-        dateOfBirth: dateInputValue(body.dateOfBirth) || null,
-        dateOfAdmission: dateInputValue(body.dateOfAdmission) || null,
-        dateEnrolled: dateInputValue(body.dateEnrolled) || null,
-        dateClosed: dateInputValue(body.dateClosed),
-        dateColbRegistered: dateInputValue(body.dateColbRegistered),
-        dateColbObtained: dateInputValue(body.dateColbObtained),
-        dateCaseStudyPrepared: dateInputValue(body.dateCaseStudyPrepared),
-      };
+      const payload = buildResidentUpsertPayload(body);
       if (residentId) {
         return auth.authenticatedJson<Resident>(`/api/admin/caseload/residents/${residentId}`, {
           method: "PUT",
@@ -249,11 +336,15 @@ const Caseload = () => {
         body: payload,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["admin-caseload-residents"] });
       setIsEditing(false);
       setIsCreateOpen(false);
       setSaveErrorMessage(null);
+      if (data && variables.residentId) {
+        setSelected(data);
+        setForm({ ...data });
+      }
     },
     onError: (error) => {
       setSaveErrorMessage(getErrorMessage(error, t("errors.saveFailed")));
@@ -262,6 +353,7 @@ const Caseload = () => {
 
   const residents = caseloadQuery.data?.residents ?? [];
   const safehouses = caseloadQuery.data?.safehouses ?? [];
+  const caseCategoryOptions = caseloadQuery.data?.caseCategoryOptions ?? [];
   const totalResidents = residents.length;
   const effectivePageSize = pageSize === "all" ? totalResidents || 1 : Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(totalResidents / effectivePageSize));
@@ -315,8 +407,9 @@ const Caseload = () => {
           <Button
             type="button"
             onClick={() => {
+              const nextCode = computeNextLsInternalCode(residents.map((r) => r.internalCode));
               setIsCreateOpen(true);
-              setForm(buildEmptyResident(safehouses[0]?.safehouseId ?? 1));
+              setForm(buildEmptyResident(safehouses[0]?.safehouseId ?? 1, nextCode));
               setSaveErrorMessage(null);
             }}
           >
@@ -529,11 +622,12 @@ const Caseload = () => {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label={t("fields.residentCode")}>
+                <Field label={t("fields.internalCode")}>
                   <Input
                     value={form.internalCode}
-                    disabled={!isEditing}
-                    onChange={(event) => setForm({ ...form, internalCode: event.target.value })}
+                    readOnly
+                    className="cursor-not-allowed bg-muted/50"
+                    aria-readonly="true"
                   />
                 </Field>
                 <Field label={t("fields.firstName")}>
@@ -565,10 +659,12 @@ const Caseload = () => {
                   />
                 </Field>
                 <Field label={t("fields.caseCategory")}>
-                  <Input
+                  <CaseCategoryControl
                     value={form.caseCategory}
+                    onChange={(next) => setForm({ ...form, caseCategory: next })}
+                    options={caseCategoryOptions}
                     disabled={!isEditing}
-                    onChange={(event) => setForm({ ...form, caseCategory: event.target.value })}
+                    placeholder={t("fields.caseCategoryPlaceholder")}
                   />
                 </Field>
                 <Field label={t("fields.safehouse")}>
@@ -703,8 +799,13 @@ const Caseload = () => {
                   {saveErrorMessage}
                 </div>
               ) : null}
-              <Field label={t("fields.residentCode")}>
-                <Input value={form.internalCode} onChange={(event) => setForm({ ...form, internalCode: event.target.value })} />
+              <Field label={t("fields.internalCode")}>
+                <Input
+                  value={form.internalCode}
+                  readOnly
+                  className="cursor-not-allowed bg-muted/50"
+                  aria-readonly="true"
+                />
               </Field>
               <Field label={t("fields.firstName")}>
                 <Input value={form.firstName ?? ""} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
@@ -719,7 +820,12 @@ const Caseload = () => {
                 <Input value={form.caseStatus} onChange={(event) => setForm({ ...form, caseStatus: event.target.value })} />
               </Field>
               <Field label={t("fields.caseCategory")}>
-                <Input value={form.caseCategory} onChange={(event) => setForm({ ...form, caseCategory: event.target.value })} />
+                <CaseCategoryControl
+                  value={form.caseCategory}
+                  onChange={(next) => setForm({ ...form, caseCategory: next })}
+                  options={caseCategoryOptions}
+                  placeholder={t("fields.caseCategoryPlaceholder")}
+                />
               </Field>
               <Field label={t("fields.safehouse")}>
                 <Select
@@ -754,7 +860,7 @@ const Caseload = () => {
   );
 };
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="space-y-1">
     <Label>{label}</Label>
     {children}
