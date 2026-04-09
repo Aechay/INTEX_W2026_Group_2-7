@@ -394,7 +394,7 @@ const ProcessRecording = () => {
                 <SelectTrigger className="rounded-none">
                   <SelectValue placeholder={t("filters.allResidents")} />
                 </SelectTrigger>
-                <SelectContent side="bottom">
+                <SelectContent side="bottom" avoidCollisions={false}>
                   <div className="p-2">
                     <Input
                       placeholder="Search residents..."

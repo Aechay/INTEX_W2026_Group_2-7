@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"color\\\\|theme\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" /c/Users/blake/Desktop/'INTEX II'/INTEX_W2026_Group_2-7/frontend/intex-w2026-group-2-7/src/*.tsx)",
+      "Bash(dotnet build:*)"
+    ]
+  }
+}

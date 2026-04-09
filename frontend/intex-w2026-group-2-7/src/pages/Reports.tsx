@@ -263,25 +263,23 @@ const Reports = () => {
                 type="button"
                 variant="outline"
                 size="default"
-                className="rounded-none h-9 w-full sm:w-auto"
+                className="rounded-none h-10 w-full sm:w-auto"
                 onClick={() => { setStartDate(defaultStartDate); setEndDate(defaultEndDate); }}
               >
                 Reset to past year
               </Button>
             </div>
-            {(startDate || endDate) && (
-              <div className="flex items-end col-span-1 self-stretch">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="default"
-                  className="rounded-none h-9 w-full sm:w-auto text-muted-foreground"
-                  onClick={() => { setStartDate(""); setEndDate(""); }}
-                >
-                  Show all time
-                </Button>
-              </div>
-            )}
+            <div className="flex items-end col-span-1 self-stretch">
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                className="rounded-none h-10 w-full sm:w-auto text-muted-foreground"
+                onClick={() => { setStartDate(""); setEndDate(""); }}
+              >
+                Show all time
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
