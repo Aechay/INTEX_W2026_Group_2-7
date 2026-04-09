@@ -55,7 +55,7 @@ public static class AdminProcessRecordingEndpointExtensions
             .Select(r => new ProcessRecordingCardDto(
                 r.recording.RecordingId,
                 r.recording.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.recording.SessionDate,
                 r.recording.SocialWorker,
                 r.recording.SessionType,
@@ -85,7 +85,7 @@ public static class AdminProcessRecordingEndpointExtensions
             .Select(r => new ProcessRecordingDetailDto(
                 r.recording.RecordingId,
                 r.recording.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.recording.SessionDate,
                 r.recording.SocialWorker,
                 r.recording.SessionType,
@@ -158,11 +158,13 @@ public static class AdminProcessRecordingEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == recording.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Created(
@@ -212,11 +214,13 @@ public static class AdminProcessRecordingEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == recording.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Ok(ToCardDto(recording, displayName));
