@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -18,6 +18,7 @@ import {
   ImagePlus,
   Instagram,
   LayoutDashboard,
+  Loader2,
   Megaphone,
   PencilLine,
   Plus,
@@ -30,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getErrorMessage } from "@/auth/auth-api";
 import useAuth from "@/auth/useAuth";
 import AdminWorkspace, { type AdminNavItem } from "@/components/admin/AdminWorkspace";
@@ -244,6 +245,16 @@ const platformOptions = [
   },
 ] as const;
 
+const manualPlatformOptions = [
+  "Facebook",
+  "Instagram",
+  "Linked In",
+  "Tik Tok",
+  "Twitter",
+  "Whats App",
+  "You Tube",
+];
+
 const wizardSteps = [
   { id: "platforms", label: "Platforms" },
   { id: "postType", label: "Post Type" },
@@ -259,29 +270,6 @@ const mediaTypeOptions = ["Photo", "Carousel", "Video", "Reel"];
 const contentTopicOptions = ["Health", "SafehouseLife", "Reintegration", "Education", "DonorImpact"];
 const sentimentToneOptions = ["Urgent", "Emotional", "Celebratory", "Hopeful", "Informative"];
 const callToActionOptions = ["Donate", "LearnMore", "Volunteer", "Share", "ReadStory"];
-
-const signalCards = [
-  {
-    title: "Resident Story",
-    value: "132,948 PHP",
-    detail: "Average value from posts featuring a resident story in the training set.",
-  },
-  {
-    title: "Impact Story Format",
-    value: "116,161 PHP",
-    detail: "The highest-performing post type by average donation value.",
-  },
-  {
-    title: "Reels & Video",
-    value: "55,284 PHP",
-    detail: "Video-first formats outperformed photos and text-only posts.",
-  },
-  {
-    title: "160-219 Characters",
-    value: "65,860 PHP",
-    detail: "The strongest caption-length band in the local social dataset.",
-  },
-] as const;
 
 const createDefaultWizardForm = (): WizardFormState => ({
   platforms: ["Instagram", "Facebook"],
@@ -369,6 +357,57 @@ type SocialMediaManagerProps = {
   mode?: "library" | "composer";
 };
 
+const createDefaultNewPost = (): SocialMediaPostDetail => ({
+  postId: 0,
+  platform: "Facebook",
+  platformPostId: null,
+  postUrl: null,
+  publishStatus: "Recorded",
+  createdAt: new Date().toISOString(),
+  publishedAtUtc: null,
+  dayOfWeek: "",
+  postHour: 0,
+  postType: "ImpactStory",
+  mediaType: "Photo",
+  caption: "",
+  hashtags: null,
+  numHashtags: 0,
+  mentionsCount: 0,
+  hasCallToAction: false,
+  callToActionType: "Donate",
+  callToActionUrl: null,
+  altText: null,
+  mediaUrls: [],
+  contentTopic: "Health",
+  sentimentTone: "Emotional",
+  captionLength: 0,
+  featuresResidentStory: true,
+  campaignName: null,
+  isBoosted: false,
+  boostBudgetPhp: null,
+  impressions: 0,
+  reach: 0,
+  likes: 0,
+  comments: 0,
+  shares: 0,
+  saves: 0,
+  clickThroughs: 0,
+  videoViews: null,
+  engagementRate: 0,
+  profileVisits: 0,
+  donationReferrals: 0,
+  estimatedDonationValuePhp: 0,
+  predictedDonationValuePhp: null,
+  predictionModelVersion: null,
+  predictionScoredAtUtc: null,
+  followerCountAtPost: 0,
+  lastMetricsUpdatedAtUtc: new Date().toISOString(),
+  watchTimeSeconds: null,
+  avgViewDurationSeconds: null,
+  subscriberCountAtPost: null,
+  forwards: null,
+});
+
 const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
   const auth = useAuth();
   const { i18n } = useTranslation("common");
@@ -388,9 +427,21 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
   const [pageSize, setPageSize] = useState("8");
   const [currentPage, setCurrentPage] = useState(1);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editLoadPending, setEditLoadPending] = useState(false);
   const [editingPost, setEditingPost] = useState<SocialMediaPostDetail | null>(null);
+  const [newPost, setNewPost] = useState<SocialMediaPostDetail | null>(null);
   const [composerFeedback, setComposerFeedback] = useState<ComposerFeedback | null>(null);
+
+  // Reset wizard when entering composer
+  useEffect(() => {
+    if (isComposerMode) {
+      setWizardStepIndex(0);
+      setWizard(createDefaultWizardForm());
+      setUploadedAssets([]);
+      setComposerFeedback(null);
+    }
+  }, [isComposerMode]);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
@@ -840,6 +891,71 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: (post: SocialMediaPostDetail) =>
+      auth.authenticatedJson<SocialMediaPostDetail>("/api/admin/social-media/posts", {
+        method: "POST",
+        body: {
+          platform: post.platform,
+          createdAt: post.createdAt,
+          postType: post.postType,
+          mediaType: post.mediaType,
+          caption: post.caption,
+          mentionsCount: post.mentionsCount,
+          hasCallToAction: post.hasCallToAction,
+          callToActionType: post.callToActionType,
+          callToActionUrl: post.callToActionUrl,
+          contentTopic: post.contentTopic,
+          sentimentTone: post.sentimentTone,
+          featuresResidentStory: post.featuresResidentStory,
+          campaignName: post.campaignName,
+          isBoosted: post.isBoosted,
+          boostBudgetPhp: post.boostBudgetPhp,
+          followerCountAtPost: post.followerCountAtPost,
+          platformPostId: post.platformPostId,
+          postUrl: post.postUrl,
+          altText: post.altText,
+          mediaUrls: post.mediaUrls,
+          impressions: post.impressions,
+          reach: post.reach,
+          likes: post.likes,
+          comments: post.comments,
+          shares: post.shares,
+          saves: post.saves,
+          clickThroughs: post.clickThroughs,
+          videoViews: post.videoViews,
+          engagementRate: post.engagementRate,
+          profileVisits: post.profileVisits,
+          donationReferrals: post.donationReferrals,
+          estimatedDonationValuePhp: post.estimatedDonationValuePhp,
+          watchTimeSeconds: post.watchTimeSeconds,
+          avgViewDurationSeconds: post.avgViewDurationSeconds,
+          subscriberCountAtPost: post.subscriberCountAtPost,
+          forwards: post.forwards,
+          predictedDonationValuePhp: post.predictedDonationValuePhp,
+          predictionModelVersion: post.predictionModelVersion,
+          predictionScoredAtUtc: post.predictionScoredAtUtc,
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-social-media-posts"] });
+      setComposerFeedback({
+        tone: "success",
+        title: "Record created",
+        description: "The manual post record was created successfully.",
+      });
+      setCreateDialogOpen(false);
+      setNewPost(null);
+    },
+    onError: (error) => {
+      setComposerFeedback({
+        tone: "error",
+        title: "Create failed",
+        description: getErrorMessage(error, "The post record could not be created."),
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (postId: number) =>
       auth.authenticatedJson<void>(`/api/admin/social-media/posts/${postId}`, {
@@ -903,6 +1019,12 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
     }
   };
 
+  const openCreateDialog = () => {
+    setNewPost(createDefaultNewPost());
+    setCreateDialogOpen(true);
+    setComposerFeedback(null);
+  };
+
   const resetComposer = () => {
     setWizard(createDefaultWizardForm());
     setWizardStepIndex(0);
@@ -912,100 +1034,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
     }
   };
 
-  const summaryMetrics = useMemo(() => {
-    const published = posts.filter((post) => post.publishStatus === "Published").length;
-    const projected = posts.reduce((total, post) => total + (post.predictedDonationValuePhp ?? 0), 0);
-    const actual = posts.reduce((total, post) => total + post.estimatedDonationValuePhp, 0);
-    const totalReach = posts.reduce((total, post) => total + post.reach, 0);
-
-    return { published, projected, actual, totalReach };
-  }, [posts]);
-
   return (
     <AdminWorkspace items={navigationItems} signOutPending={signOutPending} onSignOut={handleLogout}>
       <div className="space-y-6">
-        {!isComposerMode && (
-          <section className="relative overflow-hidden border border-border bg-card">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.18),transparent_42%),radial-gradient(circle_at_left,rgba(14,165,233,0.14),transparent_38%)]" />
-            <div className="relative grid gap-6 p-6 xl:grid-cols-[1.3fr_0.7fr]">
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Badge className="rounded-none border-0 bg-primary/15 px-3 py-1 text-primary">
-                    Admin Only
-                  </Badge>
-                  <Button asChild className="rounded-none">
-                    <Link to={socialMediaComposerPath}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Post
-                    </Link>
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    Social Media Management
-                  </p>
-                  <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                    Track published posts, donations, and campaign performance in one place.
-                  </h1>
-                  <p className="max-w-3xl text-sm text-muted-foreground">
-                    Review historical posts, update metrics manually, and jump into the dedicated post composer when you are ready to publish.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {signalCards.map((card) => (
-                    <Card key={card.title} className="rounded-none border border-border/80 bg-background/80 shadow-none">
-                      <CardContent className="space-y-2 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          {card.title}
-                        </p>
-                        <p className="text-2xl font-semibold tracking-tight text-foreground">{card.value}</p>
-                        <p className="text-sm text-muted-foreground">{card.detail}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-
-              <Card className="rounded-none border border-border bg-background/85 shadow-none">
-                <CardHeader className="space-y-2">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Library Snapshot
-                  </CardTitle>
-                  <CardDescription>
-                    Quick read of the posts currently loaded on this page.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1 border-l-4 border-primary pl-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Published</div>
-                    <div className="text-2xl font-semibold text-foreground">{summaryMetrics.published}</div>
-                  </div>
-                  <div className="space-y-1 border-l-4 border-accent pl-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Page Reach</div>
-                    <div className="text-2xl font-semibold text-foreground">
-                      {compactNumberFormatter.format(summaryMetrics.totalReach)}
-                    </div>
-                  </div>
-                  <div className="space-y-1 border-l-4 border-secondary pl-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Projected Value</div>
-                    <div className="text-xl font-semibold text-foreground">
-                      {formatCurrency(summaryMetrics.projected)}
-                    </div>
-                  </div>
-                  <div className="space-y-1 border-l-4 border-primary pl-3">
-                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Logged Donations</div>
-                    <div className="text-xl font-semibold text-foreground">
-                      {formatCurrency(summaryMetrics.actual)}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-        )}
-
         {composerFeedback ? (
           <Card
             className={cn(
@@ -1040,7 +1071,20 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
         ) : null}
 
         {isComposerMode ? (
-          <div className="space-y-6">
+          <div className="space-y-6 relative">
+            {publishMutation.isPending && (
+              <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm transition-all animate-in fade-in">
+                <div className="flex flex-col items-center gap-4 text-center p-8 bg-card border border-border shadow-2xl">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-xl font-semibold tracking-tight">Distributing Content</p>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Publishing to social media platforms, this may take a minute...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           <Card className="rounded-none border border-border shadow-none">
             <CardHeader className="space-y-4 border-b border-border">
               <div className="flex items-center justify-between gap-6">
@@ -1456,8 +1500,22 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               onClick={() => publishMutation.mutate()}
                               disabled={publishMutation.isPending || wizard.platforms.length === 0}
                             >
-                              <Rocket className="mr-2 h-4 w-4" />
+                              {publishMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Rocket className="mr-2 h-4 w-4" />
+                              )}
                               {publishMutation.isPending ? "Publishing..." : "Publish Now"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="rounded-none"
+                              onClick={() => recordMutation.mutate()}
+                              disabled={recordMutation.isPending || wizard.platforms.length === 0}
+                            >
+                              <ClipboardList className="mr-2 h-4 w-4" />
+                              {recordMutation.isPending ? "Saving..." : "Save Record Only"}
                             </Button>
                           </div>
                         </CardContent>
@@ -1532,9 +1590,13 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
               <div className="flex flex-wrap gap-3">
                 <Button asChild className="rounded-none">
                   <Link to={socialMediaComposerPath}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Post
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Interactive Post Builder
                   </Link>
+                </Button>
+                <Button variant="outline" className="rounded-none" onClick={openCreateDialog}>
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Record Other Post
                 </Button>
                 <Button type="button" variant="outline" className="rounded-none" onClick={() => void postsQuery.refetch()}>
                   Refresh
@@ -1803,9 +1865,9 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {platformOptions.map((platform) => (
-                        <SelectItem key={platform.id} value={platform.id}>
-                          {humanizeValue(platform.label)}
+                      {manualPlatformOptions.map((platform) => (
+                        <SelectItem key={platform} value={platform}>
+                          {platform}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -2020,6 +2082,218 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
           ) : (
             <div className="text-sm text-muted-foreground">Select a post to edit.</div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto rounded-none border-border bg-card">
+          <DialogHeader>
+            <DialogTitle>Create Social Post Record</DialogTitle>
+          </DialogHeader>
+
+          {newPost ? (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Platform</Label>
+                  <Select
+                    value={newPost.platform}
+                    onValueChange={(value) => setNewPost((current) => (current ? { ...current, platform: value } : current))}
+                  >
+                    <SelectTrigger className="rounded-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {manualPlatformOptions.map((platform) => (
+                        <SelectItem key={platform} value={platform}>
+                          {platform}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Created at</Label>
+                  <Input
+                    type="datetime-local"
+                    className="rounded-none"
+                    value={toLocalDateTimeInput(newPost.createdAt)}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, createdAt: fromLocalDateTimeInput(event.target.value) } : current,
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Campaign</Label>
+                  <Input
+                    className="rounded-none"
+                    placeholder="Optional campaign name"
+                    value={newPost.campaignName ?? ""}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, campaignName: event.target.value || null } : current,
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Caption</Label>
+                  <Textarea
+                    className="min-h-36 rounded-none"
+                    placeholder="Enter the post caption here..."
+                    value={newPost.caption}
+                    onChange={(event) =>
+                      setNewPost((current) => (current ? { ...current, caption: event.target.value } : current))
+                    }
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Media URLs</Label>
+                    <Textarea
+                      className="min-h-24 rounded-none"
+                      placeholder="One URL per line"
+                      value={newPost.mediaUrls.join("\n")}
+                      onChange={(event) =>
+                        setNewPost((current) =>
+                          current ? { ...current, mediaUrls: parseMediaUrls(event.target.value) } : current,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Alt text</Label>
+                    <Textarea
+                      className="min-h-20 rounded-none"
+                      placeholder="Accessibility description"
+                      value={newPost.altText ?? ""}
+                      onChange={(event) =>
+                        setNewPost((current) =>
+                          current ? { ...current, altText: event.target.value || null } : current,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="space-y-2">
+                  <Label>Platform post id</Label>
+                  <Input
+                    className="rounded-none"
+                    placeholder="External ID"
+                    value={newPost.platformPostId ?? ""}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, platformPostId: event.target.value || null } : current,
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Post URL</Label>
+                  <Input
+                    className="rounded-none"
+                    placeholder="https://..."
+                    value={newPost.postUrl ?? ""}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, postUrl: event.target.value || null } : current,
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Follower count</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    className="rounded-none"
+                    value={newPost.followerCountAtPost}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, followerCountAtPost: parsePositiveNumber(event.target.value) } : current,
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Donation value (PHP)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    className="rounded-none"
+                    value={newPost.estimatedDonationValuePhp}
+                    onChange={(event) =>
+                      setNewPost((current) =>
+                        current ? { ...current, estimatedDonationValuePhp: parsePositiveNumber(event.target.value) } : current,
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                {[
+                  ["Impressions", "impressions"],
+                  ["Reach", "reach"],
+                  ["Likes", "likes"],
+                  ["Comments", "comments"],
+                  ["Shares", "shares"],
+                  ["Saves", "saves"],
+                  ["Click throughs", "clickThroughs"],
+                  ["Profile visits", "profileVisits"],
+                  ["Donation referrals", "donationReferrals"],
+                ].map(([label, key]) => (
+                  <div key={key} className="space-y-2">
+                    <Label>{label}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="rounded-none"
+                      value={String(newPost[key as keyof SocialMediaPostDetail] ?? 0)}
+                      onChange={(event) =>
+                        setNewPost((current) =>
+                          current
+                            ? {
+                                ...current,
+                                [key]: parsePositiveNumber(event.target.value),
+                              }
+                            : current,
+                        )
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-border pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-none"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-none"
+                  onClick={() => createMutation.mutate(newPost)}
+                  disabled={createMutation.isPending || !newPost.caption.trim()}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {createMutation.isPending ? "Creating..." : "Create Record"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </AdminWorkspace>
