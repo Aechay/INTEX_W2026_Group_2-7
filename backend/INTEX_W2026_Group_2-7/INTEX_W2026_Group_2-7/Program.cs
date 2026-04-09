@@ -169,8 +169,15 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
+
+// Ensure the temporary storage directory exists so the StaticFileProvider can watch it
+var storagePath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "social-media-assets", "temp");
+Directory.CreateDirectory(storagePath);
+
 app.UseStaticFiles(new StaticFileOptions
 {
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "wwwroot")),
     OnPrepareResponse = ctx =>
     {
         if (ctx.Context.Request.Path.StartsWithSegments("/social-media-assets/temp"))
@@ -178,6 +185,8 @@ app.UseStaticFiles(new StaticFileOptions
             ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
             ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
             ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type");
+            // Prevent caching of temporary assets to ensure the latest uploads are seen
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
         }
     }
 });
