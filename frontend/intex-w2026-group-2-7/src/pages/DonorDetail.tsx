@@ -436,7 +436,13 @@ const DonorDetail = () => {
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                   {donorQuery.data?.displayName ?? "Donor details"}
                 </h1>
-                <Button type="button" variant="ghost" size="icon" onClick={openEditDonor}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={openEditDonor}
+                  aria-label="Edit donor profile"
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </div>
@@ -539,6 +545,7 @@ const DonorDetail = () => {
                               size="icon"
                               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               disabled={deleteContributionMutation.isPending}
+                              aria-label="Delete contribution"
                               onClick={() => {
                                 if (
                                   !window.confirm(

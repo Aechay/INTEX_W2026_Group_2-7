@@ -17,7 +17,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 pt-12 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">
+            <h3 className="text-lg font-bold mb-4 text-primary">
               {t('brand.name')}
             </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -26,31 +26,31 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">
+            <h3 className="text-lg font-bold mb-4 text-primary">
               {t('footer.quickLinks')}
             </h3>
             <div className="space-y-2">
               <Link
                 to={localizedPath('/')}
-                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t('nav.home')}
               </Link>
               <Link
                 to={localizedPath('/get-help')}
-                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t('nav.getHelp')}
               </Link>
               <Link
                 to={localizedPath('/login') + '?tab=staff'}
-                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t('footer.staffLogin')}
               </Link>
               <Link
                 to={localizedPath('/privacy-policy')}
-                className="block text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t('footer.privacyPolicy')}
               </Link>
@@ -58,7 +58,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-accent">
+            <h3 className="text-lg font-bold mb-4 text-primary">
               {t('footer.contact')}
             </h3>
             <div className="space-y-2 text-sm text-muted-foreground">

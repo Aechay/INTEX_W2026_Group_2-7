@@ -497,8 +497,14 @@ const HomeVisitation = () => {
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {t("filters.resident")}
               </Label>
-              <Select value={residentFilter} onValueChange={(v) => { setResidentFilter(v); setVisitPage(1); }}>
-                <SelectTrigger className="rounded-none">
+              <Select
+                value={residentFilter}
+                onValueChange={(value) => {
+                  setResidentFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label={t("filters.resident")}>
                   <SelectValue placeholder={t("filters.allResidents")} />
                 </SelectTrigger>
                 <SelectContent side="bottom">
@@ -532,8 +538,14 @@ const HomeVisitation = () => {
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {t("filters.visitType")}
               </Label>
-              <Select value={visitTypeFilter} onValueChange={(v) => { setVisitTypeFilter(v); setVisitPage(1); }}>
-                <SelectTrigger className="rounded-none">
+              <Select
+                value={visitTypeFilter}
+                onValueChange={(value) => {
+                  setVisitTypeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label={t("filters.visitType")}>
                   <SelectValue placeholder={t("filters.allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,8 +561,14 @@ const HomeVisitation = () => {
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 Outcome
               </Label>
-              <Select value={outcomeFilter} onValueChange={(v) => { setOutcomeFilter(v); setVisitPage(1); }}>
-                <SelectTrigger className="rounded-none">
+              <Select
+                value={outcomeFilter}
+                onValueChange={(value) => {
+                  setOutcomeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label="Outcome">
                   <SelectValue placeholder="All Outcomes" />
                 </SelectTrigger>
                 <SelectContent>
@@ -624,10 +642,24 @@ const HomeVisitation = () => {
                           </TableCell>
                           <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex justify-end gap-1">
-                              <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => void openEditVisit(visit)}>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                aria-label="Edit home visitation"
+                                onClick={() => openEdit(visit)}
+                              >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => setDeleteVisitId(visit.visitationId)}>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                aria-label="Delete home visitation"
+                                onClick={() => setDeleteId(visit.visitationId)}
+                              >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>

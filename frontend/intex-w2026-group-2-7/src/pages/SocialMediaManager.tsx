@@ -1069,6 +1069,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                 variant="ghost"
                 className="h-6 w-6 -mt-1 -mr-1"
                 onClick={() => setComposerFeedback(null)}
+                aria-label={socialT("actions.dismiss")}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -1329,6 +1330,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                                 className="h-7 w-7"
                                 onClick={() => moveAsset(index, "up")}
                                 disabled={index === 0}
+                                aria-label={socialT("actions.moveUp")}
                               >
                                 <ArrowUp className="h-4 w-4" />
                               </Button>
@@ -1338,6 +1340,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                                 className="h-7 w-7"
                                 onClick={() => moveAsset(index, "down")}
                                 disabled={index === uploadedAssets.length - 1}
+                                aria-label={socialT("actions.moveDown")}
                               >
                                 <ArrowDown className="h-4 w-4" />
                               </Button>
@@ -1348,6 +1351,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               className="h-7 w-7 text-destructive hover:bg-destructive/10"
                               onClick={() => deleteAssetMutation.mutate(asset.assetId)}
                               disabled={deleteAssetMutation.isPending}
+                              aria-label={socialT("actions.removeAsset")}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1804,7 +1808,12 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               <div className="flex justify-end gap-2">
                                 {post.postUrl ? (
                                   <Button asChild size="icon" variant="outline" className="rounded-none">
-                                    <a href={post.postUrl} rel="noreferrer" target="_blank">
+                                    <a
+                                      href={post.postUrl}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                      aria-label={socialT("actions.openPost")}
+                                    >
                                       <ExternalLink className="h-4 w-4" />
                                     </a>
                                   </Button>
@@ -1816,6 +1825,7 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                                   className="rounded-none"
                                   onClick={() => void openEditDialog(post.postId)}
                                   disabled={editLoadPending}
+                                  aria-label={socialT("actions.editPost")}
                                 >
                                   <PencilLine className="h-4 w-4" />
                                 </Button>
@@ -1836,16 +1846,17 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                   <Pagination className="mx-0 w-auto justify-end">
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            setCurrentPage((page) => Math.max(page - 1, 1));
-                          }}
-                          className={cn(
-                            (postsQuery.data?.page ?? 1) === 1 ? "pointer-events-none opacity-50" : "",
-                          )}
-                        />
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setCurrentPage((page) => Math.max(page - 1, 1));
+                        }}
+                        className={cn(
+                          (postsQuery.data?.page ?? 1) === 1 ? "pointer-events-none opacity-50" : "",
+                        )}
+                        aria-label={socialT("pagination.previous")}
+                      />
                       </PaginationItem>
                       <PaginationItem>
                         <span className="px-3 text-sm text-muted-foreground">
@@ -1853,20 +1864,21 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                         </span>
                       </PaginationItem>
                       <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            setCurrentPage((page) =>
-                              Math.min(page + 1, postsQuery.data?.totalPages ?? page + 1),
-                            );
-                          }}
-                          className={cn(
-                            (postsQuery.data?.page ?? 1) >= (postsQuery.data?.totalPages ?? 1)
-                              ? "pointer-events-none opacity-50"
-                              : "",
-                          )}
-                        />
+                      <PaginationNext
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setCurrentPage((page) =>
+                            Math.min(page + 1, postsQuery.data?.totalPages ?? page + 1),
+                          );
+                        }}
+                        className={cn(
+                          (postsQuery.data?.page ?? 1) >= (postsQuery.data?.totalPages ?? 1)
+                            ? "pointer-events-none opacity-50"
+                            : "",
+                        )}
+                        aria-label={socialT("pagination.next")}
+                      />
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
@@ -2093,7 +2105,12 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                   </Button>
                   {editingPost.postUrl ? (
                     <Button asChild type="button" variant="outline" className="rounded-none">
-                      <a href={editingPost.postUrl} rel="noreferrer" target="_blank">
+                      <a
+                        href={editingPost.postUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                        aria-label={socialT("actions.openPost")}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         Open live post
                       </a>

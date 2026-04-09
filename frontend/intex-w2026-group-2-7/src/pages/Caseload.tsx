@@ -534,7 +534,9 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseStatus")}</Label>
           <Select value={caseStatus} onValueChange={(value) => { setCurrentPage(1); setCaseStatus(value); }}>
-            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.caseStatus")}>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.caseStatuses ?? []).map((value) => (
@@ -546,7 +548,9 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.safehouse")}</Label>
           <Select value={safehouseId} onValueChange={(value) => { setCurrentPage(1); setSafehouseId(value); }}>
-            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.safehouse")}>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {safehouses.map((value) => (
@@ -558,7 +562,9 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseCategory")}</Label>
           <Select value={caseCategory} onValueChange={(value) => { setCurrentPage(1); setCaseCategory(value); }}>
-            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.caseCategory")}>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.caseCategories ?? []).map((value) => (
@@ -576,7 +582,9 @@ const Caseload = () => {
               setAssignedSocialWorker(value);
             }}
           >
-            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none" aria-label={t("filters.socialWorker")}>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent className="max-h-40">
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.assignedSocialWorkers ?? []).map((value) => (
@@ -600,7 +608,9 @@ const Caseload = () => {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[110px] rounded-none"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[110px] rounded-none" aria-label={t("list.perPage")}>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="30">30</SelectItem>
@@ -808,7 +818,9 @@ const Caseload = () => {
                     onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
                     disabled={!isEditing}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label={t("fields.safehouse")}>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {safehouses.map((safehouse) => (
                         <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
@@ -986,7 +998,9 @@ const Caseload = () => {
                     value={form.safehouseId.toString()}
                     onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label={t("fields.safehouse")}>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {safehouses.map((safehouse) => (
                         <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
