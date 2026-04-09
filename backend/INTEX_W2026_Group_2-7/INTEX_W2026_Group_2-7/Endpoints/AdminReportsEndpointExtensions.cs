@@ -11,19 +11,19 @@ public static class AdminReportsEndpointExtensions
     {
         endpoints.MapGet("/api/admin/reports/donation-trends", GetDonationTrendsAsync)
             .WithName("GetAdminReportsDonationTrends")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/resident-outcomes", GetResidentOutcomesAsync)
             .WithName("GetAdminReportsResidentOutcomes")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/safehouse-performance", GetSafehousePerformanceAsync)
             .WithName("GetAdminReportsSafehousePerformance")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         endpoints.MapGet("/api/admin/reports/service-activity", GetServiceActivityAsync)
             .WithName("GetAdminReportsServiceActivity")
-            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+            .RequireAuthorization(AppPolicies.AdminOnly);
 
         return endpoints;
     }
@@ -106,20 +106,28 @@ public static class AdminReportsEndpointExtensions
             .OrderByDescending(x => x.Count)
             .ToArrayAsync(cancellationToken);
 
-        var avgEducationProgress = await dbContext.EducationRecords
+        var educationValues = await dbContext.EducationRecords
             .AsNoTracking()
-            .AverageAsync(e => (double?)e.ProgressPercent, cancellationToken);
+            .Select(e => (decimal?)e.ProgressPercent)
+            .ToArrayAsync(cancellationToken);
+        var avgEducationProgress = educationValues.Length > 0
+            ? educationValues.Where(v => v.HasValue).Average(v => v!.Value)
+            : (decimal?)null;
 
-        var avgHealthScore = await dbContext.HealthWellbeingRecords
+        var healthValues = await dbContext.HealthWellbeingRecords
             .AsNoTracking()
-            .AverageAsync(h => (double?)h.GeneralHealthScore, cancellationToken);
+            .Select(h => (decimal?)h.GeneralHealthScore)
+            .ToArrayAsync(cancellationToken);
+        var avgHealthScore = healthValues.Length > 0
+            ? healthValues.Where(v => v.HasValue).Average(v => v!.Value)
+            : (decimal?)null;
 
         return TypedResults.Ok(new ResidentOutcomesReportDto(
             byCaseStatus,
             byRiskLevel,
             byReintegrationStatus,
-            avgEducationProgress.HasValue ? (decimal)avgEducationProgress.Value : null,
-            avgHealthScore.HasValue ? (decimal)avgHealthScore.Value : null));
+            avgEducationProgress,
+            avgHealthScore));
     }
 
     private static async Task<Ok<SafehousePerformanceRowDto[]>> GetSafehousePerformanceAsync(
@@ -140,18 +148,34 @@ public static class AdminReportsEndpointExtensions
             metricsQuery = metricsQuery.Where(m => m.MonthEnd <= endDate.Value);
         }
 
-        var aggregated = await metricsQuery
+        var rawMetrics = await metricsQuery
+            .Select(m => new
+            {
+                m.SafehouseId,
+                m.AvgEducationProgress,
+                m.AvgHealthScore,
+                m.ProcessRecordingCount,
+                m.HomeVisitationCount,
+                m.IncidentCount
+            })
+            .ToArrayAsync(cancellationToken);
+
+        var aggregated = rawMetrics
             .GroupBy(m => m.SafehouseId)
             .Select(g => new
             {
                 SafehouseId = g.Key,
-                AvgEducationProgress = g.Average(m => m.AvgEducationProgress),
-                AvgHealthScore = g.Average(m => m.AvgHealthScore),
+                AvgEducationProgress = g.Any(m => m.AvgEducationProgress.HasValue)
+                    ? (decimal?)g.Where(m => m.AvgEducationProgress.HasValue).Average(m => m.AvgEducationProgress!.Value)
+                    : null,
+                AvgHealthScore = g.Any(m => m.AvgHealthScore.HasValue)
+                    ? (decimal?)g.Where(m => m.AvgHealthScore.HasValue).Average(m => m.AvgHealthScore!.Value)
+                    : null,
                 TotalProcessRecordings = g.Sum(m => m.ProcessRecordingCount),
                 TotalHomeVisitations = g.Sum(m => m.HomeVisitationCount),
                 TotalIncidents = g.Sum(m => m.IncidentCount)
             })
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         var safehouseNames = await dbContext.Safehouses
             .AsNoTracking()
