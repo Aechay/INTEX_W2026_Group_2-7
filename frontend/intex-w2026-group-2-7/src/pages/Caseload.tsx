@@ -196,17 +196,6 @@ const predictedRiskTranslationKey = (risk: string) => {
   return "riskLevels.low";
 };
 
-const predictedReadinessCategoryTranslationKey = (category: string) => {
-  const normalized = category.trim().toLowerCase();
-  if (normalized === "strong readiness") {
-    return "readinessCategories.strongReadiness";
-  }
-  if (normalized === "monitor closely") {
-    return "readinessCategories.monitorClosely";
-  }
-  return "readinessCategories.continuedCare";
-};
-
 /** Empty string is invalid for `DateTime?` in the API — use null for unset optional dates. */
 function optionalDateIso(iso: string | null | undefined): string | null {
   const s = dateInputValue(iso ?? null);
@@ -690,16 +679,11 @@ const Caseload = () => {
                           resident.predictedReintegrationCategory
                             ? predictedReadinessBadgeClass(resident.predictedReintegrationCategory)
                             : noPredictionBadgeClass
-                        }`}
+                        } text-[11px]`}
                       >
                         {resident.predictedReintegrationCategory &&
                         resident.predictedReintegrationReadiness !== null
                           ? t("cards.predictedReadinessBadge", {
-                              category: t(
-                                predictedReadinessCategoryTranslationKey(
-                                  resident.predictedReintegrationCategory,
-                                ),
-                              ),
                               score: Math.round(resident.predictedReintegrationReadiness * 100),
                             })
                           : t("cards.noReadinessPredictionBadge")}
