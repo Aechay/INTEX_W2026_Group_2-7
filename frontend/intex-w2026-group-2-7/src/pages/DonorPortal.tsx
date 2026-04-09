@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Heart, Landmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import useAuth from '@/auth/useAuth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getErrorMessage } from '@/auth/auth-api';
+import { withPathLanguage } from '@/i18n/routing';
 
 type DonationAllocationSummary = {
   programArea: string;
@@ -193,9 +195,9 @@ const DonorPortal = () => {
                   asChild
                   className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  <a href="https://donate.hopeshelter.org" target="_blank" rel="noopener noreferrer">
+                  <Link to={withPathLanguage('/donate', i18n.resolvedLanguage)}>
                     {t('history.makeDonation')}
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </CardContent>
