@@ -26,6 +26,12 @@ export type ExternalAuthProvider = {
   startUrl: string;
 };
 
+export type PublicDonationCreateRequest = {
+  name: string;
+  email: string;
+  amount: number;
+};
+
 export const resolveApiBaseUrl = (): string => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
   if (configuredBaseUrl) {
@@ -214,3 +220,12 @@ export const logoutRequest = (apiBaseUrl: string, accessToken: string) =>
 
 export const getCurrentUserRequest = (apiBaseUrl: string, accessToken: string) =>
   requestJson<CurrentUser>(apiBaseUrl, "/auth/me", {}, accessToken);
+
+export const createPublicDonationRequest = (
+  apiBaseUrl: string,
+  payload: PublicDonationCreateRequest,
+) =>
+  requestJson<void>(apiBaseUrl, "/api/public/donations", {
+    method: "POST",
+    body: payload,
+  });
