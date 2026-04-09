@@ -7,6 +7,14 @@ namespace INTEX_W2026_Group_2_7.Endpoints;
 
 public static class AdminCaseloadEndpointExtensions
 {
+    private static readonly HashSet<string> AllowedRiskLevels = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+    };
+
     public static IEndpointRouteBuilder MapAdminCaseloadEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/admin/caseload/residents", GetResidentsAsync)
@@ -94,7 +102,24 @@ public static class AdminCaseloadEndpointExtensions
             residentQuery = residentQuery.Where(r => r.resident.ReintegrationStatus == reintegrationStatus);
         }
 
-        var residents = await residentQuery
+        var latestScoredAt = await dbContext.ResidentRiskPredictions
+            .MaxAsync(prediction => (DateTimeOffset?)prediction.ScoredAt, cancellationToken);
+
+        Dictionary<int, ResidentRiskPrediction> predictionByResidentId = new();
+        if (latestScoredAt is not null)
+        {
+            predictionByResidentId = await dbContext.ResidentRiskPredictions
+                .AsNoTracking()
+                .Where(prediction => prediction.ScoredAt == latestScoredAt)
+                .GroupBy(prediction => prediction.ResidentId)
+                .Select(group => group
+                    .OrderByDescending(prediction => prediction.PredictedRiskNum)
+                    .ThenByDescending(prediction => prediction.ScoredAt)
+                    .First())
+                .ToDictionaryAsync(prediction => prediction.ResidentId, cancellationToken);
+        }
+
+        var residentRows = await residentQuery
             .OrderByDescending(r => r.resident.DateOfAdmission)
             .ThenBy(r => r.resident.InternalCode)
             .Select(r => new ResidentCardDto(
@@ -151,6 +176,22 @@ public static class AdminCaseloadEndpointExtensions
             ))
             .ToArrayAsync(cancellationToken);
 
+        var residents = residentRows
+            .Select(row =>
+            {
+                if (!predictionByResidentId.TryGetValue(row.ResidentId, out var prediction))
+                {
+                    return row;
+                }
+
+                return row with
+                {
+                    PredictedRisk = prediction.PredictedRisk,
+                    PredictedRiskNum = prediction.PredictedRiskNum
+                };
+            })
+            .ToArray();
+
         var filterOptions = new CaseloadFilterOptionsDto(
             residents.Select(r => r.CaseStatus).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().OrderBy(v => v).ToArray(),
             residents.Select(r => r.CaseCategory).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().OrderBy(v => v).ToArray(),
@@ -171,6 +212,31 @@ public static class AdminCaseloadEndpointExtensions
             return TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["internalCode"] = ["Internal code is required."]
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentRiskLevel))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["currentRiskLevel"] = ["Current risk level is required."]
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.InitialRiskLevel) &&
+            !AllowedRiskLevels.Contains(request.InitialRiskLevel.Trim()))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["initialRiskLevel"] = ["Initial risk level must be one of: Low, Medium, High, Critical."]
+            });
+        }
+
+        if (!AllowedRiskLevels.Contains(request.CurrentRiskLevel.Trim()))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["currentRiskLevel"] = ["Current risk level must be one of: Low, Medium, High, Critical."]
             });
         }
 
@@ -259,6 +325,31 @@ public static class AdminCaseloadEndpointExtensions
             return TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["internalCode"] = ["Internal code is required."]
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentRiskLevel))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["currentRiskLevel"] = ["Current risk level is required."]
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.InitialRiskLevel) &&
+            !AllowedRiskLevels.Contains(request.InitialRiskLevel.Trim()))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["initialRiskLevel"] = ["Initial risk level must be one of: Low, Medium, High, Critical."]
+            });
+        }
+
+        if (!AllowedRiskLevels.Contains(request.CurrentRiskLevel.Trim()))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["currentRiskLevel"] = ["Current risk level must be one of: Low, Medium, High, Critical."]
             });
         }
 
@@ -442,7 +533,9 @@ public sealed record ResidentCardDto(
     string CurrentRiskLevel,
     DateTime DateEnrolled,
     DateTime? DateClosed,
-    string? NotesRestricted);
+    string? NotesRestricted,
+    string? PredictedRisk = null,
+    int? PredictedRiskNum = null);
 
 public sealed record ResidentUpsertRequest(
     string? CaseControlNo,
