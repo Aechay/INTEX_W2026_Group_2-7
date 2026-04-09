@@ -31,6 +31,7 @@ import Resources from './pages/Resources';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Donations from './pages/Donations';
 import DonorDetail from './pages/DonorDetail';
+import Security from './pages/Security';
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,8 @@ const App = () => (
                   <Route path="/donor-portal" element={<DonorPortal />} />
                   <Route path="/:lang/donor-portal" element={<DonorPortal />} />
                 </Route>
+                <Route path="/account/security" element={<Security />} />
+                <Route path="/:lang/account/security" element={<Security />} />
               </Route>
 
               {/* Protected: Admin only */}

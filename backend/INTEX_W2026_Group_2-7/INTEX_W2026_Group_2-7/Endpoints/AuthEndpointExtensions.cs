@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Configuration;
 using INTEX_W2026_Group_2_7.Data;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Text.Encodings.Web;
 using Microsoft.Extensions.Options;
 
 namespace INTEX_W2026_Group_2_7.Endpoints;
@@ -260,6 +262,215 @@ public static class AuthEndpointExtensions
             .WithName("UpdateDisplayName")
             .RequireAuthorization(AppPolicies.AuthenticatedUser);
 
+        group.MapGet("/security/account", async (
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(new SecurityAccountResponse(
+                    user.Email ?? string.Empty,
+                    user.PasswordHash is not null,
+                    user.TwoFactorEnabled));
+            })
+            .WithName("GetSecurityAccount")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
+        group.MapPost("/security/password", async (
+                UpdatePasswordRequest request,
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var newPassword = request.NewPassword?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(newPassword))
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.NewPassword)] = ["A new password is required."]
+                    });
+                }
+
+                IdentityResult passwordResult;
+                if (user.PasswordHash is null)
+                {
+                    passwordResult = await userManager.AddPasswordAsync(user, newPassword);
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+                    {
+                        return Results.ValidationProblem(new Dictionary<string, string[]>
+                        {
+                            [nameof(request.CurrentPassword)] = ["Your current password is required."]
+                        });
+                    }
+
+                    passwordResult = await userManager.ChangePasswordAsync(
+                        user,
+                        request.CurrentPassword,
+                        newPassword);
+                }
+
+                if (!passwordResult.Succeeded)
+                {
+                    return Results.ValidationProblem(passwordResult.Errors
+                        .GroupBy(error => error.Code, StringComparer.Ordinal)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.Select(error => error.Description).ToArray(),
+                            StringComparer.Ordinal));
+                }
+
+                return Results.Ok(new SecurityAccountResponse(
+                    user.Email ?? string.Empty,
+                    true,
+                    user.TwoFactorEnabled));
+            })
+            .WithName("UpdateSecurityPassword")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
+        group.MapGet("/security/mfa/setup", async (
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var key = await userManager.GetAuthenticatorKeyAsync(user);
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    await userManager.ResetAuthenticatorKeyAsync(user);
+                    key = await userManager.GetAuthenticatorKeyAsync(user);
+                }
+
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    return Results.Problem(
+                        detail: "Could not generate an authenticator key.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+
+                var email = user.Email ?? user.UserName ?? "account";
+                var otpAuthUri = BuildTotpAuthUri("Hope Shelter", email, key);
+
+                return Results.Ok(new TotpSetupResponse(
+                    key,
+                    otpAuthUri));
+            })
+            .WithName("GetTotpSetup")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
+        group.MapPost("/security/mfa/enable", async (
+                EnableTotpRequest request,
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var code = NormalizeAuthenticatorCode(request.Code);
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.Code)] = ["A valid 6-digit code is required."]
+                    });
+                }
+
+                var isValid = await userManager.VerifyTwoFactorTokenAsync(
+                    user,
+                    userManager.Options.Tokens.AuthenticatorTokenProvider,
+                    code);
+                if (!isValid)
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.Code)] = ["The verification code is invalid."]
+                    });
+                }
+
+                var enableResult = await userManager.SetTwoFactorEnabledAsync(user, true);
+                if (!enableResult.Succeeded)
+                {
+                    return Results.ValidationProblem(enableResult.Errors
+                        .GroupBy(error => error.Code, StringComparer.Ordinal)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.Select(error => error.Description).ToArray(),
+                            StringComparer.Ordinal));
+                }
+
+                return Results.Ok(new SecurityAccountResponse(
+                    user.Email ?? string.Empty,
+                    user.PasswordHash is not null,
+                    true));
+            })
+            .WithName("EnableTotp")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
+        group.MapPost("/security/mfa/disable", async (
+                DisableTotpRequest request,
+                ClaimsPrincipal principal,
+                UserManager<ApplicationUser> userManager) =>
+            {
+                var user = await userManager.GetUserAsync(principal);
+                if (user is null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Password))
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.Password)] = ["Your password is required."]
+                    });
+                }
+
+                var passwordValid = await userManager.CheckPasswordAsync(user, request.Password);
+                if (!passwordValid)
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        [nameof(request.Password)] = ["The password is incorrect."]
+                    });
+                }
+
+                var disableResult = await userManager.SetTwoFactorEnabledAsync(user, false);
+                if (!disableResult.Succeeded)
+                {
+                    return Results.ValidationProblem(disableResult.Errors
+                        .GroupBy(error => error.Code, StringComparer.Ordinal)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.Select(error => error.Description).ToArray(),
+                            StringComparer.Ordinal));
+                }
+
+                return Results.Ok(new SecurityAccountResponse(
+                    user.Email ?? string.Empty,
+                    user.PasswordHash is not null,
+                    false));
+            })
+            .WithName("DisableTotp")
+            .RequireAuthorization(AppPolicies.AuthenticatedUser);
+
         group.MapGet("/admin/ping", (ClaimsPrincipal principal) =>
             {
                 return Results.Ok(new AdminPingResponse(
@@ -428,6 +639,36 @@ public static class AuthEndpointExtensions
             externalLoginInfo.LoginProvider,
             GoogleDefaults.AuthenticationScheme,
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeAuthenticatorCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return string.Empty;
+        }
+
+        return new string(code.Where(char.IsDigit).ToArray());
+    }
+
+    private static string BuildTotpAuthUri(string issuer, string email, string secretKey)
+    {
+        var encodedIssuer = UrlEncoder.Default.Encode(issuer);
+        var encodedEmail = UrlEncoder.Default.Encode(email);
+        var encodedSecret = UrlEncoder.Default.Encode(secretKey);
+
+        var builder = new StringBuilder();
+        builder.Append("otpauth://totp/");
+        builder.Append(encodedIssuer);
+        builder.Append(':');
+        builder.Append(encodedEmail);
+        builder.Append("?secret=");
+        builder.Append(encodedSecret);
+        builder.Append("&issuer=");
+        builder.Append(encodedIssuer);
+        builder.Append("&digits=6");
+
+        return builder.ToString();
     }
 
     private sealed record ExternalUserResolutionResult(ApplicationUser? User, string? ErrorCode)

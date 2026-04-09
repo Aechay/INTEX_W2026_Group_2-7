@@ -99,8 +99,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    const tokens = await loginRequest(apiBaseUrl, email, password);
+  const login = async (email: string, password: string, twoFactorCode?: string) => {
+    const tokens = await loginRequest(apiBaseUrl, email, password, twoFactorCode);
     const user = await getCurrentUserRequest(apiBaseUrl, tokens.accessToken);
     applySession(tokens, user);
   };

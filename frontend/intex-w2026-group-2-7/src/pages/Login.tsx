@@ -8,6 +8,7 @@ import {
   storePendingAuthRedirect,
 } from "@/auth/auth-redirect";
 import {
+  ApiError,
   forgotPasswordRequest,
   getErrorMessage,
   getExternalAuthProvidersRequest,
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { withPathLanguage } from "@/i18n/routing";
 
 type Mode = "signin" | "register" | "forgot-password" | "reset-password";
+type SignInStep = "credentials" | "mfa";
 
 type PasswordFieldProps = {
   autoComplete: string;
@@ -96,6 +98,8 @@ const Login = () => {
   const [resetCode, setResetCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signInStep, setSignInStep] = useState<SignInStep>("credentials");
+  const [mfaCode, setMfaCode] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -168,10 +172,38 @@ const Login = () => {
 
     setName("");
     setPassword("");
+    setMfaCode("");
     setConfirmPassword("");
     setResetCode("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setSignInStep("credentials");
+  };
+
+  const getAuthFailureDetail = (error: unknown): string | null => {
+    if (!(error instanceof ApiError) || error.status !== 401) {
+      return null;
+    }
+
+    if (typeof error.details === "object" && error.details !== null && "detail" in error.details) {
+      const detail = (error.details as { detail?: unknown }).detail;
+      if (typeof detail === "string") {
+        return detail;
+      }
+    }
+
+    if (typeof error.details === "string") {
+      try {
+        const parsed = JSON.parse(error.details) as { detail?: unknown };
+        if (typeof parsed.detail === "string") {
+          return parsed.detail;
+        }
+      } catch {
+        // Ignore parse failure and fall through.
+      }
+    }
+
+    return null;
   };
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -182,7 +214,34 @@ const Login = () => {
     try {
       await auth.login(username, password);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, t("loginFailed")));
+      const authFailureDetail = getAuthFailureDetail(error);
+      if (authFailureDetail === "RequiresTwoFactor") {
+        setSignInStep("mfa");
+        setErrorMessage(null);
+      } else if (authFailureDetail === "Failed") {
+        setErrorMessage(t("invalidCredentials"));
+      } else {
+        setErrorMessage(getErrorMessage(error, t("loginFailed")));
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMfaLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await auth.login(username, password, mfaCode);
+    } catch (error) {
+      const authFailureDetail = getAuthFailureDetail(error);
+      if (authFailureDetail === "Failed") {
+        setErrorMessage(t("mfaInvalidCode"));
+      } else {
+        setErrorMessage(getErrorMessage(error, t("loginFailed")));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -293,60 +352,100 @@ const Login = () => {
 
           {mode === "signin" ? (
             <>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
-                  <Input
-                    type="email"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    autoComplete="username"
-                    placeholder={t("usernamePlaceholder")}
-                    required
-                    className="h-11"
-                  />
-                </div>
-
-                <PasswordField
-                  autoComplete="current-password"
-                  label={t("passwordLabel")}
-                  onChange={setPassword}
-                  placeholder={t("passwordPlaceholder")}
-                  showPassword={showPassword}
-                  togglePassword={() => setShowPassword((currentValue) => !currentValue)}
-                  value={password}
-                />
-
-                <Button type="submit" className="w-full" disabled={isSubmitting || auth.isBootstrapping}>
-                  {isSubmitting ? t("signingIn") : t("submit")}
-                </Button>
-              </form>
-
-              {externalProviders.length > 0 ? (
+              {signInStep === "credentials" ? (
                 <>
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                      {t("externalSignInLabel")}
-                    </span>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">{t("usernameLabel")}</label>
+                      <Input
+                        type="email"
+                        value={username}
+                        onChange={(event) => setUsername(event.target.value)}
+                        autoComplete="username"
+                        placeholder={t("usernamePlaceholder")}
+                        required
+                        className="h-11"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    {externalProviders.map((provider) => (
-                      <Button
-                        key={provider.name}
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleExternalProviderClick(provider)}
-                      >
-                        {t("signInWithProvider", { provider: provider.displayName })}
-                      </Button>
-                    ))}
-                  </div>
+                    <PasswordField
+                      autoComplete="current-password"
+                      label={t("passwordLabel")}
+                      onChange={setPassword}
+                      placeholder={t("passwordPlaceholder")}
+                      showPassword={showPassword}
+                      togglePassword={() => setShowPassword((currentValue) => !currentValue)}
+                      value={password}
+                    />
+
+                    <Button type="submit" className="w-full" disabled={isSubmitting || auth.isBootstrapping}>
+                      {isSubmitting ? t("signingIn") : t("submit")}
+                    </Button>
+                  </form>
+
+                  {externalProviders.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          {t("externalSignInLabel")}
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+
+                      <div className="space-y-2">
+                        {externalProviders.map((provider) => (
+                          <Button
+                            key={provider.name}
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleExternalProviderClick(provider)}
+                          >
+                            {t("signInWithProvider", { provider: provider.displayName })}
+                          </Button>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
                 </>
-              ) : null}
+              ) : (
+                <>
+                  <form onSubmit={handleMfaLogin} className="space-y-4">
+                    <div className="rounded-md border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                      {t("mfaPrompt")}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">{t("mfaCodeLabel")}</label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        value={mfaCode}
+                        onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder={t("mfaCodePlaceholder")}
+                        required
+                        className="h-11"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isSubmitting || auth.isBootstrapping}>
+                      {isSubmitting ? t("mfaSubmitting") : t("mfaSubmit")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSignInStep("credentials");
+                        setMfaCode("");
+                        setErrorMessage(null);
+                      }}
+                    >
+                      {t("mfaBack")}
+                    </Button>
+                  </form>
+                </>
+              )}
 
               <div className="flex items-center justify-between gap-3 text-sm">
                 <Button type="button" variant="link" className="h-auto px-0" onClick={() => changeMode("register")}>
