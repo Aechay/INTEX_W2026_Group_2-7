@@ -1,10 +1,12 @@
 using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Configuration;
+using INTEX_W2026_Group_2_7.Configuration.Meta;
 using INTEX_W2026_Group_2_7.Configuration.Ml;
 using INTEX_W2026_Group_2_7.Data;
 using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
 using INTEX_W2026_Group_2_7.Services.Ml;
+using INTEX_W2026_Group_2_7.Services.SocialMedia;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +73,8 @@ builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<MetaPublishingOptions>(
+    builder.Configuration.GetSection(MetaPublishingOptions.SectionName));
 builder.Services.Configure<SocialMediaInferenceOptions>(
     builder.Configuration.GetSection(SocialMediaInferenceOptions.SectionName));
 builder.Services.Configure<SmtpEmailOptions>(
@@ -123,8 +127,11 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, SmtpIdentityEmailSender>();
 builder.Services.AddSingleton<IExternalAuthCodeStore, ExternalAuthCodeStore>();
+builder.Services.AddSingleton<ISocialMediaAssetStorage, FileSystemSocialMediaAssetStorage>();
 builder.Services.AddHttpClient(SocialMediaInferenceClient.HttpClientName);
+builder.Services.AddHttpClient(MetaPublishingService.HttpClientName);
 builder.Services.AddScoped<ISocialMediaInferenceClient, SocialMediaInferenceClient>();
+builder.Services.AddScoped<IMetaPublishingService, MetaPublishingService>();
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
@@ -161,6 +168,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.Use(async (context, next) =>
 {
@@ -190,6 +198,7 @@ authGroup.MapCustomAuthEndpoints();
 app.MapControllers();
 app.MapAdminDashboardEndpoints();
 app.MapAdminCaseloadEndpoints();
+app.MapAdminSocialMediaEndpoints();
 app.MapDonorEndpoints();
 app.MapMlEndpoints();
 app.MapAdminProcessRecordingEndpoints();

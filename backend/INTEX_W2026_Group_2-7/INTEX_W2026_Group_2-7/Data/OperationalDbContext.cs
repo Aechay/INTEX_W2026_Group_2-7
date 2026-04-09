@@ -330,18 +330,30 @@ public class OperationalDbContext : DbContext
             entity.Property(post => post.Platform).HasMaxLength(32);
             entity.Property(post => post.PlatformPostId).HasMaxLength(64);
             entity.Property(post => post.PostUrl).HasMaxLength(512);
+            entity.Property(post => post.PublishStatus).HasMaxLength(32).HasDefaultValue("Published");
             entity.Property(post => post.CreatedAt).HasColumnType("datetime2");
+            entity.Property(post => post.PublishedAtUtc).HasColumnType("datetime2");
             entity.Property(post => post.DayOfWeek).HasMaxLength(16);
             entity.Property(post => post.PostType).HasMaxLength(64);
             entity.Property(post => post.MediaType).HasMaxLength(32);
             entity.Property(post => post.CallToActionType).HasMaxLength(32);
+            entity.Property(post => post.CallToActionUrl).HasMaxLength(512);
+            entity.Property(post => post.AltText).HasMaxLength(1000);
+            entity.Property(post => post.MediaAssetUrlsJson).HasColumnType("nvarchar(max)");
+            entity.Property(post => post.PlatformMetadataJson).HasColumnType("nvarchar(max)");
             entity.Property(post => post.ContentTopic).HasMaxLength(64);
             entity.Property(post => post.SentimentTone).HasMaxLength(32);
             entity.Property(post => post.CampaignName).HasMaxLength(128);
             entity.Property(post => post.BoostBudgetPhp).HasPrecision(18, 2);
             entity.Property(post => post.EngagementRate).HasPrecision(9, 4);
             entity.Property(post => post.EstimatedDonationValuePhp).HasPrecision(18, 2);
-            entity.HasIndex(post => post.PlatformPostId).IsUnique();
+            entity.Property(post => post.PredictedDonationValuePhp).HasPrecision(18, 2);
+            entity.Property(post => post.PredictionModelVersion).HasMaxLength(100);
+            entity.Property(post => post.PredictionScoredAtUtc).HasColumnType("datetimeoffset");
+            entity.Property(post => post.LastMetricsUpdatedAtUtc).HasColumnType("datetime2");
+            entity.HasIndex(post => post.PlatformPostId)
+                .IsUnique()
+                .HasFilter("[PlatformPostId] IS NOT NULL");
             entity.HasIndex(post => post.CreatedAt);
         });
 

@@ -17,6 +17,7 @@ import Index from './pages/Index';
 import GetHelp from './pages/GetHelp';
 import Dashboard from './pages/Dashboard';
 import Caseload from './pages/Caseload';
+import SocialMediaManager from './pages/SocialMediaManager';
 import ProcessRecording from './pages/ProcessRecording';
 import HomeVisitation from './pages/HomeVisitation';
 import Reports from './pages/Reports';
@@ -93,6 +94,10 @@ const App = () => (
                 <Route path="/:lang/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/caseload" element={<Caseload />} />
                 <Route path="/:lang/dashboard/caseload" element={<Caseload />} />
+                <Route path="/dashboard/social-media" element={<SocialMediaManager mode="library" />} />
+                <Route path="/:lang/dashboard/social-media" element={<SocialMediaManager mode="library" />} />
+                <Route path="/dashboard/social-media/new" element={<SocialMediaManager mode="composer" />} />
+                <Route path="/:lang/dashboard/social-media/new" element={<SocialMediaManager mode="composer" />} />
                 <Route path="/dashboard/process-recordings" element={<ProcessRecording />} />
                 <Route path="/:lang/dashboard/process-recordings" element={<ProcessRecording />} />
                 <Route path="/dashboard/home-visitations" element={<HomeVisitation />} />
