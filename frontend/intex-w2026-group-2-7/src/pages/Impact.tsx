@@ -144,8 +144,10 @@ const Impact = () => {
             alt={t("title")}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
+            width={1920}
+            height={1080}
           />
-          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4">
               {t("title")}

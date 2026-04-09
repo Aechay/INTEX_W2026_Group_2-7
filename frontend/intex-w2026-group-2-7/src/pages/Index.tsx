@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Shield, Users, Heart, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,39 @@ import QuickExitButton from "@/components/QuickExitButton";
 import heroImage from "@/assets/hero-beach.jpg";
 import missionImage from "@/assets/safehouse.avif";
 import { withPathLanguage } from "@/i18n/routing";
+
+const FadeInSection = ({ children, delayMs = 0 }: { children: ReactNode; delayMs?: number }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-fade ${isVisible ? "scroll-fade-visible" : ""}`}
+      style={{ transitionDelay: `${delayMs}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Index = () => {
   const { t, i18n } = useTranslation("home");
@@ -80,27 +114,31 @@ const Index = () => {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                {t("mission.title")}
-              </h2>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                {t("mission.paragraph1")}
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                {t("mission.paragraph2")}
-              </p>
-            </div>
-            <div className="rounded-lg overflow-hidden shadow-lg">
-              <img
-                src={missionImage}
-                alt={t("mission.imageAlt")}
-                className="w-full h-80 object-cover"
-                loading="lazy"
-                width={1280}
-                height={720}
-              />
-            </div>
+            <FadeInSection>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+                  {t("mission.title")}
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  {t("mission.paragraph1")}
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  {t("mission.paragraph2")}
+                </p>
+              </div>
+            </FadeInSection>
+            <FadeInSection delayMs={120}>
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img
+                  src={missionImage}
+                  alt={t("mission.imageAlt")}
+                  className="w-full h-80 object-cover"
+                  loading="lazy"
+                  width={1280}
+                  height={720}
+                />
+              </div>
+            </FadeInSection>
           </div>
         </div>
       </section>
@@ -111,23 +149,24 @@ const Index = () => {
             {t("services.title")}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {services.map((service) => (
-              <Card
-                key={service.title}
-                className="border-none shadow-md hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                    <service.icon className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-3">
-                    {service.title}
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {service.description}
-                  </p>
-                </CardContent>
-              </Card>
+            {services.map((service, index) => (
+              <FadeInSection key={service.title} delayMs={index * 120}>
+                <Card
+                  className="border-none shadow-md hover:shadow-lg transition-shadow"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                      <service.icon className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">
+                      {service.title}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {service.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </FadeInSection>
             ))}
           </div>
         </div>

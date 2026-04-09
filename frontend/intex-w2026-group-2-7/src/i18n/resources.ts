@@ -185,7 +185,7 @@ export const resources = {
       hero: {
         title: "Resources & Safety",
         description:
-          "You are not alone. This page shares trusted resources, information about sexual abuse, and simple ways to stay safe.",
+          "This page shares trusted resources, information about sexual abuse, and simple ways to stay safe.",
         imageAlt: "Ocean shoreline",
       },
       sections: {
@@ -1455,7 +1455,7 @@ export const resources = {
       hero: {
         title: "Recursos y seguridad",
         description:
-          "No estás sola. Esta página comparte recursos confiables, información sobre el abuso sexual y formas sencillas de mantenerte segura.",
+          "Esta página comparte recursos confiables, información sobre el abuso sexual y formas sencillas de mantenerte segura.",
         imageAlt: "Orilla del océano",
       },
       sections: {
