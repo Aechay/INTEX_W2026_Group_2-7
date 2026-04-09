@@ -161,6 +161,8 @@ const predictedRiskBadgeClass = (risk: string) => {
   return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
 };
 
+const noPredictionBadgeClass = "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200";
+
 const predictedRiskTranslationKey = (risk: string) => {
   const normalizedRisk = risk.trim().toLowerCase();
   if (normalizedRisk === "critical") {
@@ -636,15 +638,19 @@ const Caseload = () => {
                         {subcategories.length > 0 ? subcategories.join(", ") : t("cards.noSubcategories")}
                       </div>
                     </div>
-                    {resident.predictedRisk ? (
-                      <Badge
-                        className={`absolute bottom-4 right-4 border ${predictedRiskBadgeClass(
-                          resident.predictedRisk,
-                        )}`}
-                      >
-                        {t("cards.predictedRiskLabel")}: {t(predictedRiskTranslationKey(resident.predictedRisk))}
-                      </Badge>
-                    ) : null}
+                    <Badge
+                      className={`absolute bottom-4 right-4 border ${
+                        resident.predictedRisk
+                          ? predictedRiskBadgeClass(resident.predictedRisk)
+                          : noPredictionBadgeClass
+                      }`}
+                    >
+                      {resident.predictedRisk
+                        ? t("cards.predictedRiskBadge", {
+                            level: t(predictedRiskTranslationKey(resident.predictedRisk)),
+                          })
+                        : t("cards.noPredictionBadge")}
+                    </Badge>
                   </CardContent>
                 </Card>
               </button>
