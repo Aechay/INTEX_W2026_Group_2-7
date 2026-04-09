@@ -165,9 +165,37 @@ public static class AdminDonationsEndpointExtensions
                 group.SupporterType,
                 group.Status,
                 group.LastDonationDate,
-                decimal.Round(group.TotalEstimatedValue, 2)))
+                decimal.Round(group.TotalEstimatedValue, 2),
+                null))
             .OrderByDescending(row => row.LastDonationDate)
             .ThenBy(row => row.DisplayName)
+            .ToList();
+
+        var latestDonorChurnScoredAt = await dbContext.DonorChurnPredictions
+            .MaxAsync(prediction => (DateTimeOffset?)prediction.ScoredAt, cancellationToken);
+
+        Dictionary<int, string> donorRiskBandBySupporterId = new();
+        if (latestDonorChurnScoredAt is not null)
+        {
+            donorRiskBandBySupporterId = await dbContext.DonorChurnPredictions
+                .AsNoTracking()
+                .Where(prediction => prediction.ScoredAt == latestDonorChurnScoredAt)
+                .GroupBy(prediction => prediction.DonorId)
+                .Select(group => group
+                    .OrderByDescending(prediction => prediction.RiskScore)
+                    .ThenByDescending(prediction => prediction.ScoredAt)
+                    .First())
+                .ToDictionaryAsync(
+                    prediction => prediction.DonorId,
+                    prediction => prediction.RiskBand,
+                    cancellationToken);
+        }
+
+        donorRows = donorRows
+            .Select(row => row with
+            {
+                ChurnRiskBand = donorRiskBandBySupporterId.GetValueOrDefault(row.SupporterId)
+            })
             .ToList();
 
         var totalDonors = donorRows.Count;
@@ -687,7 +715,8 @@ public static class AdminDonationsEndpointExtensions
         string SupporterType,
         string Status,
         DateTime? LastDonationDate,
-        decimal TotalEstimatedValue);
+        decimal TotalEstimatedValue,
+        string? ChurnRiskBand);
 
     private sealed record AdminDonationActivityResponse(
         int DonationId,
