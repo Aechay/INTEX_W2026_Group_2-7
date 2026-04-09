@@ -211,6 +211,15 @@ const DesktopSidebar = ({
   onOpenPreferences: () => void;
 }) => {
   const { t } = useTranslation("common");
+  const [isHoverDisabled, setIsHoverDisabled] = useState(false);
+
+  const handleToggle = () => {
+    if (!collapsed) {
+      setIsHoverDisabled(true);
+    }
+    onToggleCollapsed();
+  };
+
   const railRowClassName = collapsed
     ? "justify-center gap-0 px-0 group-hover/sidebar:justify-start group-hover/sidebar:gap-3 group-hover/sidebar:px-4"
     : "gap-3 px-4";
@@ -220,9 +229,11 @@ const DesktopSidebar = ({
 
   return (
     <aside
+      onMouseLeave={() => setIsHoverDisabled(false)}
       className={cn(
-        "group/sidebar fixed bottom-0 left-0 top-16 z-40 hidden border-r border-white/10 bg-[hsl(200_25%_15%)] text-slate-100 transition-[width] duration-200 lg:flex lg:flex-col",
-        collapsed ? "w-16 hover:w-72" : "w-72",
+        "fixed bottom-0 left-0 top-16 z-40 hidden border-r border-white/10 bg-[hsl(200_25%_15%)] text-slate-100 transition-[width] duration-200 lg:flex lg:flex-col",
+        !isHoverDisabled && "group/sidebar",
+        collapsed ? (isHoverDisabled ? "w-16" : "w-16 hover:w-72") : "w-72",
       )}
     >
       <div className="border-b border-white/10">
@@ -242,7 +253,7 @@ const DesktopSidebar = ({
             type="button"
             aria-label={collapsed ? "Expand admin navigation" : "Collapse admin navigation"}
             className="flex h-8 w-8 items-center justify-center text-slate-400 transition-colors hover:text-white"
-            onClick={onToggleCollapsed}
+            onClick={handleToggle}
           >
             {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
