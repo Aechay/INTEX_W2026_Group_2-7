@@ -46,35 +46,29 @@ public static class AdminReportsEndpointExtensions
             query = query.Where(d => d.DonationDate <= endDate.Value);
         }
 
-        var monthlyTotals = await query
+        var rawDonations = await query
+            .Select(d => new { d.DonationDate, d.EstimatedValue, d.DonationType, d.CampaignName })
+            .ToArrayAsync(cancellationToken);
+
+        var monthlyTotals = rawDonations
             .GroupBy(d => new { d.DonationDate.Year, d.DonationDate.Month })
-            .Select(g => new DonationMonthlyTotalDto(
-                g.Key.Year,
-                g.Key.Month,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationMonthlyTotalDto(g.Key.Year, g.Key.Month, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderBy(m => m.Year)
             .ThenBy(m => m.Month)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byType = await query
+        var byType = rawDonations
             .GroupBy(d => d.DonationType)
-            .Select(g => new DonationByTypeDto(
-                g.Key,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationByTypeDto(g.Key, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderByDescending(t => t.TotalEstimatedValue)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
-        var byCampaign = await query
-            .Where(d => d.CampaignName != null && d.CampaignName != string.Empty)
+        var byCampaign = rawDonations
+            .Where(d => !string.IsNullOrEmpty(d.CampaignName))
             .GroupBy(d => d.CampaignName!)
-            .Select(g => new DonationByCampaignDto(
-                g.Key,
-                g.Sum(d => d.EstimatedValue),
-                g.Count()))
+            .Select(g => new DonationByCampaignDto(g.Key, g.Sum(d => d.EstimatedValue), g.Count()))
             .OrderByDescending(c => c.TotalEstimatedValue)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         return TypedResults.Ok(new DonationTrendsReportDto(monthlyTotals, byType, byCampaign));
     }
@@ -221,17 +215,25 @@ public static class AdminReportsEndpointExtensions
             incidentReportsQuery = incidentReportsQuery.Where(i => i.IncidentDate <= endDate.Value);
         }
 
-        var processRecordingsByMonth = await processRecordingsQuery
-            .GroupBy(r => new { r.SessionDate.Year, r.SessionDate.Month })
-            .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
-            .OrderBy(m => m.Year).ThenBy(m => m.Month)
+        var rawProcessRecordings = await processRecordingsQuery
+            .Select(r => r.SessionDate)
             .ToArrayAsync(cancellationToken);
 
-        var homeVisitationsByMonth = await homeVisitationsQuery
-            .GroupBy(v => new { v.VisitDate.Year, v.VisitDate.Month })
+        var processRecordingsByMonth = rawProcessRecordings
+            .GroupBy(d => new { d.Year, d.Month })
             .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
             .OrderBy(m => m.Year).ThenBy(m => m.Month)
+            .ToArray();
+
+        var rawHomeVisitations = await homeVisitationsQuery
+            .Select(v => v.VisitDate)
             .ToArrayAsync(cancellationToken);
+
+        var homeVisitationsByMonth = rawHomeVisitations
+            .GroupBy(d => new { d.Year, d.Month })
+            .Select(g => new ActivityMonthlyCountDto(g.Key.Year, g.Key.Month, g.Count()))
+            .OrderBy(m => m.Year).ThenBy(m => m.Month)
+            .ToArray();
 
         var incidentsByType = await incidentReportsQuery
             .GroupBy(i => i.IncidentType)
