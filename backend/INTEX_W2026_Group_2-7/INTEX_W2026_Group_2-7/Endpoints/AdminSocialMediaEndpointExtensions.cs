@@ -681,7 +681,7 @@ public static class AdminSocialMediaEndpointExtensions
 
         return parsedUri.AbsolutePath.Contains(TemporarySocialAssetPathSegment, StringComparison.OrdinalIgnoreCase);
     }
-    }
+    
     private static string? SerializeMediaUrls(IReadOnlyCollection<string>? mediaUrls)
     {
         var normalizedMediaUrls = mediaUrls?
