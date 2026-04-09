@@ -96,6 +96,12 @@ const EmptyState = ({ message }: { message: string }) => (
   </div>
 );
 
+const ErrorState = ({ message }: { message: string }) => (
+  <div className="flex items-center justify-center py-16 text-sm text-destructive">
+    {message}
+  </div>
+);
+
 // ---- Component ----
 
 const Reports = () => {
@@ -273,6 +279,8 @@ const Reports = () => {
         <CardContent className="space-y-6 p-5">
           {donationQuery.isLoading ? (
             <SectionSkeleton />
+          ) : donationQuery.isError ? (
+            <ErrorState message={t("errors.loadFailed")} />
           ) : monthlyChartData.length === 0 ? (
             <EmptyState message={t("donationTrends.noData")} />
           ) : (
@@ -363,6 +371,8 @@ const Reports = () => {
         <CardContent className="space-y-6 p-5">
           {outcomesQuery.isLoading ? (
             <SectionSkeleton />
+          ) : outcomesQuery.isError ? (
+            <ErrorState message={t("errors.loadFailed")} />
           ) : (
             <>
               {/* Metric cards */}
@@ -440,6 +450,8 @@ const Reports = () => {
         <CardContent className="p-5">
           {safehouseQuery.isLoading ? (
             <SectionSkeleton />
+          ) : safehouseQuery.isError ? (
+            <ErrorState message={t("errors.loadFailed")} />
           ) : (safehouseQuery.data ?? []).length === 0 ? (
             <EmptyState message={t("safehousePerformance.noData")} />
           ) : (
@@ -486,6 +498,8 @@ const Reports = () => {
         <CardContent className="space-y-6 p-5">
           {activityQuery.isLoading ? (
             <SectionSkeleton />
+          ) : activityQuery.isError ? (
+            <ErrorState message={t("errors.loadFailed")} />
           ) : processRecChartData.length === 0 && homeVisChartData.length === 0 ? (
             <EmptyState message={t("serviceActivity.noData")} />
           ) : (
