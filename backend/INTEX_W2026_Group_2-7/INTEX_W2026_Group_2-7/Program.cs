@@ -1,12 +1,16 @@
 using INTEX_W2026_Group_2_7.Auth;
 using INTEX_W2026_Group_2_7.Configuration;
+using INTEX_W2026_Group_2_7.Configuration.Meta;
 using INTEX_W2026_Group_2_7.Configuration.Ml;
 using INTEX_W2026_Group_2_7.Data;
 using INTEX_W2026_Group_2_7.Endpoints;
 using INTEX_W2026_Group_2_7.Services;
 using INTEX_W2026_Group_2_7.Services.Ml;
+using INTEX_W2026_Group_2_7.Services.SocialMedia;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +38,11 @@ if (builder.Environment.IsDevelopment())
                  "http://localhost:4173",
                  "https://localhost:4173",
                  "http://127.0.0.1:4173",
-                 "https://127.0.0.1:4173"
+                 "https://127.0.0.1:4173",
+                 "http://localhost:8080",
+                 "https://localhost:8080",
+                 "http://127.0.0.1:8080",
+                 "https://127.0.0.1:8080"
              })
     {
         allowedFrontendOrigins.Add(origin);
@@ -46,6 +54,7 @@ const string apiContentSecurityPolicy =
     "base-uri 'none'; " +
     "frame-ancestors 'none'; " +
     "form-action 'none'; " +
+    "img-src 'self' data: blob:; " +
     "object-src 'none'";
 
 builder.Services.AddControllers();
@@ -54,10 +63,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+});
+
 builder.Services.Configure<AuthBootstrapOptions>(
     builder.Configuration.GetSection(AuthBootstrapOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<MetaPublishingOptions>(
+    builder.Configuration.GetSection(MetaPublishingOptions.SectionName));
 builder.Services.Configure<SocialMediaInferenceOptions>(
     builder.Configuration.GetSection(SocialMediaInferenceOptions.SectionName));
 builder.Services.Configure<SmtpEmailOptions>(
@@ -110,8 +128,11 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, SmtpIdentityEmailSender>();
 builder.Services.AddSingleton<IExternalAuthCodeStore, ExternalAuthCodeStore>();
+builder.Services.AddSingleton<ISocialMediaAssetStorage, FileSystemSocialMediaAssetStorage>();
 builder.Services.AddHttpClient(SocialMediaInferenceClient.HttpClientName);
+builder.Services.AddHttpClient(MetaPublishingService.HttpClientName);
 builder.Services.AddScoped<ISocialMediaInferenceClient, SocialMediaInferenceClient>();
+builder.Services.AddScoped<IMetaPublishingService, MetaPublishingService>();
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
@@ -149,6 +170,27 @@ app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
 
+// Ensure the temporary storage directory exists so the StaticFileProvider can watch it
+var storagePath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "social-media-assets", "temp");
+Directory.CreateDirectory(storagePath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "wwwroot")),
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.Context.Request.Path.StartsWithSegments("/social-media-assets/temp"))
+        {
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type");
+            // Prevent caching of temporary assets to ensure the latest uploads are seen
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+    }
+});
+
 app.Use(async (context, next) =>
 {
     var isDocumentationRequest = app.Environment.IsDevelopment()
@@ -179,8 +221,12 @@ app.MapAdminDashboardEndpoints();
 app.MapAdminCaseloadEndpoints();
 app.MapAdminDonationsEndpoints();
 app.MapAdminDonorDetailEndpoints();
+app.MapAdminSocialMediaEndpoints();
 app.MapDonorEndpoints();
 app.MapMlEndpoints();
+app.MapAdminProcessRecordingEndpoints();
+app.MapAdminHomeVisitationEndpoints();
+app.MapAdminReportsEndpoints();
 
 await app.SeedIdentityDataAsync();
 

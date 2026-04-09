@@ -63,6 +63,18 @@ export const getErrorMessage = (error: unknown, fallback: string): string => {
       }
     }
 
+    if (typeof error.details === "object" && error.details !== null && "errors" in error.details) {
+      const errors = (error.details as { errors?: Record<string, string[] | undefined> }).errors;
+      if (errors && typeof errors === "object") {
+        const lines = Object.entries(errors).flatMap(([key, messages]) =>
+          (messages ?? []).map((msg) => `${key}: ${msg}`),
+        );
+        if (lines.length > 0) {
+          return lines.join(" ");
+        }
+      }
+    }
+
     return error.message;
   }
 

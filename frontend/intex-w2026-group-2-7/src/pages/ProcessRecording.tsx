@@ -1,0 +1,788 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CalendarClock,
+  CircleAlert,
+  ClipboardList,
+  FileBarChart2,
+  HeartHandshake,
+  Home,
+  LayoutDashboard,
+  Megaphone,
+  Pencil,
+  Plus,
+  Settings,
+  Trash2,
+  UsersRound,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { getErrorMessage } from "@/auth/auth-api";
+import useAuth from "@/auth/useAuth";
+import AdminWorkspace, { type AdminNavItem } from "@/components/admin/AdminWorkspace";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { withPathLanguage } from "@/i18n/routing";
+
+type ResidentOption = {
+  residentId: number;
+  internalCode: string;
+  caseControlNo: string;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+type ProcessRecordingDetail = {
+  recordingId: number;
+  residentId: number;
+  residentDisplayName: string;
+  sessionDate: string;
+  socialWorker: string;
+  sessionType: string;
+  sessionDurationMinutes: number;
+  emotionalStateObserved: string;
+  emotionalStateEnd: string;
+  sessionNarrative: string;
+  interventionsApplied: string;
+  followUpActions: string;
+  progressNoted: boolean;
+  concernsFlagged: boolean;
+  referralMade: boolean;
+  notesRestricted: string | null;
+};
+
+type ProcessRecordingCard = {
+  recordingId: number;
+  residentId: number;
+  residentDisplayName: string;
+  sessionDate: string;
+  socialWorker: string;
+  sessionType: string;
+  emotionalStateObserved: string;
+  emotionalStateEnd: string;
+  progressNoted: boolean;
+  concernsFlagged: boolean;
+  referralMade: boolean;
+};
+
+type ProcessRecordingUpsertForm = {
+  residentId: number;
+  sessionDate: string;
+  socialWorker: string;
+  sessionType: string;
+  sessionDurationMinutes: number;
+  emotionalStateObserved: string;
+  emotionalStateEnd: string;
+  sessionNarrative: string;
+  interventionsApplied: string;
+  followUpActions: string;
+  progressNoted: boolean;
+  concernsFlagged: boolean;
+  referralMade: boolean;
+  notesRestricted: string;
+};
+
+const EMOTIONAL_STATES = [
+  "Calm",
+  "Anxious",
+  "Sad",
+  "Angry",
+  "Happy",
+  "Confused",
+  "Fearful",
+  "Hopeful",
+  "Withdrawn",
+  "Engaged",
+];
+
+const SESSION_TYPES = ["Individual", "Group"];
+
+const ITEMS_PER_PAGE = 10;
+
+const emptyForm = (): ProcessRecordingUpsertForm => ({
+  residentId: 0,
+  sessionDate: new Date().toISOString().slice(0, 10),
+  socialWorker: "",
+  sessionType: "Individual",
+  sessionDurationMinutes: 60,
+  emotionalStateObserved: "",
+  emotionalStateEnd: "",
+  sessionNarrative: "",
+  interventionsApplied: "",
+  followUpActions: "",
+  progressNoted: false,
+  concernsFlagged: false,
+  referralMade: false,
+  notesRestricted: "",
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const formatDate = (iso: string) => dateFormatter.format(new Date(iso));
+
+const Field = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-1.5">
+    <Label className="text-sm font-medium text-foreground">{label}</Label>
+    {children}
+  </div>
+);
+
+const ProcessRecording = () => {
+  const auth = useAuth();
+  const { i18n, t } = useTranslation("processRecording");
+  const queryClient = useQueryClient();
+  const [signOutPending, setSignOutPending] = useState(false);
+  const [residentFilter, setResidentFilter] = useState("all");
+  const [socialWorkerFilter, setSocialWorkerFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<ProcessRecordingUpsertForm>(emptyForm());
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
+  const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
+  const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
+
+  const navigationItems: AdminNavItem[] = [
+    { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
+    { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
+    { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
+    { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath, active: true },
+    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
+    { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
+    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
+    { label: t("sidebar.settings"), icon: Settings, disabled: true },
+  ];
+
+  const residentsQuery = useQuery({
+    queryKey: ["admin-caseload-residents"],
+    queryFn: () =>
+      auth.authenticatedJson<{ residents: ResidentOption[] }>("/api/admin/caseload/residents"),
+    select: (data) => data.residents,
+  });
+
+  const socialWorkersQuery = useQuery({
+    queryKey: ["admin-process-recording-social-workers"],
+    queryFn: () =>
+      auth.authenticatedJson<string[]>("/api/admin/process-recordings/social-workers"),
+  });
+
+  const recordingsQuery = useQuery({
+    queryKey: ["admin-process-recordings", residentFilter, socialWorkerFilter],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (residentFilter !== "all") params.set("residentId", residentFilter);
+      if (socialWorkerFilter !== "all") params.set("socialWorker", socialWorkerFilter);
+      const qs = params.toString();
+      return auth.authenticatedJson<ProcessRecordingCard[]>(`/api/admin/process-recordings${qs ? `?${qs}` : ""}`);
+    },
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: async ({ id, body }: { id: number | null; body: ProcessRecordingUpsertForm }) => {
+      const payload = {
+        ...body,
+        sessionDate: body.sessionDate,
+        notesRestricted: body.notesRestricted.trim() || null,
+      };
+      if (id) {
+        return auth.authenticatedJson<ProcessRecordingCard>(`/api/admin/process-recordings/${id}`, {
+          method: "PUT",
+          body: payload,
+        });
+      }
+      return auth.authenticatedJson<ProcessRecordingCard>("/api/admin/process-recordings", {
+        method: "POST",
+        body: payload,
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-process-recordings"] });
+      setDialogOpen(false);
+      setSaveError(null);
+    },
+    onError: (error) => {
+      setSaveError(getErrorMessage(error, t("errors.saveFailed")));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) =>
+      auth.authenticatedJson(`/api/admin/process-recordings/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-process-recordings"] });
+      setDeleteId(null);
+    },
+  });
+
+  const handleLogout = async () => {
+    setSignOutPending(true);
+    try {
+      await auth.logout();
+    } finally {
+      setSignOutPending(false);
+    }
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setSaveError(null);
+    setDialogOpen(true);
+  };
+
+  const openEdit = async (recording: ProcessRecordingCard) => {
+    setEditingId(recording.recordingId);
+    setSaveError(null);
+    setForm({
+      residentId: recording.residentId,
+      sessionDate: recording.sessionDate.slice(0, 10),
+      socialWorker: recording.socialWorker,
+      sessionType: recording.sessionType,
+      sessionDurationMinutes: 60,
+      emotionalStateObserved: recording.emotionalStateObserved,
+      emotionalStateEnd: recording.emotionalStateEnd,
+      sessionNarrative: "",
+      interventionsApplied: "",
+      followUpActions: "",
+      progressNoted: recording.progressNoted,
+      concernsFlagged: recording.concernsFlagged,
+      referralMade: recording.referralMade,
+      notesRestricted: "",
+    });
+    setDialogOpen(true);
+    try {
+      const detail = await auth.authenticatedJson<ProcessRecordingDetail>(
+        `/api/admin/process-recordings/${recording.recordingId}`,
+      );
+      setForm((f) => ({
+        ...f,
+        sessionDurationMinutes: detail.sessionDurationMinutes,
+        sessionNarrative: detail.sessionNarrative,
+        interventionsApplied: detail.interventionsApplied,
+        followUpActions: detail.followUpActions,
+        notesRestricted: detail.notesRestricted ?? "",
+      }));
+    } catch {
+      // Non-critical: basic fields already populated from card data
+    }
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    upsertMutation.mutate({ id: editingId, body: form });
+  };
+
+  const recordings = recordingsQuery.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(recordings.length / ITEMS_PER_PAGE));
+  const paginatedRecordings = recordings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  return (
+    <AdminWorkspace
+      items={navigationItems}
+      signOutPending={signOutPending}
+      onSignOut={handleLogout}
+    >
+      {/* Header */}
+      <div className="border border-border bg-card">
+        <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              {t("header.kicker")}
+            </div>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+              {t("header.title")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {t("header.description")}
+            </p>
+          </div>
+          <Button
+            type="button"
+            className="w-fit"
+            onClick={openCreate}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("actions.newRecording")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card className="rounded-none border border-border bg-card shadow-none">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                {t("filters.resident")}
+              </Label>
+              <Select
+                value={residentFilter}
+                onValueChange={(value) => {
+                  setResidentFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue placeholder={t("filters.allResidents")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
+                  {(residentsQuery.data ?? []).map((r) => (
+                    <SelectItem key={r.residentId} value={String(r.residentId)}>
+                      {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                {t("filters.socialWorker")}
+              </Label>
+              <Select
+                value={socialWorkerFilter}
+                onValueChange={(value) => {
+                  setSocialWorkerFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue placeholder={t("filters.allSocialWorkers")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.allSocialWorkers")}</SelectItem>
+                  {(socialWorkersQuery.data ?? []).map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      {recordingsQuery.isError ? (
+        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
+          <CardContent className="flex flex-col items-start gap-4 p-8">
+            <div className="border-l-4 border-destructive pl-3 text-destructive">
+              <CircleAlert className="h-5 w-5" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {getErrorMessage(recordingsQuery.error, t("errors.loadFailed"))}
+            </p>
+            <Button type="button" onClick={() => void recordingsQuery.refetch()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="rounded-none border border-border bg-card shadow-none">
+          <CardHeader className="px-5 py-4">
+            <CardTitle className="text-lg font-semibold">
+              {recordings.length} {recordings.length === 1 ? "record" : "records"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recordingsQuery.isLoading ? (
+              <div className="space-y-2 p-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-12 animate-pulse bg-muted" />
+                ))}
+              </div>
+            ) : recordings.length === 0 ? (
+              <div className="border-t border-border p-8 text-center text-sm text-muted-foreground">
+                {t("table.noRecords")}
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("table.sessionDate")}</TableHead>
+                        <TableHead>{t("table.resident")}</TableHead>
+                        <TableHead>{t("table.socialWorker")}</TableHead>
+                        <TableHead>{t("table.sessionType")}</TableHead>
+                        <TableHead>{t("table.emotionalState")}</TableHead>
+                        <TableHead>{t("table.progress")}</TableHead>
+                        <TableHead>{t("table.concerns")}</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedRecordings.map((rec) => (
+                        <TableRow key={rec.recordingId}>
+                          <TableCell className="whitespace-nowrap text-sm">
+                            {formatDate(rec.sessionDate)}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {rec.residentDisplayName}
+                          </TableCell>
+                          <TableCell className="text-sm">{rec.socialWorker}</TableCell>
+                          <TableCell className="text-sm">{rec.sessionType}</TableCell>
+                          <TableCell className="text-sm">
+                            <span className="text-muted-foreground">
+                              {rec.emotionalStateObserved}
+                            </span>
+                            {" → "}
+                            <span>{rec.emotionalStateEnd}</span>
+                          </TableCell>
+                          <TableCell>
+                            {rec.progressNoted ? (
+                              <Badge variant="outline" className="rounded-none border-0 bg-primary/10 text-primary text-xs">
+                                Yes
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {rec.concernsFlagged ? (
+                              <Badge variant="outline" className="rounded-none border-0 bg-destructive/10 text-destructive text-xs">
+                                Flagged
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => openEdit(rec)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteId(rec.recordingId)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-none"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-none"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-none border-border bg-card p-0 shadow-xl sm:max-w-[800px]">
+          <DialogHeader className="border-b border-border px-6 py-5">
+            <DialogTitle>
+              {editingId ? t("dialog.editTitle") : t("dialog.createTitle")}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
+              <Field label={t("dialog.resident")}>
+                <Select
+                  value={form.residentId ? String(form.residentId) : ""}
+                  onValueChange={(value) => setForm((f) => ({ ...f, residentId: Number(value) }))}
+                >
+                  <SelectTrigger className="rounded-none">
+                    <SelectValue placeholder="Select resident" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(residentsQuery.data ?? []).map((r) => (
+                      <SelectItem key={r.residentId} value={String(r.residentId)}>
+                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label={t("dialog.sessionDate")}>
+                <Input
+                  type="date"
+                  className="rounded-none"
+                  value={form.sessionDate}
+                  onChange={(e) => setForm((f) => ({ ...f, sessionDate: e.target.value }))}
+                  required
+                />
+              </Field>
+
+              <Field label={t("dialog.socialWorker")}>
+                <Input
+                  className="rounded-none"
+                  value={form.socialWorker}
+                  onChange={(e) => setForm((f) => ({ ...f, socialWorker: e.target.value }))}
+                  required
+                />
+              </Field>
+
+              <Field label={t("dialog.sessionType")}>
+                <Select
+                  value={form.sessionType}
+                  onValueChange={(value) => setForm((f) => ({ ...f, sessionType: value }))}
+                >
+                  <SelectTrigger className="rounded-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SESSION_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label={t("dialog.sessionDuration")}>
+                <Input
+                  type="number"
+                  className="rounded-none"
+                  min={1}
+                  value={form.sessionDurationMinutes}
+                  onChange={(e) => setForm((f) => ({ ...f, sessionDurationMinutes: Number(e.target.value) }))}
+                  required
+                />
+              </Field>
+
+              <Field label={t("dialog.emotionalStateObserved")}>
+                <Select
+                  value={form.emotionalStateObserved}
+                  onValueChange={(value) => setForm((f) => ({ ...f, emotionalStateObserved: value }))}
+                >
+                  <SelectTrigger className="rounded-none">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMOTIONAL_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>{state}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label={t("dialog.emotionalStateEnd")}>
+                <Select
+                  value={form.emotionalStateEnd}
+                  onValueChange={(value) => setForm((f) => ({ ...f, emotionalStateEnd: value }))}
+                >
+                  <SelectTrigger className="rounded-none">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMOTIONAL_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>{state}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <div className="sm:col-span-2">
+                <Field label={t("dialog.sessionNarrative")}>
+                  <textarea
+                    className="min-h-[100px] w-full rounded-none border border-input bg-background px-3 py-2 text-sm"
+                    value={form.sessionNarrative}
+                    onChange={(e) => setForm((f) => ({ ...f, sessionNarrative: e.target.value }))}
+                  />
+                </Field>
+              </div>
+
+              <div className="sm:col-span-2">
+                <Field label={t("dialog.interventionsApplied")}>
+                  <textarea
+                    className="min-h-[100px] w-full rounded-none border border-input bg-background px-3 py-2 text-sm"
+                    value={form.interventionsApplied}
+                    onChange={(e) => setForm((f) => ({ ...f, interventionsApplied: e.target.value }))}
+                  />
+                </Field>
+              </div>
+
+              <div className="sm:col-span-2">
+                <Field label={t("dialog.followUpActions")}>
+                  <textarea
+                    className="min-h-[100px] w-full rounded-none border border-input bg-background px-3 py-2 text-sm"
+                    value={form.followUpActions}
+                    onChange={(e) => setForm((f) => ({ ...f, followUpActions: e.target.value }))}
+                  />
+                </Field>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="progressNoted"
+                  checked={form.progressNoted}
+                  onChange={(e) => setForm((f) => ({ ...f, progressNoted: e.target.checked }))}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="progressNoted">{t("dialog.progressNoted")}</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="concernsFlagged"
+                  checked={form.concernsFlagged}
+                  onChange={(e) => setForm((f) => ({ ...f, concernsFlagged: e.target.checked }))}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="concernsFlagged">{t("dialog.concernsFlagged")}</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="referralMade"
+                  checked={form.referralMade}
+                  onChange={(e) => setForm((f) => ({ ...f, referralMade: e.target.checked }))}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="referralMade">{t("dialog.referralMade")}</Label>
+              </div>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">
+                  {t("dialog.notesRestricted")}
+                </Label>
+                <p className="text-xs text-muted-foreground">{t("dialog.notesRestrictedWarning")}</p>
+                <textarea
+                  className="min-h-[80px] w-full rounded-none border border-input bg-background px-3 py-2 text-sm"
+                  value={form.notesRestricted}
+                  onChange={(e) => setForm((f) => ({ ...f, notesRestricted: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {saveError ? (
+              <div className="mx-6 mb-4 rounded-none border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {saveError}
+              </div>
+            ) : null}
+
+            <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-none"
+                onClick={() => setDialogOpen(false)}
+              >
+                {t("actions.cancel")}
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-none"
+                disabled={upsertMutation.isPending}
+              >
+                {upsertMutation.isPending ? "Saving…" : t("actions.save")}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-none border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteDialog.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-none">{t("deleteDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : t("deleteDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminWorkspace>
+  );
+};
+
+export default ProcessRecording;

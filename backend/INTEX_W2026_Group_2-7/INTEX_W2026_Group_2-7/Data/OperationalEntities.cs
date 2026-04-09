@@ -266,9 +266,11 @@ public sealed class SocialMediaPost
 {
     public int PostId { get; set; }
     public string Platform { get; set; } = string.Empty;
-    public string PlatformPostId { get; set; } = string.Empty;
-    public string PostUrl { get; set; } = string.Empty;
+    public string? PlatformPostId { get; set; }
+    public string? PostUrl { get; set; }
+    public string PublishStatus { get; set; } = "Published";
     public DateTime CreatedAt { get; set; }
+    public DateTime? PublishedAtUtc { get; set; }
     public string DayOfWeek { get; set; } = string.Empty;
     public int PostHour { get; set; }
     public string PostType { get; set; } = string.Empty;
@@ -279,6 +281,10 @@ public sealed class SocialMediaPost
     public int MentionsCount { get; set; }
     public bool HasCallToAction { get; set; }
     public string? CallToActionType { get; set; }
+    public string? CallToActionUrl { get; set; }
+    public string? AltText { get; set; }
+    public string? MediaAssetUrlsJson { get; set; }
+    public string? PlatformMetadataJson { get; set; }
     public string ContentTopic { get; set; } = string.Empty;
     public string SentimentTone { get; set; } = string.Empty;
     public int CaptionLength { get; set; }
@@ -298,7 +304,11 @@ public sealed class SocialMediaPost
     public int ProfileVisits { get; set; }
     public int DonationReferrals { get; set; }
     public decimal EstimatedDonationValuePhp { get; set; }
+    public decimal? PredictedDonationValuePhp { get; set; }
+    public string? PredictionModelVersion { get; set; }
+    public DateTimeOffset? PredictionScoredAtUtc { get; set; }
     public int FollowerCountAtPost { get; set; }
+    public DateTime? LastMetricsUpdatedAtUtc { get; set; }
     public int? WatchTimeSeconds { get; set; }
     public int? AvgViewDurationSeconds { get; set; }
     public int? SubscriberCountAtPost { get; set; }

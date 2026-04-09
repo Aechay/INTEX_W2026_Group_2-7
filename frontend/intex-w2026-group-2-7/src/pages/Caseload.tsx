@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
   CircleAlert,
+  ClipboardList,
   FileBarChart2,
   HeartHandshake,
   Home,
   LayoutDashboard,
+  Megaphone,
   Plus,
   Save,
   Search,
@@ -83,11 +85,15 @@ type Resident = {
   dateEnrolled: string;
   dateClosed: string | null;
   notesRestricted: string | null;
+  predictedRisk: string | null;
+  predictedRiskNum: number | null;
 };
 
 type CaseloadResponse = {
   residents: Resident[];
   safehouses: SafehouseOption[];
+  /** Distinct non-empty case categories in the operational database (for dropdowns). */
+  caseCategoryOptions: string[];
   filterOptions: {
     caseStatuses: string[];
     caseCategories: string[];
@@ -96,9 +102,29 @@ type CaseloadResponse = {
   };
 };
 
-type ResidentForm = Omit<Resident, "residentId" | "safehouseName">;
+type ResidentForm = Omit<Resident, "residentId" | "safehouseName" | "predictedRisk" | "predictedRiskNum">;
+type RiskLevel = "Low" | "Medium" | "High" | "Critical";
+const RISK_LEVEL_OPTIONS: RiskLevel[] = ["Low", "Medium", "High", "Critical"];
 
 const dateInputValue = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
+
+/** Matches codes like LS-0001 … LS-0060 (case-insensitive prefix). */
+const INTERNAL_CODE_LS_PATTERN = /^LS-(\d+)$/i;
+
+/** Next sequential internal code after the highest existing `LS-####` value. */
+function computeNextLsInternalCode(existingCodes: readonly string[]): string {
+  let max = 0;
+  for (const code of existingCodes) {
+    const match = INTERNAL_CODE_LS_PATTERN.exec(code.trim());
+    if (match) {
+      const n = Number.parseInt(match[1], 10);
+      if (!Number.isNaN(n) && n > max) {
+        max = n;
+      }
+    }
+  }
+  return `LS-${String(max + 1).padStart(4, "0")}`;
+}
 
 const subCategoryKeys = [
   "subCatOrphaned",
@@ -121,8 +147,60 @@ const familyProfileKeys = [
   "familyInformalSettler",
 ] as const;
 
-const buildEmptyResident = (safehouseId: number): ResidentForm => ({
-  internalCode: "",
+const predictedRiskBadgeClass = (risk: string) => {
+  const normalizedRisk = risk.trim().toLowerCase();
+  if (normalizedRisk === "critical") {
+    return "border-red-500/40 bg-red-500/20 text-red-900 dark:text-red-200";
+  }
+  if (normalizedRisk === "high") {
+    return "border-orange-500/40 bg-orange-500/20 text-orange-900 dark:text-orange-200";
+  }
+  if (normalizedRisk === "medium") {
+    return "border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200";
+  }
+  return "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+};
+
+const noPredictionBadgeClass = "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200";
+
+const predictedRiskTranslationKey = (risk: string) => {
+  const normalizedRisk = risk.trim().toLowerCase();
+  if (normalizedRisk === "critical") {
+    return "riskLevels.critical";
+  }
+  if (normalizedRisk === "high") {
+    return "riskLevels.high";
+  }
+  if (normalizedRisk === "medium") {
+    return "riskLevels.medium";
+  }
+  return "riskLevels.low";
+};
+
+/** Empty string is invalid for `DateTime?` in the API — use null for unset optional dates. */
+function optionalDateIso(iso: string | null | undefined): string | null {
+  const s = dateInputValue(iso ?? null);
+  return s || null;
+}
+
+/** Request body must match API: exclude UI-only fields like `safehouseName` and `residentId`. */
+function buildResidentUpsertPayload(form: ResidentForm): Record<string, unknown> {
+  const raw = form as ResidentForm & { safehouseName?: string; residentId?: number };
+  const { safehouseName: _s, residentId: _r, ...rest } = raw;
+  return {
+    ...rest,
+    dateOfBirth: dateInputValue(rest.dateOfBirth) || null,
+    dateOfAdmission: dateInputValue(rest.dateOfAdmission) || null,
+    dateEnrolled: dateInputValue(rest.dateEnrolled) || null,
+    dateClosed: optionalDateIso(rest.dateClosed),
+    dateColbRegistered: optionalDateIso(rest.dateColbRegistered),
+    dateColbObtained: optionalDateIso(rest.dateColbObtained),
+    dateCaseStudyPrepared: optionalDateIso(rest.dateCaseStudyPrepared),
+  };
+}
+
+const buildEmptyResident = (safehouseId: number, internalCode: string): ResidentForm => ({
+  internalCode,
   caseControlNo: "",
   firstName: "",
   lastName: "",
@@ -165,12 +243,97 @@ const buildEmptyResident = (safehouseId: number): ResidentForm => ({
   dateCaseStudyPrepared: null,
   reintegrationType: "",
   reintegrationStatus: "",
-  initialRiskLevel: "",
-  currentRiskLevel: "",
+  initialRiskLevel: "Low",
+  currentRiskLevel: "Low",
   dateEnrolled: new Date().toISOString(),
   dateClosed: null,
   notesRestricted: "",
 });
+
+function CaseCategoryControl({
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: string[];
+  disabled?: boolean;
+  placeholder: string;
+}) {
+  const mergedOptions = useMemo(() => {
+    if (value && !options.includes(value)) {
+      return [...options, value].sort((a, b) => a.localeCompare(b));
+    }
+    return options;
+  }, [options, value]);
+
+  if (mergedOptions.length === 0) {
+    return (
+      <Input value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
+    );
+  }
+
+  const selectValue = value || "__none__";
+
+  return (
+    <Select
+      value={selectValue}
+      onValueChange={(next) => onChange(next === "__none__" ? "" : next)}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">{placeholder}</SelectItem>
+        {mergedOptions.map((cat) => (
+          <SelectItem key={cat} value={cat}>
+            {cat}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function RiskLevelControl({
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: string[];
+  disabled?: boolean;
+  placeholder: string;
+}) {
+  const selectValue = options.includes(value) ? value : "__none__";
+
+  return (
+    <Select
+      value={selectValue}
+      onValueChange={(next) => onChange(next === "__none__" ? "" : next)}
+      disabled={disabled}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">{placeholder}</SelectItem>
+        {options.map((riskLevel) => (
+          <SelectItem key={riskLevel} value={riskLevel}>
+            {riskLevel}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const Caseload = () => {
   const auth = useAuth();
@@ -193,13 +356,20 @@ const Caseload = () => {
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
   const donationsPath = withPathLanguage("/dashboard/donations", i18n.resolvedLanguage);
+  const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
+  const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
+  const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
+  const reportsPath = withPathLanguage("/dashboard/reports", i18n.resolvedLanguage);
   const navigationItems: AdminNavItem[] = [
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
+    { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
     { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
+    { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
+    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },
-    { label: t("sidebar.reports"), icon: FileBarChart2, disabled: true },
+    { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
@@ -226,16 +396,7 @@ const Caseload = () => {
 
   const upsertMutation = useMutation({
     mutationFn: async ({ residentId, body }: { residentId?: number; body: ResidentForm }) => {
-      const payload = {
-        ...body,
-        dateOfBirth: dateInputValue(body.dateOfBirth) || null,
-        dateOfAdmission: dateInputValue(body.dateOfAdmission) || null,
-        dateEnrolled: dateInputValue(body.dateEnrolled) || null,
-        dateClosed: dateInputValue(body.dateClosed),
-        dateColbRegistered: dateInputValue(body.dateColbRegistered),
-        dateColbObtained: dateInputValue(body.dateColbObtained),
-        dateCaseStudyPrepared: dateInputValue(body.dateCaseStudyPrepared),
-      };
+      const payload = buildResidentUpsertPayload(body);
       if (residentId) {
         return auth.authenticatedJson<Resident>(`/api/admin/caseload/residents/${residentId}`, {
           method: "PUT",
@@ -247,11 +408,15 @@ const Caseload = () => {
         body: payload,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["admin-caseload-residents"] });
       setIsEditing(false);
       setIsCreateOpen(false);
       setSaveErrorMessage(null);
+      if (data && variables.residentId) {
+        setSelected(data);
+        setForm({ ...data });
+      }
     },
     onError: (error) => {
       setSaveErrorMessage(getErrorMessage(error, t("errors.saveFailed")));
@@ -260,6 +425,8 @@ const Caseload = () => {
 
   const residents = caseloadQuery.data?.residents ?? [];
   const safehouses = caseloadQuery.data?.safehouses ?? [];
+  const caseCategoryOptions = caseloadQuery.data?.caseCategoryOptions ?? [];
+  const riskLevelOptions = RISK_LEVEL_OPTIONS;
   const totalResidents = residents.length;
   const effectivePageSize = pageSize === "all" ? totalResidents || 1 : Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(totalResidents / effectivePageSize));
@@ -299,6 +466,10 @@ const Caseload = () => {
     return resident.internalCode || t("cards.unnamedResident");
   };
 
+  const saveValidationMessage = "Initial Risk Level and Current Risk Level are required.";
+  const hasRequiredRiskLevels = (residentForm: ResidentForm) =>
+    residentForm.initialRiskLevel.trim().length > 0 && residentForm.currentRiskLevel.trim().length > 0;
+
   return (
     <AdminWorkspace items={navigationItems} signOutPending={signOutPending} onSignOut={handleLogout}>
       <section className="border border-border bg-card p-5">
@@ -313,8 +484,9 @@ const Caseload = () => {
           <Button
             type="button"
             onClick={() => {
+              const nextCode = computeNextLsInternalCode(residents.map((r) => r.internalCode));
               setIsCreateOpen(true);
-              setForm(buildEmptyResident(safehouses[0]?.safehouseId ?? 1));
+              setForm(buildEmptyResident(safehouses[0]?.safehouseId ?? 1, nextCode));
               setSaveErrorMessage(null);
             }}
           >
@@ -456,7 +628,7 @@ const Caseload = () => {
                       <Badge variant="secondary">{resident.safehouseName}</Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="relative space-y-3 pb-12 text-sm">
                     <div className="text-muted-foreground">
                       {resident.sex} • {dateInputValue(resident.dateOfBirth) || t("cards.dobNotSet")}
                     </div>
@@ -468,6 +640,19 @@ const Caseload = () => {
                         {subcategories.length > 0 ? subcategories.join(", ") : t("cards.noSubcategories")}
                       </div>
                     </div>
+                    <Badge
+                      className={`absolute bottom-4 right-4 border ${
+                        resident.predictedRisk
+                          ? predictedRiskBadgeClass(resident.predictedRisk)
+                          : noPredictionBadgeClass
+                      }`}
+                    >
+                      {resident.predictedRisk
+                        ? t("cards.predictedRiskBadge", {
+                            level: t(predictedRiskTranslationKey(resident.predictedRisk)),
+                          })
+                        : t("cards.noPredictionBadge")}
+                    </Badge>
                   </CardContent>
                 </Card>
               </button>
@@ -518,7 +703,16 @@ const Caseload = () => {
                   <Button
                     type="button"
                     disabled={upsertMutation.isPending || !selected}
-                    onClick={() => selected && upsertMutation.mutate({ residentId: selected.residentId, body: form })}
+                    onClick={() => {
+                      if (!selected) {
+                        return;
+                      }
+                      if (!hasRequiredRiskLevels(form)) {
+                        setSaveErrorMessage(saveValidationMessage);
+                        return;
+                      }
+                      upsertMutation.mutate({ residentId: selected.residentId, body: form });
+                    }}
                   >
                     <Save className="mr-2 h-4 w-4" />
                     {t("actions.save")}
@@ -527,11 +721,12 @@ const Caseload = () => {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label={t("fields.residentCode")}>
+                <Field label={t("fields.internalCode")}>
                   <Input
                     value={form.internalCode}
-                    disabled={!isEditing}
-                    onChange={(event) => setForm({ ...form, internalCode: event.target.value })}
+                    readOnly
+                    className="cursor-not-allowed bg-muted/50"
+                    aria-readonly="true"
                   />
                 </Field>
                 <Field label={t("fields.firstName")}>
@@ -563,10 +758,12 @@ const Caseload = () => {
                   />
                 </Field>
                 <Field label={t("fields.caseCategory")}>
-                  <Input
+                  <CaseCategoryControl
                     value={form.caseCategory}
+                    onChange={(next) => setForm({ ...form, caseCategory: next })}
+                    options={caseCategoryOptions}
                     disabled={!isEditing}
-                    onChange={(event) => setForm({ ...form, caseCategory: event.target.value })}
+                    placeholder={t("fields.caseCategoryPlaceholder")}
                   />
                 </Field>
                 <Field label={t("fields.safehouse")}>
@@ -620,6 +817,24 @@ const Caseload = () => {
                     value={form.reintegrationStatus ?? ""}
                     disabled={!isEditing}
                     onChange={(event) => setForm({ ...form, reintegrationStatus: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.initialRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.initialRiskLevel}
+                    onChange={(next) => setForm({ ...form, initialRiskLevel: next })}
+                    options={riskLevelOptions}
+                    disabled={!isEditing}
+                    placeholder={t("fields.initialRiskLevel")}
+                  />
+                </Field>
+                <Field label={t("fields.currentRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.currentRiskLevel}
+                    onChange={(next) => setForm({ ...form, currentRiskLevel: next })}
+                    options={riskLevelOptions}
+                    disabled={!isEditing}
+                    placeholder={t("fields.currentRiskLevel")}
                   />
                 </Field>
                 <Field label={t("fields.pwdType")}>
@@ -690,56 +905,183 @@ const Caseload = () => {
       </Dialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[640px]">
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>{t("dialogs.createTitle")}</DialogTitle>
           </DialogHeader>
           {form ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {saveErrorMessage ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                   {saveErrorMessage}
                 </div>
               ) : null}
-              <Field label={t("fields.residentCode")}>
-                <Input value={form.internalCode} onChange={(event) => setForm({ ...form, internalCode: event.target.value })} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={t("fields.internalCode")}>
+                  <Input
+                    value={form.internalCode}
+                    readOnly
+                    className="cursor-not-allowed bg-muted/50"
+                    aria-readonly="true"
+                  />
+                </Field>
+                <Field label={t("fields.firstName")}>
+                  <Input value={form.firstName ?? ""} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
+                </Field>
+                <Field label={t("fields.lastName")}>
+                  <Input value={form.lastName ?? ""} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseControlNo")}>
+                  <Input value={form.caseControlNo} onChange={(event) => setForm({ ...form, caseControlNo: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseStatus")}>
+                  <Input value={form.caseStatus} onChange={(event) => setForm({ ...form, caseStatus: event.target.value })} />
+                </Field>
+                <Field label={t("fields.caseCategory")}>
+                  <CaseCategoryControl
+                    value={form.caseCategory}
+                    onChange={(next) => setForm({ ...form, caseCategory: next })}
+                    options={caseCategoryOptions}
+                    placeholder={t("fields.caseCategoryPlaceholder")}
+                  />
+                </Field>
+                <Field label={t("fields.safehouse")}>
+                  <Select
+                    value={form.safehouseId.toString()}
+                    onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {safehouses.map((safehouse) => (
+                        <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
+                          {safehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={t("fields.assignedSocialWorker")}>
+                  <Input
+                    value={form.assignedSocialWorker}
+                    onChange={(event) => setForm({ ...form, assignedSocialWorker: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.dateOfBirth")}>
+                  <Input
+                    type="date"
+                    value={dateInputValue(form.dateOfBirth)}
+                    onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.dateOfAdmission")}>
+                  <Input
+                    type="date"
+                    value={dateInputValue(form.dateOfAdmission)}
+                    onChange={(event) => setForm({ ...form, dateOfAdmission: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.referralSource")}>
+                  <Input
+                    value={form.referralSource}
+                    onChange={(event) => setForm({ ...form, referralSource: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.reintegrationStatus")}>
+                  <Input
+                    value={form.reintegrationStatus ?? ""}
+                    onChange={(event) => setForm({ ...form, reintegrationStatus: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.initialRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.initialRiskLevel}
+                    onChange={(next) => setForm({ ...form, initialRiskLevel: next })}
+                    options={riskLevelOptions}
+                    placeholder={t("fields.initialRiskLevel")}
+                  />
+                </Field>
+                <Field label={t("fields.currentRiskLevel")}>
+                  <RiskLevelControl
+                    value={form.currentRiskLevel}
+                    onChange={(next) => setForm({ ...form, currentRiskLevel: next })}
+                    options={riskLevelOptions}
+                    placeholder={t("fields.currentRiskLevel")}
+                  />
+                </Field>
+                <Field label={t("fields.pwdType")}>
+                  <Input
+                    value={form.pwdType ?? ""}
+                    onChange={(event) => setForm({ ...form, pwdType: event.target.value })}
+                  />
+                </Field>
+                <Field label={t("fields.specialNeedsDiagnosis")}>
+                  <Input
+                    value={form.specialNeedsDiagnosis ?? ""}
+                    onChange={(event) => setForm({ ...form, specialNeedsDiagnosis: event.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("sections.caseSubcategories")}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                  {subCategoryKeys.map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form[key])}
+                        onChange={(event) => setForm({ ...form, [key]: event.target.checked })}
+                      />
+                      {t(`subCategories.${key}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("sections.familyProfile")}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                  {familyProfileKeys.map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form[key])}
+                        onChange={(event) => setForm({ ...form, [key]: event.target.checked })}
+                      />
+                      {t(`familyProfile.${key}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <Field label={t("fields.restrictedNotes")}>
+                <textarea
+                  className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.notesRestricted ?? ""}
+                  onChange={(event) => setForm({ ...form, notesRestricted: event.target.value })}
+                />
               </Field>
-              <Field label={t("fields.firstName")}>
-                <Input value={form.firstName ?? ""} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
-              </Field>
-              <Field label={t("fields.lastName")}>
-                <Input value={form.lastName ?? ""} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseControlNo")}>
-                <Input value={form.caseControlNo} onChange={(event) => setForm({ ...form, caseControlNo: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseStatus")}>
-                <Input value={form.caseStatus} onChange={(event) => setForm({ ...form, caseStatus: event.target.value })} />
-              </Field>
-              <Field label={t("fields.caseCategory")}>
-                <Input value={form.caseCategory} onChange={(event) => setForm({ ...form, caseCategory: event.target.value })} />
-              </Field>
-              <Field label={t("fields.safehouse")}>
-                <Select
-                  value={form.safehouseId.toString()}
-                  onValueChange={(value) => setForm({ ...form, safehouseId: Number(value) })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {safehouses.map((safehouse) => (
-                      <SelectItem key={safehouse.safehouseId} value={safehouse.safehouseId.toString()}>
-                        {safehouse.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                   <X className="mr-2 h-4 w-4" />
                   {t("actions.cancel")}
                 </Button>
-                <Button type="button" disabled={upsertMutation.isPending} onClick={() => upsertMutation.mutate({ body: form })}>
+                <Button
+                  type="button"
+                  disabled={upsertMutation.isPending}
+                  onClick={() => {
+                    if (!hasRequiredRiskLevels(form)) {
+                      setSaveErrorMessage(saveValidationMessage);
+                      return;
+                    }
+                    upsertMutation.mutate({ body: form });
+                  }}
+                >
                   <Save className="mr-2 h-4 w-4" />
                   {t("actions.save")}
                 </Button>
@@ -752,7 +1094,7 @@ const Caseload = () => {
   );
 };
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="space-y-1">
     <Label>{label}</Label>
     {children}
