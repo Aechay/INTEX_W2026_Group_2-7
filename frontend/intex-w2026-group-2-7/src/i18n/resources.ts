@@ -560,6 +560,7 @@ export const resources = {
     processRecording: {
       sidebar: {
         dashboard: "Dashboard",
+        socialMedia: "Social Media",
         residents: "Residents",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
@@ -627,6 +628,7 @@ export const resources = {
     homeVisitation: {
       sidebar: {
         dashboard: "Dashboard",
+        socialMedia: "Social Media",
         residents: "Residents",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
@@ -695,6 +697,7 @@ export const resources = {
     reports: {
       sidebar: {
         dashboard: "Dashboard",
+        socialMedia: "Social Media",
         residents: "Residents",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
@@ -1328,6 +1331,7 @@ export const resources = {
     processRecording: {
       sidebar: {
         dashboard: "Panel",
+        socialMedia: "Redes sociales",
         residents: "Residentes",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
@@ -1395,6 +1399,7 @@ export const resources = {
     homeVisitation: {
       sidebar: {
         dashboard: "Panel",
+        socialMedia: "Redes sociales",
         residents: "Residentes",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
@@ -1463,6 +1468,7 @@ export const resources = {
     reports: {
       sidebar: {
         dashboard: "Panel",
+        socialMedia: "Redes sociales",
         residents: "Residentes",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
