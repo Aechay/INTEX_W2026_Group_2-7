@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .blob_store import BlobArtifactStore, publish_bundle_locally
 from .donor_churn import train_donor_churn_model
+from .reintegration_readiness import train_reintegration_readiness_model
 from .resident_risk import train_resident_risk_model
 from .settings import load_runtime_settings
 from .social_media import train_social_media_model
@@ -28,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("score-donor-churn-batch")
     subparsers.add_parser("train-resident-risk")
     subparsers.add_parser("score-resident-risk-batch")
+    subparsers.add_parser("train-reintegration-readiness")
+    subparsers.add_parser("score-reintegration-readiness-batch")
     subparsers.add_parser("train-social-media")
 
     predict_parser = subparsers.add_parser("predict-social-media")
@@ -83,6 +86,35 @@ def main() -> None:
 
     if args.command == "score-resident-risk-batch":
         trained = train_resident_risk_model(
+            frames["residents"],
+            frames["process_recordings"],
+            frames["home_visitations"],
+            frames["education_records"],
+            frames["health_records"],
+            frames["incident_reports"],
+            frames["intervention_plans"],
+        )
+        print(trained.predictions.to_csv(index=False))
+        return
+
+    if args.command == "train-reintegration-readiness":
+        trained = train_reintegration_readiness_model(
+            frames["residents"],
+            frames["process_recordings"],
+            frames["home_visitations"],
+            frames["education_records"],
+            frames["health_records"],
+            frames["incident_reports"],
+            frames["intervention_plans"],
+        )
+        if args.publish_to_blob:
+            BlobArtifactStore(settings.blob).publish_bundle(trained.bundle)
+        elif args.output_dir is not None:
+            publish_bundle_locally(trained.bundle, args.output_dir)
+        return
+
+    if args.command == "score-reintegration-readiness-batch":
+        trained = train_reintegration_readiness_model(
             frames["residents"],
             frames["process_recordings"],
             frames["home_visitations"],
