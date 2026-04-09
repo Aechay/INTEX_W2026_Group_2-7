@@ -355,6 +355,7 @@ const Caseload = () => {
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const caseloadPath = withPathLanguage("/dashboard/caseload", i18n.resolvedLanguage);
+  const donationsPath = withPathLanguage("/dashboard/donations", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
   const processRecordingPath = withPathLanguage("/dashboard/process-recordings", i18n.resolvedLanguage);
   const homeVisitationPath = withPathLanguage("/dashboard/home-visitations", i18n.resolvedLanguage);
@@ -363,9 +364,10 @@ const Caseload = () => {
     { label: t("sidebar.dashboard"), icon: LayoutDashboard, to: dashboardPath },
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
+    { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
     { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.donations"), icon: HeartHandshake, disabled: true },
     { label: t("sidebar.safehouses"), icon: Home, disabled: true },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
     { label: t("sidebar.settings"), icon: Settings, disabled: true },

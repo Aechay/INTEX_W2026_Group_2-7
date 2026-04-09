@@ -168,6 +168,8 @@ export const resources = {
       sidebar: {
         dashboard: "Dashboard",
         residents: "Residents",
+        donations: "Donors and Contributions",
+        caseConferences: "Case Conferences",
         socialMedia: "Social Media",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
@@ -456,6 +458,8 @@ export const resources = {
       sidebar: {
         dashboard: "Dashboard",
         residents: "Residents",
+        donations: "Donors and Contributions",
+        caseConferences: "Case Conferences",
         socialMedia: "Social Media",
         processRecording: "Process Recording",
         homeVisitation: "Home Visitation",
@@ -943,6 +947,8 @@ export const resources = {
       sidebar: {
         dashboard: "Panel",
         residents: "Residentes",
+        donations: "Donantes y contribuciones",
+        caseConferences: "Conferencias de caso",
         socialMedia: "Redes sociales",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
@@ -1239,10 +1245,11 @@ export const resources = {
       sidebar: {
         dashboard: "Panel",
         residents: "Residentes",
+        donations: "Donantes y contribuciones",
+        caseConferences: "Conferencias de caso",
         socialMedia: "Redes sociales",
         processRecording: "Registro de Proceso",
         homeVisitation: "Visita al Hogar",
-        donations: "Donaciones",
         safehouses: "Casas seguras",
         reports: "Reportes",
         settings: "Configuracion",

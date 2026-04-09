@@ -29,6 +29,8 @@ import ExternalAuthCallback from './pages/ExternalAuthCallback';
 import NotFound from './pages/NotFound';
 import Resources from './pages/Resources';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Donations from './pages/Donations';
+import DonorDetail from './pages/DonorDetail';
 
 const queryClient = new QueryClient();
 
@@ -94,6 +96,10 @@ const App = () => (
                 <Route path="/:lang/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/caseload" element={<Caseload />} />
                 <Route path="/:lang/dashboard/caseload" element={<Caseload />} />
+                <Route path="/dashboard/donations" element={<Donations />} />
+                <Route path="/:lang/dashboard/donations" element={<Donations />} />
+                <Route path="/dashboard/donations/:supporterId" element={<DonorDetail />} />
+                <Route path="/:lang/dashboard/donations/:supporterId" element={<DonorDetail />} />
                 <Route path="/dashboard/social-media" element={<SocialMediaManager mode="library" />} />
                 <Route path="/:lang/dashboard/social-media" element={<SocialMediaManager mode="library" />} />
                 <Route path="/dashboard/social-media/new" element={<SocialMediaManager mode="composer" />} />

@@ -219,6 +219,8 @@ authGroup.MapCustomAuthEndpoints();
 app.MapControllers();
 app.MapAdminDashboardEndpoints();
 app.MapAdminCaseloadEndpoints();
+app.MapAdminDonationsEndpoints();
+app.MapAdminDonorDetailEndpoints();
 app.MapAdminSocialMediaEndpoints();
 app.MapDonorEndpoints();
 app.MapMlEndpoints();
