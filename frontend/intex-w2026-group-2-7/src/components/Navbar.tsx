@@ -3,6 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo.png';
 import { withPathLanguage } from '@/i18n/routing';
 import useAuth from '@/auth/useAuth';
@@ -71,14 +78,28 @@ const Navbar = () => {
             )}
           </div>
           {auth.isAuthenticated ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void auth.logout()}
-              className="border-input text-muted-foreground hover:text-foreground"
-            >
-              {t('nav.signOut')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-input text-muted-foreground hover:text-foreground"
+                >
+                  {t('nav.account')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={localizedPath('/account/security')}>
+                    {t('nav.security')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => void auth.logout()}>
+                  {t('nav.logOut')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
           <Button
             asChild
@@ -129,16 +150,27 @@ const Navbar = () => {
             </Link>
           )}
           {auth.isAuthenticated ? (
-            <Button
-              variant="outline"
-              className="w-full border-input text-muted-foreground"
-              onClick={() => {
-                void auth.logout();
-                setIsOpen(false);
-              }}
-            >
-              {t('nav.signOut')}
-            </Button>
+            <>
+              <Link
+                to={localizedPath('/account/security')}
+                onClick={() => setIsOpen(false)}
+                className={`block text-sm font-medium py-2 ${
+                  isActive('/account/security') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {t('nav.security')}
+              </Link>
+              <Button
+                variant="outline"
+                className="w-full border-input text-muted-foreground"
+                onClick={() => {
+                  void auth.logout();
+                  setIsOpen(false);
+                }}
+              >
+                {t('nav.logOut')}
+              </Button>
+            </>
           ) : null}
           <Button
             asChild

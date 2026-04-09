@@ -7,7 +7,7 @@ export type AuthContextValue = {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isBootstrapping: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, twoFactorCode?: string) => Promise<void>;
   completeExternalLogin: (code: string) => Promise<CurrentUser>;
   updateDisplayName: (displayName: string) => Promise<CurrentUser>;
   logout: () => Promise<void>;
