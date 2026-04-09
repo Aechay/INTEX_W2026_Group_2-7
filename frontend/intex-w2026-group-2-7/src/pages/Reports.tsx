@@ -12,10 +12,8 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Megaphone,
-  Settings,
   UsersRound,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -108,8 +106,14 @@ const Reports = () => {
   const auth = useAuth();
   const { i18n, t } = useTranslation("reports");
   const [signOutPending, setSignOutPending] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const defaultEndDate = new Date().toISOString().split("T")[0];
+  const defaultStartDate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().split("T")[0];
+  })();
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultEndDate);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
   const socialMediaPath = withPathLanguage("/dashboard/social-media", i18n.resolvedLanguage);
@@ -124,12 +128,9 @@ const Reports = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath, active: true },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const dateParams = () => {
@@ -234,14 +235,14 @@ const Reports = () => {
       {/* Date range filter */}
       <Card className="rounded-none border border-border bg-card shadow-none">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-stretch sm:gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {t("filters.startDate")}
               </Label>
               <Input
                 type="date"
-                className="rounded-none w-[180px]"
+                className="rounded-none w-full sm:w-[180px]"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
@@ -252,21 +253,34 @@ const Reports = () => {
               </Label>
               <Input
                 type="date"
-                className="rounded-none w-[180px]"
+                className="rounded-none w-full sm:w-[180px]"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            {(startDate || endDate) && (
+            <div className="flex items-end col-span-1 self-stretch">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="rounded-none"
-                onClick={() => { setStartDate(""); setEndDate(""); }}
+                size="default"
+                className="rounded-none h-9 w-full sm:w-auto"
+                onClick={() => { setStartDate(defaultStartDate); setEndDate(defaultEndDate); }}
               >
-                Clear
+                Reset to past year
               </Button>
+            </div>
+            {(startDate || endDate) && (
+              <div className="flex items-end col-span-1 self-stretch">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="rounded-none h-9 w-full sm:w-auto text-muted-foreground"
+                  onClick={() => { setStartDate(""); setEndDate(""); }}
+                >
+                  Show all time
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
@@ -287,7 +301,7 @@ const Reports = () => {
             <EmptyState message={t("donationTrends.noData")} />
           ) : (
             <div className="grid gap-6 xl:grid-cols-2">
-              <div>
+              <div className="min-w-0">
                 <p className="mb-2 text-sm font-medium text-foreground">{t("donationTrends.monthlyChart")}</p>
                 <ChartContainer
                   className="h-[260px] w-full"
@@ -309,7 +323,7 @@ const Reports = () => {
                 </ChartContainer>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <p className="mb-2 text-sm font-medium text-foreground">{t("donationTrends.byTypeChart")}</p>
                 {byTypeChartData.length === 0 ? (
                   <EmptyState message={t("donationTrends.noData")} />
@@ -405,7 +419,7 @@ const Reports = () => {
                 <EmptyState message={t("residentOutcomes.noData")} />
               ) : (
                 <div className="grid gap-6 xl:grid-cols-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="mb-2 text-sm font-medium text-foreground">{t("residentOutcomes.byCaseStatus")}</p>
                     <ChartContainer
                       className="h-[220px] w-full"
@@ -421,7 +435,7 @@ const Reports = () => {
                     </ChartContainer>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <p className="mb-2 text-sm font-medium text-foreground">{t("residentOutcomes.byRiskLevel")}</p>
                     <ChartContainer
                       className="h-[220px] w-full"
@@ -507,7 +521,7 @@ const Reports = () => {
           ) : (
             <div className="grid gap-6 xl:grid-cols-2">
               {processRecChartData.length > 0 && (
-                <div>
+                <div className="min-w-0">
                   <p className="mb-2 text-sm font-medium text-foreground">{t("serviceActivity.processRecordingsChart")}</p>
                   <ChartContainer
                     className="h-[220px] w-full"
@@ -525,7 +539,7 @@ const Reports = () => {
               )}
 
               {homeVisChartData.length > 0 && (
-                <div>
+                <div className="min-w-0">
                   <p className="mb-2 text-sm font-medium text-foreground">{t("serviceActivity.homeVisitationsChart")}</p>
                   <ChartContainer
                     className="h-[220px] w-full"
@@ -543,11 +557,11 @@ const Reports = () => {
               )}
 
               {incidentTypeData.length > 0 && (
-                <div className="xl:col-span-2">
+                <div className="min-w-0 xl:col-span-2">
                   <p className="mb-2 text-sm font-medium text-foreground">{t("serviceActivity.incidentsByType")}</p>
                   <ChartContainer
                     className="h-[220px] w-full"
-                    config={{ count: { label: "Incidents", color: "hsl(var(--destructive))" } }}
+                    config={{ count: { label: "Incidents", color: "hsl(var(--destructive) / 0.70)" } }}
                   >
                     <BarChart data={incidentTypeData} layout="vertical">
                       <CartesianGrid horizontal={false} strokeDasharray="3 3" />

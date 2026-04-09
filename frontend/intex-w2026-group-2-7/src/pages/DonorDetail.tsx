@@ -5,10 +5,8 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Megaphone,
-  Settings,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -150,12 +148,9 @@ const DonorDetail = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath, active: true },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const donorQuery = useQuery({

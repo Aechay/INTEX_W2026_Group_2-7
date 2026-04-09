@@ -6,13 +6,11 @@ import {
   ClipboardList,
   FileBarChart2,
   HeartHandshake,
-  Home,
   LayoutDashboard,
   Megaphone,
   Plus,
   Save,
   Search,
-  Settings,
   UsersRound,
   X,
 } from "lucide-react";
@@ -365,12 +363,9 @@ const Caseload = () => {
     { label: t("sidebar.socialMedia"), icon: Megaphone, to: socialMediaPath },
     { label: t("sidebar.residents"), icon: UsersRound, to: caseloadPath, active: true },
     { label: t("sidebar.donations"), icon: HeartHandshake, to: donationsPath },
-    { label: t("sidebar.caseConferences"), icon: CalendarClock, disabled: true },
     { label: t("sidebar.processRecording"), icon: ClipboardList, to: processRecordingPath },
-    { label: t("sidebar.homeVisitation"), icon: CalendarClock, to: homeVisitationPath },
-    { label: t("sidebar.safehouses"), icon: Home, disabled: true },
+    { label: t("sidebar.caseConferences"), icon: CalendarClock, to: homeVisitationPath },
     { label: t("sidebar.reports"), icon: FileBarChart2, to: reportsPath },
-    { label: t("sidebar.settings"), icon: Settings, disabled: true },
   ];
 
   const caseloadQuery = useQuery({
@@ -496,7 +491,9 @@ const Caseload = () => {
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+      <Card className="rounded-none border border-border bg-card shadow-none">
+        <CardContent className="p-5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <div className="xl:col-span-2">
           <Label htmlFor="search">{t("filters.search")}</Label>
           <div className="relative mt-1">
@@ -508,7 +505,7 @@ const Caseload = () => {
                 setCurrentPage(1);
                 setSearch(event.target.value);
               }}
-              className="pl-9"
+              className="rounded-none pl-9"
               placeholder={t("filters.searchPlaceholder")}
             />
           </div>
@@ -516,7 +513,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseStatus")}</Label>
           <Select value={caseStatus} onValueChange={(value) => { setCurrentPage(1); setCaseStatus(value); }}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.caseStatuses ?? []).map((value) => (
@@ -528,7 +525,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.safehouse")}</Label>
           <Select value={safehouseId} onValueChange={(value) => { setCurrentPage(1); setSafehouseId(value); }}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {safehouses.map((value) => (
@@ -540,7 +537,7 @@ const Caseload = () => {
         <div>
           <Label>{t("filters.caseCategory")}</Label>
           <Select value={caseCategory} onValueChange={(value) => { setCurrentPage(1); setCaseCategory(value); }}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.caseCategories ?? []).map((value) => (
@@ -558,7 +555,7 @@ const Caseload = () => {
               setAssignedSocialWorker(value);
             }}
           >
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.all")}</SelectItem>
               {(caseloadQuery.data?.filterOptions.assignedSocialWorkers ?? []).map((value) => (
@@ -567,7 +564,9 @@ const Caseload = () => {
             </SelectContent>
           </Select>
         </div>
-      </section>
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">{t("list.residentCount", { count: totalResidents })}</div>
@@ -580,7 +579,7 @@ const Caseload = () => {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[110px] rounded-none"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="30">30</SelectItem>
@@ -598,7 +597,7 @@ const Caseload = () => {
           ))}
         </div>
       ) : caseloadQuery.isError ? (
-        <Card className="border-destructive/20">
+        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
           <CardContent className="flex items-start gap-3 p-5">
             <CircleAlert className="mt-0.5 h-5 w-5 text-destructive" />
             <div className="text-sm text-muted-foreground">
@@ -617,7 +616,7 @@ const Caseload = () => {
                 onClick={() => openResident(resident)}
                 className="text-left"
               >
-                <Card className="h-full transition-shadow hover:shadow-md">
+                <Card className="h-full rounded-none border border-border bg-card shadow-none transition-colors hover:border-primary/40">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">{getResidentDisplayName(resident)}</CardTitle>
                     <p className="text-xs text-muted-foreground">
@@ -625,7 +624,7 @@ const Caseload = () => {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline">{resident.caseStatus || t("cards.noStatus")}</Badge>
-                      <Badge variant="secondary">{resident.safehouseName}</Badge>
+                      <Badge variant="outline" className="bg-muted text-muted-foreground">{resident.safehouseName}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="relative space-y-3 pb-12 text-sm">
