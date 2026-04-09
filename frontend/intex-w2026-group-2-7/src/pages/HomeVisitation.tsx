@@ -82,7 +82,7 @@ type HomeVisitationUpsertForm = {
   visitOutcome: string;
 };
 
-const VISIT_TYPES = ["Initial", "Follow-Up", "Crisis", "Routine", "Court-Ordered"];
+const VISIT_TYPES = ["Emergency", "Initial Assessment", "Post-Placement Monitoring", "Reintegration Assessment", "Routine Follow-Up"];
 const COOPERATION_LEVELS = ["High", "Moderate", "Low", "Resistant", "Unknown"];
 const OUTCOMES = ["Favorable", "Needs Improvement", "Unfavorable", "Inconclusive"];
 
