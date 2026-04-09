@@ -58,6 +58,11 @@ public static class AdminDonationsEndpointExtensions
             .RequireAuthorization(AppPolicies.AdminOnly)
             .Produces<AdminDonorCreatedResponse>();
 
+        endpoints.MapPut("/api/admin/donations/donors/{supporterId:int}", UpdateDonorAsync)
+            .WithName("UpdateAdminDonor")
+            .RequireAuthorization(AppPolicies.AdminOnly)
+            .Produces<AdminDonorUpdatedResponse>();
+
         endpoints.MapGet("/api/admin/donations/supporters", GetSupportersAsync)
             .WithName("GetAdminDonationSupporters")
             .RequireAuthorization(AppPolicies.AdminOnly)
@@ -227,6 +232,8 @@ public static class AdminDonationsEndpointExtensions
                     donation.DonationId,
                     donation.DonationDate,
                     donation.DonationType,
+                    donation.ChannelSource,
+                    donation.ImpactUnit,
                     donation.EstimatedValue,
                     donation.CurrencyCode,
                     SupporterName = supporter.DisplayName,
@@ -280,7 +287,10 @@ public static class AdminDonationsEndpointExtensions
                 donation.DonationId,
                 donation.DonationDate,
                 donation.SupporterName,
+                donation.SupporterEmail,
                 donation.DonationType,
+                donation.ChannelSource,
+                donation.ImpactUnit,
                 allocationLabels.GetValueOrDefault(donation.DonationId, "Unallocated"),
                 decimal.Round(donation.EstimatedValue, 2),
                 donation.CurrencyCode))
@@ -394,6 +404,93 @@ public static class AdminDonationsEndpointExtensions
             new AdminDonorCreatedResponse(supporter.SupporterId, supporter.DisplayName));
     }
 
+    private static async Task<Results<Ok<AdminDonorUpdatedResponse>, ValidationProblem, NotFound>> UpdateDonorAsync(
+        OperationalDbContext dbContext,
+        int supporterId,
+        AdminDonorUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            errors["displayName"] = ["Display name is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            errors["email"] = ["Email is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+        {
+            errors["phone"] = ["Phone is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SupporterType))
+        {
+            errors["supporterType"] = ["Supporter type is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RelationshipType))
+        {
+            errors["relationshipType"] = ["Relationship type is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Region))
+        {
+            errors["region"] = ["Region is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Country))
+        {
+            errors["country"] = ["Country is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            errors["status"] = ["Status is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.AcquisitionChannel))
+        {
+            errors["acquisitionChannel"] = ["Acquisition channel is required."];
+        }
+
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        var supporter = await dbContext.Supporters.FirstOrDefaultAsync(
+            row => row.SupporterId == supporterId,
+            cancellationToken);
+
+        if (supporter is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        supporter.SupporterType = request.SupporterType.Trim();
+        supporter.DisplayName = request.DisplayName.Trim();
+        supporter.OrganizationName = string.IsNullOrWhiteSpace(request.OrganizationName)
+            ? null
+            : request.OrganizationName.Trim();
+        supporter.FirstName = string.IsNullOrWhiteSpace(request.FirstName) ? null : request.FirstName.Trim();
+        supporter.LastName = string.IsNullOrWhiteSpace(request.LastName) ? null : request.LastName.Trim();
+        supporter.RelationshipType = request.RelationshipType.Trim();
+        supporter.Region = request.Region.Trim();
+        supporter.Country = request.Country.Trim();
+        supporter.Email = request.Email.Trim();
+        supporter.Phone = request.Phone.Trim();
+        supporter.Status = request.Status.Trim();
+        supporter.AcquisitionChannel = request.AcquisitionChannel.Trim();
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(new AdminDonorUpdatedResponse(supporter.SupporterId, supporter.DisplayName));
+    }
+
     private sealed record AdminDonorCreateRequest(
         string DisplayName,
         string Email,
@@ -409,6 +506,22 @@ public static class AdminDonationsEndpointExtensions
         string? AcquisitionChannel);
 
     private sealed record AdminDonorCreatedResponse(int SupporterId, string DisplayName);
+
+    private sealed record AdminDonorUpdateRequest(
+        string DisplayName,
+        string Email,
+        string Phone,
+        string SupporterType,
+        string? OrganizationName,
+        string? FirstName,
+        string? LastName,
+        string RelationshipType,
+        string Region,
+        string Country,
+        string Status,
+        string AcquisitionChannel);
+
+    private sealed record AdminDonorUpdatedResponse(int SupporterId, string DisplayName);
 
     private sealed record SupporterLookupResponse(int SupporterId, string DisplayName, string Email);
 
@@ -722,7 +835,10 @@ public static class AdminDonationsEndpointExtensions
         int DonationId,
         DateTime DonationDate,
         string SupporterName,
+        string SupporterEmail,
         string DonationType,
+        string ChannelSource,
+        string ImpactUnit,
         string AllocationLabel,
         decimal EstimatedValue,
         string? CurrencyCode);

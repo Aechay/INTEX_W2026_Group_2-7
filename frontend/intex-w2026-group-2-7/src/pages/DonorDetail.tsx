@@ -7,6 +7,8 @@ import {
   HeartHandshake,
   LayoutDashboard,
   Megaphone,
+  Pencil,
+  Settings,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -40,6 +42,17 @@ import { withPathLanguage } from "@/i18n/routing";
 type DonorDetailResponse = {
   supporterId: number;
   displayName: string;
+  supporterType: string;
+  organizationName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  relationshipType: string;
+  region: string;
+  country: string;
+  email: string;
+  phone: string;
+  status: string;
+  acquisitionChannel: string;
   totalByDonor: number;
   totalAllDonations: number;
   totalDonationCount: number;
@@ -127,6 +140,23 @@ const DonorDetail = () => {
   const [contributionFieldErrors, setContributionFieldErrors] = useState<Record<string, string>>(
     {},
   );
+  const [isEditDonorOpen, setIsEditDonorOpen] = useState(false);
+  const [donorError, setDonorError] = useState<string | null>(null);
+  const [donorFieldErrors, setDonorFieldErrors] = useState<Record<string, string>>({});
+  const [donorForm, setDonorForm] = useState({
+    supporterType: "MonetaryDonor",
+    displayName: "",
+    organizationName: "",
+    firstName: "",
+    lastName: "",
+    relationshipType: "",
+    region: "",
+    country: "",
+    email: "",
+    phone: "",
+    status: "Active",
+    acquisitionChannel: "",
+  });
   const [contributionForm, setContributionForm] = useState({
     donationType: "Monetary",
     donationDate: "",
@@ -166,6 +196,8 @@ const DonorDetail = () => {
     queryKey: ["admin-donations-metadata"],
     queryFn: () =>
       auth.authenticatedJson<{
+        relationshipTypes: string[];
+        acquisitionChannels: string[];
         safehouses: Array<{ safehouseId: number; name: string }>;
         programAreas: string[];
       }>("/api/admin/donations/metadata"),
@@ -256,6 +288,29 @@ const DonorDetail = () => {
     },
   });
 
+  const updateDonorMutation = useMutation({
+    mutationFn: (payload: typeof donorForm) =>
+      auth.authenticatedJson<{ supporterId: number; displayName: string }>(
+        `/api/admin/donations/donors/${supporterId}`,
+        {
+          method: "PUT",
+          body: payload,
+        },
+      ),
+    onSuccess: () => {
+      setIsEditDonorOpen(false);
+      setDonorError(null);
+      setDonorFieldErrors({});
+      queryClient.invalidateQueries({ queryKey: ["admin-donor-detail", supporterId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-donations-overview"] });
+    },
+    onError: (error: unknown) => {
+      setDonorError(
+        error instanceof Error ? error.message : "Unable to update donor. Please try again.",
+      );
+    },
+  });
+
   const deleteContributionMutation = useMutation({
     mutationFn: (donationId: number) =>
       auth.authenticatedJson(`/api/admin/donations/contributions/${donationId}`, {
@@ -303,6 +358,42 @@ const DonorDetail = () => {
     return errors;
   };
 
+  const validateDonorForm = (form: typeof donorForm) => {
+    const errors: Record<string, string> = {};
+    if (!form.displayName.trim()) errors.displayName = "Display name is required.";
+    if (!form.email.trim()) errors.email = "Email is required.";
+    if (!form.phone.trim()) errors.phone = "Phone is required.";
+    if (!form.supporterType.trim()) errors.supporterType = "Supporter type is required.";
+    if (!form.relationshipType.trim()) errors.relationshipType = "Relationship type is required.";
+    if (!form.region.trim()) errors.region = "Region is required.";
+    if (!form.country.trim()) errors.country = "Country is required.";
+    if (!form.status.trim()) errors.status = "Status is required.";
+    if (!form.acquisitionChannel.trim())
+      errors.acquisitionChannel = "Acquisition channel is required.";
+    return errors;
+  };
+
+  const openEditDonor = () => {
+    if (!donorQuery.data) return;
+    setDonorForm({
+      supporterType: donorQuery.data.supporterType,
+      displayName: donorQuery.data.displayName,
+      organizationName: donorQuery.data.organizationName ?? "",
+      firstName: donorQuery.data.firstName ?? "",
+      lastName: donorQuery.data.lastName ?? "",
+      relationshipType: donorQuery.data.relationshipType,
+      region: donorQuery.data.region,
+      country: donorQuery.data.country,
+      email: donorQuery.data.email,
+      phone: donorQuery.data.phone?.trim() ? donorQuery.data.phone : "000-000-0000",
+      status: donorQuery.data.status,
+      acquisitionChannel: donorQuery.data.acquisitionChannel,
+    });
+    setDonorError(null);
+    setDonorFieldErrors({});
+    setIsEditDonorOpen(true);
+  };
+
   const openEditDonation = (donation: {
     donationId: number;
     donationDate: string;
@@ -341,9 +432,14 @@ const DonorDetail = () => {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Donor
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                {donorQuery.data?.displayName ?? "Donor details"}
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                  {donorQuery.data?.displayName ?? "Donor details"}
+                </h1>
+                <Button type="button" variant="ghost" size="icon" onClick={openEditDonor}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
                 Review all contributions from this supporter and their total giving.
               </p>
@@ -623,6 +719,265 @@ const DonorDetail = () => {
                 }}
               >
                 Save contribution
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDonorOpen} onOpenChange={setIsEditDonorOpen}>
+        <DialogContent className="sm:max-w-[620px]">
+          <DialogHeader>
+            <DialogTitle>Edit donor profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {donorError ? (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {donorError}
+              </div>
+            ) : null}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="First name">
+                <Input
+                  value={donorForm.firstName}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, firstName: event.target.value });
+                    if (donorFieldErrors.firstName) {
+                      setDonorFieldErrors((current) => ({ ...current, firstName: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.firstName ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.firstName}</p>
+                ) : null}
+              </Field>
+              <Field label="Last name">
+                <Input
+                  value={donorForm.lastName}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, lastName: event.target.value });
+                    if (donorFieldErrors.lastName) {
+                      setDonorFieldErrors((current) => ({ ...current, lastName: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.lastName ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.lastName}</p>
+                ) : null}
+              </Field>
+            </div>
+            <Field label="Display name">
+              <Input
+                value={donorForm.displayName}
+                onChange={(event) => {
+                  setDonorForm({ ...donorForm, displayName: event.target.value });
+                  if (donorFieldErrors.displayName) {
+                    setDonorFieldErrors((current) => ({ ...current, displayName: "" }));
+                  }
+                }}
+              />
+              {donorFieldErrors.displayName ? (
+                <p className="text-xs text-destructive">{donorFieldErrors.displayName}</p>
+              ) : null}
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Email">
+                <Input
+                  value={donorForm.email}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, email: event.target.value });
+                    if (donorFieldErrors.email) {
+                      setDonorFieldErrors((current) => ({ ...current, email: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.email ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.email}</p>
+                ) : null}
+              </Field>
+              <Field label="Phone">
+                <Input
+                  value={donorForm.phone}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, phone: event.target.value });
+                    if (donorFieldErrors.phone) {
+                      setDonorFieldErrors((current) => ({ ...current, phone: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.phone ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.phone}</p>
+                ) : null}
+              </Field>
+            </div>
+            <Field label="Supporter type">
+              <Select
+                value={donorForm.supporterType}
+                onValueChange={(value) => {
+                  setDonorForm({ ...donorForm, supporterType: value });
+                  if (donorFieldErrors.supporterType) {
+                    setDonorFieldErrors((current) => ({ ...current, supporterType: "" }));
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MonetaryDonor">Monetary</SelectItem>
+                  <SelectItem value="InKindDonor">In-kind</SelectItem>
+                  <SelectItem value="SkillsContributor">Skills</SelectItem>
+                  <SelectItem value="SocialMediaAdvocate">Social Media</SelectItem>
+                  <SelectItem value="Volunteer">Volunteer</SelectItem>
+                </SelectContent>
+              </Select>
+              {donorFieldErrors.supporterType ? (
+                <p className="text-xs text-destructive">{donorFieldErrors.supporterType}</p>
+              ) : null}
+            </Field>
+            <Field label="Organization name (optional)">
+              <Input
+                value={donorForm.organizationName}
+                onChange={(event) =>
+                  setDonorForm({ ...donorForm, organizationName: event.target.value })
+                }
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Relationship type">
+                <Select
+                  value={donorForm.relationshipType}
+                  onValueChange={(value) => {
+                    setDonorForm({ ...donorForm, relationshipType: value });
+                    if (donorFieldErrors.relationshipType) {
+                      setDonorFieldErrors((current) => ({ ...current, relationshipType: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metadataQuery.data?.relationshipTypes?.length ? (
+                      metadataQuery.data.relationshipTypes
+                        .filter((option) => option !== "Supporter")
+                        .map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {formatDisplayLabel(option)}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value={donorForm.relationshipType}>
+                        {formatDisplayLabel(donorForm.relationshipType)}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {donorFieldErrors.relationshipType ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.relationshipType}</p>
+                ) : null}
+              </Field>
+              <Field label="Region">
+                <Input
+                  value={donorForm.region}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, region: event.target.value });
+                    if (donorFieldErrors.region) {
+                      setDonorFieldErrors((current) => ({ ...current, region: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.region ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.region}</p>
+                ) : null}
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Country">
+                <Input
+                  value={donorForm.country}
+                  onChange={(event) => {
+                    setDonorForm({ ...donorForm, country: event.target.value });
+                    if (donorFieldErrors.country) {
+                      setDonorFieldErrors((current) => ({ ...current, country: "" }));
+                    }
+                  }}
+                />
+                {donorFieldErrors.country ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.country}</p>
+                ) : null}
+              </Field>
+              <Field label="Status">
+                <Select
+                  value={donorForm.status}
+                  onValueChange={(value) => {
+                    setDonorForm({ ...donorForm, status: value });
+                    if (donorFieldErrors.status) {
+                      setDonorFieldErrors((current) => ({ ...current, status: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                {donorFieldErrors.status ? (
+                  <p className="text-xs text-destructive">{donorFieldErrors.status}</p>
+                ) : null}
+              </Field>
+            </div>
+            <Field label="Acquisition channel">
+              <Select
+                value={donorForm.acquisitionChannel}
+                onValueChange={(value) => {
+                  setDonorForm({ ...donorForm, acquisitionChannel: value });
+                  if (donorFieldErrors.acquisitionChannel) {
+                    setDonorFieldErrors((current) => ({ ...current, acquisitionChannel: "" }));
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select acquisition channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  {metadataQuery.data?.acquisitionChannels?.length ? (
+                    metadataQuery.data.acquisitionChannels
+                      .filter((option) => option !== "Manual")
+                      .map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatDisplayLabel(option)}
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <SelectItem value={donorForm.acquisitionChannel}>
+                      {formatDisplayLabel(donorForm.acquisitionChannel)}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {donorFieldErrors.acquisitionChannel ? (
+                <p className="text-xs text-destructive">{donorFieldErrors.acquisitionChannel}</p>
+              ) : null}
+            </Field>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDonorOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={updateDonorMutation.isPending}
+                onClick={() => {
+                  const errors = validateDonorForm(donorForm);
+                  setDonorFieldErrors(errors);
+                  if (Object.keys(errors).length > 0) return;
+                  updateDonorMutation.mutate(donorForm);
+                }}
+              >
+                Save changes
               </Button>
             </div>
           </div>

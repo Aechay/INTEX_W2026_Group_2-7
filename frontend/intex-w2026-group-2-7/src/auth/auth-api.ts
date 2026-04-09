@@ -32,6 +32,17 @@ export type PublicDonationCreateRequest = {
   amount: number;
 };
 
+export type SecurityAccount = {
+  email: string;
+  hasPassword: boolean;
+  isTotpEnabled: boolean;
+};
+
+export type TotpSetup = {
+  secretKey: string;
+  otpAuthUri: string;
+};
+
 export const resolveApiBaseUrl = (): string => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
   if (configuredBaseUrl) {
@@ -129,8 +140,10 @@ export async function requestJson<T>(
   }
 
   const rawBody = await response.text();
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const isJsonResponse = contentType.includes("application/json") || contentType.includes("+json");
   const parsedBody =
-    rawBody.length > 0 && response.headers.get("content-type")?.includes("application/json")
+    rawBody.length > 0 && isJsonResponse
       ? JSON.parse(rawBody)
       : rawBody;
 
@@ -187,10 +200,19 @@ export const resetPasswordRequest = (
     },
   });
 
-export const loginRequest = (apiBaseUrl: string, email: string, password: string) =>
+export const loginRequest = (
+  apiBaseUrl: string,
+  email: string,
+  password: string,
+  twoFactorCode?: string,
+) =>
   requestJson<AuthTokens>(apiBaseUrl, "/auth/login?useCookies=false", {
     method: "POST",
-    body: { email, password },
+    body: {
+      email,
+      password,
+      ...(twoFactorCode ? { twoFactorCode } : {}),
+    },
   });
 
 export const getExternalAuthProvidersRequest = (apiBaseUrl: string) =>
@@ -220,6 +242,49 @@ export const logoutRequest = (apiBaseUrl: string, accessToken: string) =>
 
 export const getCurrentUserRequest = (apiBaseUrl: string, accessToken: string) =>
   requestJson<CurrentUser>(apiBaseUrl, "/auth/me", {}, accessToken);
+
+export const getSecurityAccountRequest = (apiBaseUrl: string, accessToken: string) =>
+  requestJson<SecurityAccount>(apiBaseUrl, "/auth/security/account", {}, accessToken);
+
+export const updateSecurityPasswordRequest = (
+  apiBaseUrl: string,
+  accessToken: string,
+  payload: { newPassword: string; currentPassword?: string },
+) =>
+  requestJson<SecurityAccount>(
+    apiBaseUrl,
+    "/auth/security/password",
+    {
+      method: "POST",
+      body: payload,
+    },
+    accessToken,
+  );
+
+export const getTotpSetupRequest = (apiBaseUrl: string, accessToken: string) =>
+  requestJson<TotpSetup>(apiBaseUrl, "/auth/security/mfa/setup", {}, accessToken);
+
+export const enableTotpRequest = (apiBaseUrl: string, accessToken: string, code: string) =>
+  requestJson<SecurityAccount>(
+    apiBaseUrl,
+    "/auth/security/mfa/enable",
+    {
+      method: "POST",
+      body: { code },
+    },
+    accessToken,
+  );
+
+export const disableTotpRequest = (apiBaseUrl: string, accessToken: string, password: string) =>
+  requestJson<SecurityAccount>(
+    apiBaseUrl,
+    "/auth/security/mfa/disable",
+    {
+      method: "POST",
+      body: { password },
+    },
+    accessToken,
+  );
 
 export const createPublicDonationRequest = (
   apiBaseUrl: string,

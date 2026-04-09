@@ -6,6 +6,7 @@ import {
   FileBarChart2,
   HeartHandshake,
   LayoutDashboard,
+  Mail,
   Megaphone,
   Plus,
   Search,
@@ -55,6 +56,12 @@ type Contribution = {
   type: "Monetary" | "In-kind" | "Time" | "Skills" | "Social Media";
   allocation: string;
   value: string;
+  supporterEmail: string;
+  donationType: string;
+  channelSource: string;
+  impactUnit: string;
+  donationDate: string;
+  estimatedValue: number;
 };
 
 type DonationsOverviewResponse = {
@@ -71,7 +78,10 @@ type DonationsOverviewResponse = {
     donationId: number;
     donationDate: string;
     supporterName: string;
+    supporterEmail: string;
     donationType: string;
+    channelSource: string;
+    impactUnit: string;
     allocationLabel: string;
     estimatedValue: number;
     currencyCode: string | null;
@@ -178,6 +188,9 @@ const translateDonationType = (t: (key: string) => string, value: string) => {
   const key = donationTypeTranslationKey(value);
   return key ? t(key) : value;
 };
+
+const formatDonationValue = (donationType: string, estimatedValue: number) =>
+  donationType === "Monetary" ? formatCurrency(estimatedValue) : currencyFormatter.format(estimatedValue);
 
 const churnRiskBadgeClass = (risk: string | null) => {
   if (!risk) {
@@ -485,8 +498,30 @@ const Donations = () => {
       type: formatContributionType(contribution.donationType),
       allocation: contribution.allocationLabel,
       value: formatCurrency(contribution.estimatedValue),
+      supporterEmail: contribution.supporterEmail,
+      donationType: contribution.donationType,
+      channelSource: contribution.channelSource,
+      impactUnit: contribution.impactUnit,
+      donationDate: contribution.donationDate,
+      estimatedValue: contribution.estimatedValue,
     }));
   }, [donationsQuery.data]);
+
+  const createThankYouEmailHref = (contribution: Contribution) => {
+    const subject = t("donations.thankYou.subject", { name: contribution.contributor });
+    const body = t("donations.thankYou.body", {
+      name: contribution.contributor,
+      donationType: translateDonationType(t, contribution.type),
+      channel: contribution.channelSource,
+      value: formatDonationValue(contribution.donationType, contribution.estimatedValue),
+      impactUnit: contribution.impactUnit,
+      donationDate: contribution.donationDate
+        ? dateFormatter.format(new Date(contribution.donationDate))
+        : t("common.noDate"),
+    });
+
+    return `mailto:${contribution.supporterEmail ?? ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
   const allocations = useMemo(
     () =>
@@ -745,18 +780,21 @@ const Donations = () => {
                     <TableHead>{t("donorsContributions.contributions.columns.contributor")}</TableHead>
                     <TableHead>{t("donorsContributions.contributions.columns.type")}</TableHead>
                     <TableHead>{t("donorsContributions.contributions.columns.allocation")}</TableHead>
+                    <TableHead className="text-right">
+                      <span className="sr-only">{t("donations.sendThankYou")}</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
                         {t("donorsContributions.contributions.loading")}
                       </TableCell>
                     </TableRow>
                   ) : contributions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
                         {t("donorsContributions.contributions.empty")}
                       </TableCell>
                     </TableRow>
@@ -771,6 +809,21 @@ const Donations = () => {
                         <TableCell>
                           <div className="text-sm text-foreground">{contribution.allocation}</div>
                           <div className="text-xs text-muted-foreground">{contribution.value}</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {contribution.supporterEmail ? (
+                            <a
+                              href={createThankYouEmailHref(contribution)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary hover:bg-muted"
+                              title={t("donations.sendThankYou")}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {t("donations.emailUnavailable")}
+                            </span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
