@@ -792,6 +792,7 @@ export const resources = {
         amountLabel: "Donation Amount",
         amountPlaceholder: "50.00",
         submit: "Donate",
+        submitting: "Submitting...",
       },
       cards: {
         why: {
@@ -813,6 +814,9 @@ export const resources = {
       toast: {
         title: "Thank you for your generosity!",
         description: "Every donation helps girls access safety, healing, and hope.",
+        errorTitle: "We couldn't process your donation",
+        errorDescription: "Please try again in a moment.",
+        invalidAmount: "Please enter a valid donation amount.",
       },
     },
     donorPortal: {
@@ -2054,6 +2058,7 @@ export const resources = {
         amountLabel: "Monto de donacion",
         amountPlaceholder: "50.00",
         submit: "Donar",
+        submitting: "Enviando...",
       },
       cards: {
         why: {
@@ -2075,6 +2080,9 @@ export const resources = {
       toast: {
         title: "Gracias por tu generosidad",
         description: "Cada donacion ayuda a las ninas a acceder a seguridad, sanacion y esperanza.",
+        errorTitle: "No pudimos procesar tu donación",
+        errorDescription: "Inténtalo de nuevo en un momento.",
+        invalidAmount: "Ingresa un monto de donación válido.",
       },
     },
     donorPortal: {

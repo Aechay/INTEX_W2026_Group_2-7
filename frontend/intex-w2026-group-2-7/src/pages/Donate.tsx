@@ -8,23 +8,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { createPublicDonationRequest, getErrorMessage, resolveApiBaseUrl } from "@/auth/auth-api";
 
 const Donate = () => {
   const { t } = useTranslation("donate");
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     amount: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: t("toast.title"),
-      description: t("toast.description"),
-    });
-    setFormData({ name: "", email: "", amount: "" });
+
+    const amount = Number.parseFloat(formData.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast({
+        title: t("toast.errorTitle"),
+        description: t("toast.invalidAmount"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createPublicDonationRequest(resolveApiBaseUrl(), {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        amount,
+      });
+
+      toast({
+        title: t("toast.title"),
+        description: t("toast.description"),
+      });
+      setFormData({ name: "", email: "", amount: "" });
+    } catch (error) {
+      toast({
+        title: t("toast.errorTitle"),
+        description: getErrorMessage(error, t("toast.errorDescription")),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,9 +129,10 @@ const Donate = () => {
                   </div>
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
                   >
-                    {t("form.submit")}
+                    {isSubmitting ? t("form.submitting") : t("form.submit")}
                   </Button>
                 </form>
               </CardContent>

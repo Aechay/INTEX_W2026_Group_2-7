@@ -223,6 +223,7 @@ app.MapAdminDonationsEndpoints();
 app.MapAdminDonorDetailEndpoints();
 app.MapAdminSocialMediaEndpoints();
 app.MapDonorEndpoints();
+app.MapPublicDonationEndpoints();
 app.MapMlEndpoints();
 app.MapAdminProcessRecordingEndpoints();
 app.MapAdminHomeVisitationEndpoints();
