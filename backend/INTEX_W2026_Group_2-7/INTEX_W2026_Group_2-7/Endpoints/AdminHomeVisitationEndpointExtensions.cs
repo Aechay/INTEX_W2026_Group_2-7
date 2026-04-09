@@ -61,7 +61,7 @@ public static class AdminHomeVisitationEndpointExtensions
             .Select(r => new HomeVisitationCardDto(
                 r.visitation.VisitationId,
                 r.visitation.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.visitation.VisitDate,
                 r.visitation.SocialWorker,
                 r.visitation.VisitType,
@@ -90,7 +90,7 @@ public static class AdminHomeVisitationEndpointExtensions
             .Select(r => new HomeVisitationDetailDto(
                 r.visitation.VisitationId,
                 r.visitation.ResidentId,
-                r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo,
+                r.resident.ResidentFirstName == "" ? r.resident.InternalCode + " \u2014 " + r.resident.CaseControlNo : r.resident.ResidentFirstName + " " + r.resident.ResidentLastName,
                 r.visitation.VisitDate,
                 r.visitation.SocialWorker,
                 r.visitation.VisitType,
@@ -161,11 +161,13 @@ public static class AdminHomeVisitationEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == visitation.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Created(
@@ -214,11 +216,13 @@ public static class AdminHomeVisitationEndpointExtensions
         var resident = await dbContext.Residents
             .AsNoTracking()
             .Where(r => r.ResidentId == visitation.ResidentId)
-            .Select(r => new { r.InternalCode, r.CaseControlNo })
+            .Select(r => new { r.ResidentFirstName, r.ResidentLastName, r.InternalCode, r.CaseControlNo })
             .FirstOrDefaultAsync(cancellationToken);
 
         var displayName = resident is not null
-            ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+            ? (string.IsNullOrEmpty(resident.ResidentFirstName)
+                ? resident.InternalCode + " \u2014 " + resident.CaseControlNo
+                : resident.ResidentFirstName + " " + resident.ResidentLastName)
             : string.Empty;
 
         return TypedResults.Ok(ToCardDto(visitation, displayName));
