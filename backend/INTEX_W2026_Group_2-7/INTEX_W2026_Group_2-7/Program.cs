@@ -54,6 +54,7 @@ const string apiContentSecurityPolicy =
     "base-uri 'none'; " +
     "frame-ancestors 'none'; " +
     "form-action 'none'; " +
+    "img-src 'self' data: blob:; " +
     "object-src 'none'";
 
 builder.Services.AddControllers();
