@@ -366,7 +366,7 @@ const ProcessRecording = () => {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-none">
+                <SelectTrigger className="rounded-none" aria-label={t("filters.resident")}>
                   <SelectValue placeholder={t("filters.allResidents")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -390,7 +390,7 @@ const ProcessRecording = () => {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-none">
+                <SelectTrigger className="rounded-none" aria-label={t("filters.socialWorker")}>
                   <SelectValue placeholder={t("filters.allSocialWorkers")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -418,7 +418,7 @@ const ProcessRecording = () => {
               {getErrorMessage(recordingsQuery.error, t("errors.loadFailed"))}
             </p>
             <Button type="button" onClick={() => void recordingsQuery.refetch()}>
-              Try again
+              {t("actions.tryAgain")}
             </Button>
           </CardContent>
         </Card>
@@ -451,11 +451,11 @@ const ProcessRecording = () => {
                         <TableHead>{t("table.socialWorker")}</TableHead>
                         <TableHead>{t("table.sessionType")}</TableHead>
                         <TableHead>{t("table.emotionalState")}</TableHead>
-                        <TableHead>{t("table.progress")}</TableHead>
-                        <TableHead>{t("table.concerns")}</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                          <TableHead>{t("table.progress")}</TableHead>
+                          <TableHead>{t("table.concerns")}</TableHead>
+                          <TableHead className="text-right">{t("table.actions")}</TableHead>
+                        </TableRow>
+                      </TableHeader>
                     <TableBody>
                       {paginatedRecordings.map((rec) => (
                         <TableRow key={rec.recordingId}>
@@ -500,6 +500,7 @@ const ProcessRecording = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0"
                                 onClick={() => openEdit(rec)}
+                                aria-label={t("table.editRecording")}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
@@ -509,6 +510,7 @@ const ProcessRecording = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                 onClick={() => setDeleteId(rec.recordingId)}
+                                aria-label={t("table.deleteRecording")}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
@@ -531,10 +533,10 @@ const ProcessRecording = () => {
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => p - 1)}
                     >
-                      Previous
+                      {t("pagination.previous")}
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
+                      {t("pagination.pageOf", { page: currentPage, total: totalPages })}
                     </span>
                     <Button
                       type="button"
@@ -544,7 +546,7 @@ const ProcessRecording = () => {
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage((p) => p + 1)}
                     >
-                      Next
+                      {t("pagination.next")}
                     </Button>
                   </div>
                 )}
@@ -570,8 +572,8 @@ const ProcessRecording = () => {
                   value={form.residentId ? String(form.residentId) : ""}
                   onValueChange={(value) => setForm((f) => ({ ...f, residentId: Number(value) }))}
                 >
-                  <SelectTrigger className="rounded-none">
-                    <SelectValue placeholder="Select resident" />
+                  <SelectTrigger className="rounded-none" aria-label={t("dialog.resident")}>
+                    <SelectValue placeholder={t("dialog.selectResident")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(residentsQuery.data ?? []).map((r) => (
@@ -607,7 +609,7 @@ const ProcessRecording = () => {
                   value={form.sessionType}
                   onValueChange={(value) => setForm((f) => ({ ...f, sessionType: value }))}
                 >
-                  <SelectTrigger className="rounded-none">
+                  <SelectTrigger className="rounded-none" aria-label={t("dialog.sessionType")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -634,8 +636,8 @@ const ProcessRecording = () => {
                   value={form.emotionalStateObserved}
                   onValueChange={(value) => setForm((f) => ({ ...f, emotionalStateObserved: value }))}
                 >
-                  <SelectTrigger className="rounded-none">
-                    <SelectValue placeholder="Select state" />
+                  <SelectTrigger className="rounded-none" aria-label={t("dialog.emotionalStateObserved")}>
+                    <SelectValue placeholder={t("dialog.selectState")} />
                   </SelectTrigger>
                   <SelectContent>
                     {EMOTIONAL_STATES.map((state) => (
@@ -650,8 +652,8 @@ const ProcessRecording = () => {
                   value={form.emotionalStateEnd}
                   onValueChange={(value) => setForm((f) => ({ ...f, emotionalStateEnd: value }))}
                 >
-                  <SelectTrigger className="rounded-none">
-                    <SelectValue placeholder="Select state" />
+                  <SelectTrigger className="rounded-none" aria-label={t("dialog.emotionalStateEnd")}>
+                    <SelectValue placeholder={t("dialog.selectState")} />
                   </SelectTrigger>
                   <SelectContent>
                     {EMOTIONAL_STATES.map((state) => (
@@ -757,7 +759,7 @@ const ProcessRecording = () => {
                 className="rounded-none"
                 disabled={upsertMutation.isPending}
               >
-                {upsertMutation.isPending ? "Saving…" : t("actions.save")}
+                {upsertMutation.isPending ? t("actions.saving") : t("actions.save")}
               </Button>
             </div>
           </form>
@@ -778,7 +780,7 @@ const ProcessRecording = () => {
               onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting…" : t("deleteDialog.confirm")}
+              {deleteMutation.isPending ? t("deleteDialog.deleting") : t("deleteDialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

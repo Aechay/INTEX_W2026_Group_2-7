@@ -605,7 +605,7 @@ const Donations = () => {
               />
             </div>
             <Select value={donorType} onValueChange={setDonorType}>
-              <SelectTrigger>
+              <SelectTrigger aria-label={t("donorsContributions.filters.donorType")}>
                 <SelectValue placeholder={t("donorsContributions.filters.donorType")} />
               </SelectTrigger>
               <SelectContent>
@@ -618,7 +618,7 @@ const Donations = () => {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
+              <SelectTrigger aria-label={t("donorsContributions.filters.status")}>
                 <SelectValue placeholder={t("donorsContributions.filters.status")} />
               </SelectTrigger>
               <SelectContent>
@@ -628,7 +628,7 @@ const Donations = () => {
               </SelectContent>
             </Select>
             <Select value={contributionType} onValueChange={setContributionType}>
-              <SelectTrigger>
+              <SelectTrigger aria-label={t("donorsContributions.filters.contributionType")}>
                 <SelectValue placeholder={t("donorsContributions.filters.contributionType")} />
               </SelectTrigger>
               <SelectContent>
@@ -708,7 +708,10 @@ const Donations = () => {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                     <Select value={pageSize} onValueChange={setPageSize}>
-                      <SelectTrigger className="h-8 w-[90px]">
+                      <SelectTrigger
+                        className="h-8 w-[90px]"
+                        aria-label={t("donorsContributions.pagination.rowsPerPage")}
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -763,7 +766,14 @@ const Donations = () => {
                         <span>{allocation.label}</span>
                         <span className="text-muted-foreground">{allocation.value}%</span>
                       </div>
-                      <Progress value={allocation.value} className="bg-neutral-300" />
+                      <Progress
+                        value={allocation.value}
+                        className="bg-neutral-300"
+                        aria-label={t("donorsContributions.allocation.progressLabel", {
+                          program: allocation.label,
+                          percent: allocation.value,
+                        })}
+                      />
                     </div>
                   ))
                 )}
@@ -821,6 +831,7 @@ const Donations = () => {
                               href={createThankYouEmailHref(contribution)}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary hover:bg-muted"
                               title={t("donations.sendThankYou")}
+                              aria-label={t("donations.sendThankYou")}
                             >
                               <Mail className="h-4 w-4" />
                             </a>
@@ -839,7 +850,10 @@ const Donations = () => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
                   <Select value={contributionsPageSize} onValueChange={setContributionsPageSize}>
-                    <SelectTrigger className="h-8 w-[90px]">
+                    <SelectTrigger
+                      className="h-8 w-[90px]"
+                      aria-label={t("donorsContributions.pagination.rowsPerPage")}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

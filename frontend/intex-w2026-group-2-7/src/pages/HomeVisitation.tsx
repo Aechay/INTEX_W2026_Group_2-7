@@ -357,7 +357,7 @@ const HomeVisitation = () => {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-none">
+                <SelectTrigger className="rounded-none" aria-label={t("filters.resident")}>
                   <SelectValue placeholder={t("filters.allResidents")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -382,7 +382,7 @@ const HomeVisitation = () => {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-none">
+                <SelectTrigger className="rounded-none" aria-label={t("filters.visitType")}>
                   <SelectValue placeholder={t("filters.allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -405,7 +405,7 @@ const HomeVisitation = () => {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-none">
+                <SelectTrigger className="rounded-none" aria-label="Outcome">
                   <SelectValue placeholder="All Outcomes" />
                 </SelectTrigger>
                 <SelectContent>
@@ -505,6 +505,7 @@ const HomeVisitation = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
+                                aria-label="Edit home visitation"
                                 onClick={() => openEdit(visit)}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -514,6 +515,7 @@ const HomeVisitation = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                aria-label="Delete home visitation"
                                 onClick={() => setDeleteId(visit.visitationId)}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
