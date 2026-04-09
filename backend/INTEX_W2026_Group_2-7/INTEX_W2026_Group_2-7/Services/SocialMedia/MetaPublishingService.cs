@@ -358,7 +358,8 @@ public sealed class MetaPublishingService : IMetaPublishingService
         string providedToken,
         CancellationToken cancellationToken)
     {
-        // Fetch pages managed by the user to find the target ID and its specific Page Access Token
+        // Fetch pages managed by the user to find the target ID and its specific Page Access Token.
+        // Even if we have a configured Page ID, we want to find its Page Access Token in this list.
         using var document = await SendGraphGetAsync(
             FacebookGraphApiBaseUrl(),
             "me/accounts",
@@ -367,19 +368,7 @@ public sealed class MetaPublishingService : IMetaPublishingService
             cancellationToken);
 
         var pages = document.RootElement.GetProperty("data");
-        if (pages.GetArrayLength() == 0)
-        {
-            // If me/accounts is empty, the provided token might already be a Page Access Token
-            // or the user has no pages. If we have a configured Page ID, we'll try to proceed with the provided token.
-            if (!string.IsNullOrWhiteSpace(_options.FacebookPageId))
-            {
-                return new FacebookPageContext(_options.FacebookPageId.Trim(), providedToken);
-            }
-
-            throw new InvalidOperationException(
-                "No Facebook pages found for the provided access token. Ensure the account manages at least one page.");
-        }
-
+        
         // If a specific Page ID is configured, find it in the list to get its unique Page Token
         if (!string.IsNullOrWhiteSpace(_options.FacebookPageId))
         {
@@ -389,19 +378,31 @@ public sealed class MetaPublishingService : IMetaPublishingService
                 var id = page.GetProperty("id").GetString();
                 if (id == targetId)
                 {
-                    return new FacebookPageContext(id, page.GetProperty("access_token").GetString()!);
+                    var pageToken = TryGetString(page, "access_token");
+                    if (!string.IsNullOrWhiteSpace(pageToken))
+                    {
+                        return new FacebookPageContext(id!, pageToken);
+                    }
                 }
             }
 
-            // Fallback: if not found in list but ID is known, try using provided token directly
+            // Fallback: if not found in list or token missing, try using provided token directly with configured ID.
+            // This is risky but may work if the provided token is already a Page Token.
             return new FacebookPageContext(targetId, providedToken);
+        }
+
+        if (pages.GetArrayLength() == 0)
+        {
+            throw new InvalidOperationException(
+                "No Facebook pages found for the provided access token. Ensure the account manages at least one page and that you have granted pages_show_list and pages_manage_posts permissions.");
         }
 
         // Default: Use the first available page and its specific token
         var firstPage = pages[0];
-        return new FacebookPageContext(
-            firstPage.GetProperty("id").GetString()!,
-            firstPage.GetProperty("access_token").GetString()!);
+        var firstId = firstPage.GetProperty("id").GetString()!;
+        var firstToken = TryGetString(firstPage, "access_token") ?? providedToken;
+        
+        return new FacebookPageContext(firstId, firstToken);
     }
 
     private async Task<string> ResolveInstagramAccountIdAsync(CancellationToken cancellationToken)
@@ -636,8 +637,10 @@ public sealed class MetaPublishingService : IMetaPublishingService
         CancellationToken cancellationToken)
     {
         using var client = _httpClientFactory.CreateClient(HttpClientName);
-        using var request = new HttpRequestMessage(method, BuildRequestUri(baseUrl, path, queryParameters));
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        
+        // Build the URI with the access_token as a query parameter (more reliable for some Graph edges)
+        var uri = BuildRequestUri(baseUrl, path, queryParameters, accessToken);
+        using var request = new HttpRequestMessage(method, uri);
 
         if (formParameters is not null)
         {
@@ -661,17 +664,30 @@ public sealed class MetaPublishingService : IMetaPublishingService
     private static string BuildRequestUri(
         string baseUrl,
         string path,
-        IEnumerable<KeyValuePair<string, string>>? queryParameters)
+        IEnumerable<KeyValuePair<string, string>>? queryParameters,
+        string? accessToken = null)
     {
         var builder = new UriBuilder($"{baseUrl.TrimEnd('/')}/{path.TrimStart('/')}");
-        if (queryParameters is null)
+        
+        var allParameters = new List<KeyValuePair<string, string>>();
+        if (queryParameters is not null)
+        {
+            allParameters.AddRange(queryParameters);
+        }
+        
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            allParameters.Add(new KeyValuePair<string, string>("access_token", accessToken));
+        }
+
+        if (allParameters.Count == 0)
         {
             return builder.Uri.ToString();
         }
 
         var query = string.Join(
             "&",
-            queryParameters
+            allParameters
                 .Where(parameter => !string.IsNullOrWhiteSpace(parameter.Value))
                 .Select(parameter =>
                     $"{Uri.EscapeDataString(parameter.Key)}={Uri.EscapeDataString(parameter.Value)}"));
