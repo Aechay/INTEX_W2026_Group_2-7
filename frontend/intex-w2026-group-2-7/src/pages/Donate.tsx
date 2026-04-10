@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HandHeart, Heart, Landmark, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-beach.jpg";
@@ -45,13 +46,27 @@ const FadeInSection = ({ children, delayMs = 0 }: { children: ReactNode; delayMs
 
 const Donate = () => {
   const { t } = useTranslation("donate");
+  const location = useLocation();
   const { toast } = useToast();
+  const prefillName = new URLSearchParams(location.search).get("name")?.trim() ?? "";
+  const prefillEmail = new URLSearchParams(location.search).get("email")?.trim() ?? "";
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+  const [formData, setFormData] = useState(() => ({
+    name: prefillName,
+    email: prefillEmail,
     amount: "",
-  });
+  }));
+
+  useEffect(() => {
+    if (!prefillName && !prefillEmail) {
+      return;
+    }
+    setFormData((current) => ({
+      ...current,
+      name: prefillName || current.name,
+      email: prefillEmail || current.email,
+    }));
+  }, [prefillName, prefillEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +93,7 @@ const Donate = () => {
         title: t("toast.title"),
         description: t("toast.description"),
       });
-      setFormData({ name: "", email: "", amount: "" });
+      setFormData((current) => ({ ...current, amount: "" }));
     } catch (error) {
       toast({
         title: t("toast.errorTitle"),
