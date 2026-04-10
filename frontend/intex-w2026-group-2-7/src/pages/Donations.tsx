@@ -639,7 +639,7 @@ const Donations = () => {
         </Card>
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Card className="rounded-none border border-border bg-card shadow-none">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-base font-semibold text-foreground">
@@ -647,8 +647,9 @@ const Donations = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
+                <div className="max-w-full overflow-x-auto md:overflow-x-visible">
+                  <Table className="w-full min-w-[720px] md:min-w-0">
+                    <TableHeader>
                     <TableRow>
                       <TableHead>{t("donorsContributions.donorProfiles.columns.name")}</TableHead>
                       <TableHead>{t("donorsContributions.donorProfiles.columns.status")}</TableHead>
@@ -656,49 +657,50 @@ const Donations = () => {
                       <TableHead>{t("donorsContributions.donorProfiles.columns.totalValue")}</TableHead>
                       <TableHead>{t("donorsContributions.donorProfiles.columns.churnRisk")}</TableHead>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t("donorsContributions.donorProfiles.loading")}
-                      </TableCell>
-                      </TableRow>
-                    ) : donors.length === 0 ? (
-                      <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t("donorsContributions.donorProfiles.empty")}
-                      </TableCell>
-                      </TableRow>
-                    ) : (
-                      donors.map((donor) => (
-                      <TableRow
-                        key={donor.supporterId}
-                        className="cursor-pointer"
-                        onClick={() =>
-                          navigate(withPathLanguage(`/dashboard/donations/${donor.supporterId}`, i18n.resolvedLanguage))
-                        }
-                      >
-                        <TableCell className="font-medium">{donor.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={donor.status === "Active" ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200" : "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200"}>
-                            {donor.status === "Active"
-                              ? t("donorsContributions.options.status.active")
-                              : t("donorsContributions.options.status.inactive")}
-                          </Badge>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          {t("donorsContributions.donorProfiles.loading")}
                         </TableCell>
-                        <TableCell>{donor.lastContribution}</TableCell>
-                        <TableCell>{donor.totalValue}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={churnRiskBadgeClass(donor.churnRisk)}>
-                            {churnRiskLabel(donor.churnRisk, t("donorsContributions.common.noPrediction"))}
-                          </Badge>
+                        </TableRow>
+                      ) : donors.length === 0 ? (
+                        <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          {t("donorsContributions.donorProfiles.empty")}
                         </TableCell>
-                      </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                        </TableRow>
+                      ) : (
+                        donors.map((donor) => (
+                        <TableRow
+                          key={donor.supporterId}
+                          className="cursor-pointer"
+                          onClick={() =>
+                            navigate(withPathLanguage(`/dashboard/donations/${donor.supporterId}`, i18n.resolvedLanguage))
+                          }
+                        >
+                          <TableCell className="font-medium">{donor.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={donor.status === "Active" ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200" : "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200"}>
+                              {donor.status === "Active"
+                                ? t("donorsContributions.options.status.active")
+                                : t("donorsContributions.options.status.inactive")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{donor.lastContribution}</TableCell>
+                          <TableCell>{donor.totalValue}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={churnRiskBadgeClass(donor.churnRisk)}>
+                              {churnRiskLabel(donor.churnRisk, t("donorsContributions.common.noPrediction"))}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
                 <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
                   <Button
                     type="button"
@@ -762,15 +764,16 @@ const Donations = () => {
             </Card>
           </div>
 
-          <Card className="self-start rounded-none border border-border bg-card shadow-none">
+          <Card className="self-start min-w-0 rounded-none border border-border bg-card shadow-none">
             <CardHeader className="border-b border-border">
               <CardTitle className="text-base font-semibold text-foreground">
                 {t("donorsContributions.contributions.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
+              <div className="max-w-full overflow-x-auto md:overflow-x-visible">
+                <Table className="w-full min-w-[700px] md:min-w-0">
+                  <TableHeader>
                   <TableRow>
                     <TableHead>{t("donorsContributions.contributions.columns.date")}</TableHead>
                     <TableHead>{t("donorsContributions.contributions.columns.contributor")}</TableHead>
@@ -780,53 +783,54 @@ const Donations = () => {
                       <span className="sr-only">{t("donations.sendThankYou")}</span>
                     </TableHead>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t("donorsContributions.contributions.loading")}
-                      </TableCell>
-                    </TableRow>
-                  ) : contributions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t("donorsContributions.contributions.empty")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    contributions.map((contribution) => (
-                      <TableRow key={`${contribution.date}-${contribution.contributor}`}>
-                        <TableCell>{contribution.date}</TableCell>
-                        <TableCell className="font-medium">{contribution.contributor}</TableCell>
-                        <TableCell>
-                          {translateDonationType(t, contribution.type)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-foreground">{contribution.allocation}</div>
-                          <div className="text-xs text-muted-foreground">{contribution.value}</div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {contribution.supporterEmail ? (
-                            <a
-                              href={createThankYouEmailHref(contribution)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary hover:bg-muted"
-                              title={t("donations.sendThankYou")}
-                              aria-label={t("donations.sendThankYou")}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </a>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {t("donations.emailUnavailable")}
-                            </span>
-                          )}
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          {t("donorsContributions.contributions.loading")}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : contributions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          {t("donorsContributions.contributions.empty")}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      contributions.map((contribution) => (
+                        <TableRow key={`${contribution.date}-${contribution.contributor}`}>
+                          <TableCell>{contribution.date}</TableCell>
+                          <TableCell className="font-medium">{contribution.contributor}</TableCell>
+                          <TableCell>
+                            {translateDonationType(t, contribution.type)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-foreground">{contribution.allocation}</div>
+                            <div className="text-xs text-muted-foreground">{contribution.value}</div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {contribution.supporterEmail ? (
+                              <a
+                                href={createThankYouEmailHref(contribution)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary hover:bg-muted"
+                                title={t("donations.sendThankYou")}
+                                aria-label={t("donations.sendThankYou")}
+                              >
+                                <Mail className="h-4 w-4" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {t("donations.emailUnavailable")}
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
                 <Button
                   type="button"

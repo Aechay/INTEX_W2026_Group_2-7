@@ -1613,18 +1613,27 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                   {socialT("library.subtitle")}
                 </CardDescription>
               </div>
-              <div className="flex gap-3">
-                <Button asChild className="rounded-none">
+              <div className="flex flex-wrap gap-3">
+                <Button asChild className="w-full rounded-none sm:w-auto">
                   <Link to={socialMediaComposerPath}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     {socialT("library.interactiveBuilder")}
                   </Link>
                 </Button>
-                <Button variant="outline" className="rounded-none" onClick={openCreateDialog}>
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-none sm:flex-none"
+                  onClick={openCreateDialog}
+                >
                   <ClipboardList className="mr-2 h-4 w-4" />
                   {socialT("library.recordOtherPost")}
                 </Button>
-                <Button type="button" variant="outline" className="rounded-none" onClick={() => void postsQuery.refetch()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 rounded-none sm:flex-none"
+                  onClick={() => void postsQuery.refetch()}
+                >
                   {socialT("actions.refresh")}
                 </Button>
               </div>
