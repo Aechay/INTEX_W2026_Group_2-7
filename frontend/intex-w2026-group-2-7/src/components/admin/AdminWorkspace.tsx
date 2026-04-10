@@ -451,8 +451,11 @@ const AdminWorkspace = ({
   const sidebarCollapsed = desktopCollapsed && !preferencesOpen;
   const orderedItems = useMemo(() => {
     const socialMediaItems = items.filter((item) => item.to?.includes("/social-media"));
-    const otherItems = items.filter((item) => !item.to?.includes("/social-media"));
-    return [...otherItems, ...socialMediaItems];
+    const donationItems = items.filter((item) => item.to?.includes("/donations"));
+    const otherItems = items.filter(
+      (item) => !item.to?.includes("/social-media") && !item.to?.includes("/donations"),
+    );
+    return [...otherItems, ...donationItems, ...socialMediaItems];
   }, [items]);
 
   useEffect(() => {
