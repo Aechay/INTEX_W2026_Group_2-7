@@ -1,104 +1,152 @@
 # INTEX - Winter 2026 - Group 2-7
 
-For now, this is a very basic scaffold of a full stack web app with a React frontend and a .NET 10 backend.
+## What This Project Does
 
-Changes on the main branch in the corresponding folder for each of the components will automatically deploy the changes to the azure resources. The frontend is hosted at [https://wintex.alijahwhitney.dev](https://wintex.alijahwhitney.dev).
+This repository contains a full-stack platform for Hope Shelter operations and donor engagement.  
+It supports:
 
-## Local backend configuration
+- shelter/admin workflows (caseload, process recording, home visitation, reports, and case conference support)
+- donor-facing and public donation experiences
+- role-based authentication/authorization for admin and donor users
+- ML-assisted insights (social media inference and donor/resident risk snapshots)
 
-The backend now uses two SQL Server connection strings:
+Live frontend: [https://hopeshelter.alijahwhitney.dev](https://hopeshelter.alijahwhitney.dev)
 
-- `ConnectionStrings__DefaultConnection` for operational data
-- `ConnectionStrings__IdentityConnection` for ASP.NET Core Identity data
+## Tech Stack
 
-Use `dotnet user-secrets` or environment variables instead of a tracked `.env` file. From the backend project directory:
+- Frontend: React + TypeScript (Vite, Tailwind, TanStack Query, Vitest)
+- Backend: C# / .NET (`net10.0`, ASP.NET Core, EF Core, Identity)
+- Data: Azure SQL (operational + identity databases)
+- ML Runtime: Python (Azure Functions + containerized training job)
+- Infrastructure/Deployment: Azure + GitHub Actions
+
+## Project Layout
+
+- `frontend/intex-w2026-group-2-7`: React/TypeScript SPA
+- `backend/INTEX_W2026_Group_2-7`: .NET solution (API + tests)
+- `infra`: Azure Bicep and SQL setup scripts
+- `infra/sql`: SQL view scripts used by ML pipelines
+- `ml-pipelines`: notebooks, runtime, and training data files
+- `docs/auth`: authentication/authorization implementation docs
+
+## Run Locally
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- .NET SDK 10
+- SQL Server or Azure SQL access for both app databases
+- `dotnet-ef` tool (for migrations):
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+### 1) Configure Backend Secrets
+
+From `backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7`:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_OPERATIONAL_DB_CONNECTION_STRING"
 dotnet user-secrets set "ConnectionStrings:IdentityConnection" "YOUR_IDENTITY_DB_CONNECTION_STRING"
-dotnet user-secrets set "AuthBootstrap:AdminEmail" "admin@example.com"
-dotnet user-secrets set "AuthBootstrap:AdminPassword" "AdminPassword123!"
-dotnet user-secrets set "Frontend:BaseUrl" "https://wintex.alijahwhitney.dev"
+dotnet user-secrets set "Frontend:BaseUrl" "http://localhost:8080"
 ```
 
-The bootstrap admin settings are optional, but if you provide them the app will create or promote that account into the `Admin` role on startup.
+Optional bootstrap admin (creates/promotes an admin on startup):
 
-## Local migrations
+```bash
+dotnet user-secrets set "AuthBootstrap:AdminEmail" "admin@example.com"
+dotnet user-secrets set "AuthBootstrap:AdminPassword" "AdminPassword123!"
+```
 
-The backend keeps EF Core migrations separate by context:
+Optional Google auth:
 
-- Operational database migrations: `OperationalDbContext`
-- Identity database migrations: `IdentityAppDbContext`
+```bash
+dotnet user-secrets set "Authentication:Google:ClientId" "YOUR_CLIENT_ID"
+dotnet user-secrets set "Authentication:Google:ClientSecret" "YOUR_CLIENT_SECRET"
+```
 
-Apply them independently:
+### 2) Apply Database Migrations
+
+From `backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7`:
 
 ```bash
 dotnet ef database update --context OperationalDbContext
 dotnet ef database update --context IdentityAppDbContext
 ```
 
-If you add schema changes later, generate migrations against the correct context:
+### 3) Start the Backend API
+
+From `backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7`:
 
 ```bash
-dotnet ef migrations add YourOperationalMigration --context OperationalDbContext --output-dir Migrations/Operational
-dotnet ef migrations add YourIdentityMigration --context IdentityAppDbContext --output-dir Migrations/Identity
+dotnet run
 ```
 
-# CI/CD
+Default local URLs:
 
-I set up 2 different github actions workflows. One to deploy the backend, and one to deploy the frontend. Each workflow is triggered when there is a commit to the main branch with changes in the corresponding folder.
+- `https://localhost:7229`
+- `http://localhost:5112`
 
-The backend deploy workflow now applies migrations to both production databases before deployment:
+### 4) Start the Frontend
 
-- `PROD_DB_MIGRATION_CONNECTION_STRING` for the operational database
-- `PROD_IDENTITY_DB_MIGRATION_CONNECTION_STRING` for the Identity database
+From `frontend/intex-w2026-group-2-7`:
 
-Use the context-specific `dotnet ef migrations` commands as you make database changes so the GitHub Actions migration bundles stay aligned with production.
+```bash
+npm install
+npm run dev
+```
 
-# Important links and things
+Vite dev server runs on `http://localhost:8080`.
 
-The frontend is deployed on azure and has a custom domain on it. The azure domain for it is: [https://wonderful-ocean-0a5af5610.2.azurestaticapps.net](https://wonderful-ocean-0a5af5610.2.azurestaticapps.net) and the custom domain for it is: [https://wintex.alijahwhitney.dev](https://wintex.alijahwhitney.dev). The way it's set up, it will redirect any requests to the azure domain to the custom domain, so just plan around the domain being the `alijahwhitney.dev` one.
+If needed, set `VITE_API_BASE_URL` in a local `.env.local` file in `frontend/intex-w2026-group-2-7`.
 
-The backend is also deployed on azure and has the domain: [https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net](https://intex-w2026-group-2-7-h0fwdqczb3hvb2f9.centralus-01.azurewebsites.net)
+## Common Commands
 
-# ML runtime
+### Frontend
 
-The ML deployment scaffold now lives under [`ml-pipelines/runtime`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/runtime). It contains:
+From `frontend/intex-w2026-group-2-7`:
 
-- a reusable Python runtime for training and batch scoring
-- a Python Azure Function entrypoint for live social-media inference
-- a Dockerfile for the nightly Container Apps training job
+```bash
+npm run dev
+npm run build
+npm run test
+npm run lint
+```
 
-The Azure infrastructure for these resources is defined in [`infra/ml-runtime.bicep`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/infra/ml-runtime.bicep), and the manual GitHub trigger for retraining is in [`.github/workflows/ml-retrain-manual.yml`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/.github/workflows/ml-retrain-manual.yml).
+### Backend
 
-The ML runtime deployment workflow is in [`.github/workflows/ml-runtime-deploy.yml`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/.github/workflows/ml-runtime-deploy.yml). It deploys the Python Function App package, builds and pushes the nightly training image to ACR, and updates the Container Apps Job image to the latest commit SHA.
+From `backend/INTEX_W2026_Group_2-7`:
 
-The backend exposes these admin ML routes:
+```bash
+dotnet restore INTEX_W2026_Group_2-7.sln
+dotnet build INTEX_W2026_Group_2-7.sln
+dotnet test INTEX_W2026_Group_2-7.sln
+```
 
-- `POST /api/admin/ml/social-media/predict`
-- `GET /api/admin/ml/donor-churn/current`
-- `GET /api/admin/ml/resident-risk/current`
+## ML Runtime + SQL Views
 
-The React frontend now has a real bearer-token login flow and an admin dashboard that:
+ML runtime code is in `ml-pipelines/runtime`.  
+The SQL views required for training are managed in:
 
-- calls `/auth/login?useCookies=false`
-- calls `/auth/me` to determine the user and roles
-- loads current donor/resident batch predictions
-- runs live social-media predictions through the backend proxy
+- `infra/sql/create-ml-training-views.sql`
+- `infra/sql/create-reintegration-readiness-training-views.sql`
 
-For local frontend development, copy [`frontend/intex-w2026-group-2-7/.env.example`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/frontend/intex-w2026-group-2-7/.env.example) into a local `.env.local` and set `VITE_API_BASE_URL` if you are not using the default local backend URL.
+View contract and expected schema:
 
-The operational schema now includes EF migrations for model runs and prediction snapshots/views. Those migrations are checked in only; they are **not** applied by anything in this branch unless you later run them yourself or merge to `main` and let the existing backend deployment workflow execute.
+- `ml-pipelines/runtime/SQL_VIEW_CONTRACT.md`
 
-The SQL view contract that feeds nightly training lives in [`ml-pipelines/runtime/SQL_VIEW_CONTRACT.md`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/runtime/SQL_VIEW_CONTRACT.md). You still need to create those views in the operational database once you decide how the live tables map to the notebook feature sets.
+## Deployment Notes
 
-## Operational dataset seed
+GitHub Actions workflows are configured for:
 
-The operational EF Core migration [`20260407211640_CreateOperationalDataset.cs`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/backend/INTEX_W2026_Group_2-7/INTEX_W2026_Group_2-7/Migrations/Operational/20260407211640_CreateOperationalDataset.cs) creates the case-management, fundraising, social media, and ML snapshot tables and then seeds them from the CSV files in [`ml-pipelines/lighthouse_csv_v7`](/Users/alijahwhitney/Documents/Github/School/INTEX_W2026_Group_2-7/ml-pipelines/lighthouse_csv_v7).
+- backend build/test/deploy
+- static frontend deployment
+- ML runtime deployment
 
-That means the migration bundle expects the CSV directory to exist in the repository checkout when migrations run in GitHub Actions. If those files are removed or renamed, the operational migration will fail.
+Most production deployment settings are controlled through GitHub Secrets/Variables and Azure resources.
 
-# Auth docs
+## Auth Documentation
 
 - [Authorization playbook](docs/auth/authorization-playbook.md)
 - [React + Vite auth integration guide](docs/auth/react-vite-auth-integration.md)
