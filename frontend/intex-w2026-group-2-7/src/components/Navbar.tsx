@@ -23,8 +23,8 @@ const Navbar = () => {
   const links = [
     { to: '/', label: t('nav.home') },
     { to: '/get-help', label: t('nav.getHelp') },
-    { to: '/impact', label: t('nav.impact') },
     { to: '/resources', label: t('nav.resources') },
+    { to: '/impact', label: t('nav.impact') },
     ...(auth.isAdmin
       ? [{ to: '/dashboard', label: t('nav.dashboard') }]
       : auth.isAuthenticated

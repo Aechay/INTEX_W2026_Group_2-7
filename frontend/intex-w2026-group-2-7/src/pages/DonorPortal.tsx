@@ -59,6 +59,15 @@ const DonorPortal = () => {
   const { t, i18n } = useTranslation('donorPortal');
   const auth = useAuth();
   const donorName = auth.user?.displayName?.trim() || auth.user?.email?.split('@')[0] || '';
+  const donatePath = useMemo(() => {
+    const params = new URLSearchParams();
+    const name = auth.user?.displayName?.trim() ?? "";
+    const email = auth.user?.email?.trim() ?? "";
+    if (name) params.set("name", name);
+    if (email) params.set("email", email);
+    const suffix = params.toString();
+    return `${withPathLanguage("/donate", i18n.resolvedLanguage)}${suffix ? `?${suffix}` : ""}`;
+  }, [auth.user?.displayName, auth.user?.email, i18n.resolvedLanguage]);
   const [history, setHistory] = useState<DonorDonationsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +214,12 @@ const DonorPortal = () => {
             {donorName ? t('header.welcomeBackWithName', { name: donorName }) : t('header.welcomeBack')}
           </h1>
           <p className="mt-1 text-muted-foreground">{t('header.subtitle')}</p>
+          <Button
+            asChild
+            className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            <Link to={donatePath}>{t('history.makeDonation')}</Link>
+          </Button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -243,7 +258,7 @@ const DonorPortal = () => {
                   asChild
                   className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  <Link to={withPathLanguage('/donate', i18n.resolvedLanguage)}>
+                  <Link to={donatePath}>
                     {t('history.makeDonation')}
                   </Link>
                 </Button>

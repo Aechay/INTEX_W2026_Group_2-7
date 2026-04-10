@@ -449,6 +449,11 @@ const AdminWorkspace = ({
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const sidebarCollapsed = desktopCollapsed && !preferencesOpen;
+  const orderedItems = useMemo(() => {
+    const socialMediaItems = items.filter((item) => item.to?.includes("/social-media"));
+    const otherItems = items.filter((item) => !item.to?.includes("/social-media"));
+    return [...otherItems, ...socialMediaItems];
+  }, [items]);
 
   useEffect(() => {
     if (isMobile) {
@@ -460,7 +465,7 @@ const AdminWorkspace = ({
     <div className="min-h-screen bg-muted">
       <Navbar />
       <DesktopSidebar
-        items={items}
+        items={orderedItems}
         signOutPending={signOutPending}
         onSignOut={onSignOut}
         collapsed={sidebarCollapsed}
@@ -474,7 +479,7 @@ const AdminWorkspace = ({
         )}
       >
         <MobileNavigation
-          items={items}
+          items={orderedItems}
           signOutPending={signOutPending}
           onSignOut={onSignOut}
           onOpenPreferences={() => setPreferencesOpen(true)}
