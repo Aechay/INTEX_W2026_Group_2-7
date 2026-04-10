@@ -39,13 +39,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -1845,45 +1839,31 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                     Showing page {postsQuery.data?.page ?? 1} of {postsQuery.data?.totalPages ?? 1} with{" "}
                     {postsQuery.data?.totalCount ?? 0} total posts.
                   </div>
-                  <Pagination className="mx-0 w-auto justify-end">
-                    <PaginationContent>
-                      <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setCurrentPage((page) => Math.max(page - 1, 1));
-                        }}
-                        className={cn(
-                          (postsQuery.data?.page ?? 1) === 1 ? "pointer-events-none opacity-50" : "",
-                        )}
-                        aria-label={socialT("pagination.previous")}
-                      />
-                      </PaginationItem>
-                      <PaginationItem>
-                        <span className="px-3 text-sm text-muted-foreground">
-                          Page {postsQuery.data?.page ?? 1} / {postsQuery.data?.totalPages ?? 1}
-                        </span>
-                      </PaginationItem>
-                      <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setCurrentPage((page) =>
-                            Math.min(page + 1, postsQuery.data?.totalPages ?? page + 1),
-                          );
-                        }}
-                        className={cn(
-                          (postsQuery.data?.page ?? 1) >= (postsQuery.data?.totalPages ?? 1)
-                            ? "pointer-events-none opacity-50"
-                            : "",
-                        )}
-                        aria-label={socialT("pagination.next")}
-                      />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                  <div className="flex items-center justify-end gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-none"
+                      disabled={(postsQuery.data?.page ?? 1) === 1}
+                      onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {postsQuery.data?.page ?? 1} of {postsQuery.data?.totalPages ?? 1}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-none"
+                      disabled={(postsQuery.data?.page ?? 1) >= (postsQuery.data?.totalPages ?? 1)}
+                      onClick={() => setCurrentPage((page) => Math.min(page + 1, postsQuery.data?.totalPages ?? page + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
