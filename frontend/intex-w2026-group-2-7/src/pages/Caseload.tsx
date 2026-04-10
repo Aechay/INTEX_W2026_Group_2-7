@@ -707,27 +707,11 @@ const Caseload = () => {
         </section>
       )}
 
-      <section className="flex items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage <= 1}
-          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-        >
-          {t("pagination.previous")}
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          {t("pagination.pageOf", { page: currentPage, total: totalPages })}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage >= totalPages}
-          onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-        >
-          {t("pagination.next")}
-        </Button>
-      </section>
+        <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
+          <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={currentPage <= 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>Previous</Button>
+          <span className="text-sm text-muted-foreground">{t("pagination.pageOf", { page: currentPage, total: totalPages })}</span>
+          <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>Next</Button>
+        </div>
 
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[900px]">

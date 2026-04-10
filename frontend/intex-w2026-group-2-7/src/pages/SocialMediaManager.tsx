@@ -39,13 +39,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -1788,9 +1781,11 @@ const SocialMediaManager = ({ mode = "library" }: SocialMediaManagerProps) => {
                               <div className="font-medium text-foreground">
                                 {formatCurrency(post.estimatedDonationValuePhp)}
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                Predicted {formatCurrency(post.predictedDonationValuePhp)}
-                              </div>
+                              {post.predictedDonationValuePhp != null && (
+                                <div className="text-xs text-muted-foreground">
+                                  Predicted {formatCurrency(post.predictedDonationValuePhp)}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Badge

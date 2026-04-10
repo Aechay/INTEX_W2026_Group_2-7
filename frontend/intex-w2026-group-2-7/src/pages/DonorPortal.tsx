@@ -188,8 +188,8 @@ const DonorPortal = () => {
   const safehouseLabel = (value: string) => {
     const normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
     const baseLabel = t('labels.safehouses.lighthouse');
-    if (normalized.startsWith("lighthouse safehouse")) {
-      const suffix = value.slice("lighthouse safehouse".length).trim();
+    if (normalized.startsWith("hope shelter safehouse")) {
+      const suffix = value.slice("hope shelter safehouse".length).trim();
       return suffix ? `${baseLabel} ${suffix}` : baseLabel;
     }
     return value;
