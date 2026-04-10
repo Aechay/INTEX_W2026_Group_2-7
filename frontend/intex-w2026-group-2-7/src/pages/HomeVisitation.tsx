@@ -33,6 +33,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -191,7 +192,7 @@ type PlanUpsertForm = {
 };
 
 const PLAN_CATEGORIES = ["Education", "Health", "Reintegration", "Legal", "Psychosocial", "Employment", "Family Reunification", "Other"];
-const PLAN_STATUSES = ["Active", "Pending", "Completed", "Closed"];
+const PLAN_STATUSES = ["In Progress", "On Hold", "Achieved", "Open"];
 
 const emptyPlanForm = (): PlanUpsertForm => ({
   residentId: 0,
@@ -200,15 +201,16 @@ const emptyPlanForm = (): PlanUpsertForm => ({
   servicesProvided: "",
   targetValue: "0",
   targetDate: new Date().toISOString().slice(0, 10),
-  status: "Active",
+  status: "In Progress",
   caseConferenceDate: "",
 });
 
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
-    case "Active": return "border-0 bg-primary/10 text-primary";
-    case "Completed": return "border-0 bg-accent/20 text-foreground";
-    case "Closed": return "border-0 bg-muted text-muted-foreground";
+    case "In Progress": return "border-0 bg-primary/10 text-primary";
+    case "Achieved": return "border-0 bg-accent/20 text-foreground";
+    case "On Hold": return "border-0 bg-amber-500/15 text-yellow-900";
+    case "Open": return "border-0 bg-muted text-muted-foreground";
     default: return "border-0 bg-accent/10 text-foreground";
   }
 };
@@ -227,6 +229,7 @@ const HomeVisitation = () => {
   const [filterResidentSearch, setFilterResidentSearch] = useState("");
   const [visitTypeFilter, setVisitTypeFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
+  const [visitSafetyConcernsFilter, setVisitSafetyConcernsFilter] = useState<"all" | "flagged" | "clear">("all");
   const [visitPage, setVisitPage] = useState(1);
   const [visitDialogOpen, setVisitDialogOpen] = useState(false);
   const [editingVisitId, setEditingVisitId] = useState<number | null>(null);
@@ -450,6 +453,8 @@ const HomeVisitation = () => {
 
   const visitations = (visitationsQuery.data ?? []).filter((v) => {
     if (outcomeFilter !== "all" && v.visitOutcome !== outcomeFilter) return false;
+    if (visitSafetyConcernsFilter === "flagged" && !v.safetyConcernsNoted) return false;
+    if (visitSafetyConcernsFilter === "clear" && v.safetyConcernsNoted) return false;
     if (visitSearch) {
       const q = visitSearch.toLowerCase();
       if (
@@ -507,215 +512,7 @@ const HomeVisitation = () => {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 1 — Home Visits
-      ══════════════════════════════════════════════════════════════════════ */}
-
-      {/* Visit Filters */}
-      <Card className="rounded-none border border-border bg-card shadow-none">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="min-w-[220px] space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                Search
-              </Label>
-              <Input
-                placeholder="Search by resident, social worker, type..."
-                className="rounded-none w-full sm:w-[280px]"
-                value={visitSearch}
-                onChange={(e) => { setVisitSearch(e.target.value); setVisitPage(1); }}
-              />
-            </div>
-            <div className="min-w-[220px] space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                {t("filters.resident")}
-              </Label>
-              <Select
-                value={residentFilter}
-                onValueChange={(value) => {
-                  setResidentFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="rounded-none" aria-label={t("filters.resident")}>
-                  <SelectValue placeholder={t("filters.allResidents")} />
-                </SelectTrigger>
-                <SelectContent side="bottom">
-                  <div className="p-2">
-                    <Input
-                      placeholder="Search residents..."
-                      className="rounded-none h-8 text-sm"
-                      value={filterResidentSearch}
-                      onChange={(e) => setFilterResidentSearch(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
-                  {(residentsQuery.data ?? [])
-                    .filter((r) => {
-                      if (!filterResidentSearch) return true;
-                      const q = filterResidentSearch.toLowerCase();
-                      const name = r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.toLowerCase() : "";
-                      return name.includes(q) || r.internalCode.toLowerCase().includes(q) || r.caseControlNo.toLowerCase().includes(q);
-                    })
-                    .map((r) => (
-                      <SelectItem key={r.residentId} value={String(r.residentId)}>
-                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="min-w-[180px] space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                {t("filters.visitType")}
-              </Label>
-              <Select
-                value={visitTypeFilter}
-                onValueChange={(value) => {
-                  setVisitTypeFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="rounded-none" aria-label={t("filters.visitType")}>
-                  <SelectValue placeholder={t("filters.allTypes")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("filters.allTypes")}</SelectItem>
-                  {VISIT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="min-w-[180px] space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                Outcome
-              </Label>
-              <Select
-                value={outcomeFilter}
-                onValueChange={(value) => {
-                  setOutcomeFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="rounded-none" aria-label="Outcome">
-                  <SelectValue placeholder="All Outcomes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Outcomes</SelectItem>
-                  {OUTCOMES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Visit Table */}
-      {visitationsQuery.isError ? (
-        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
-          <CardContent className="flex flex-col items-start gap-4 p-8">
-            <div className="border-l-4 border-destructive pl-3 text-destructive"><CircleAlert className="h-5 w-5" /></div>
-            <p className="text-sm text-muted-foreground">{getErrorMessage(visitationsQuery.error, t("errors.loadFailed"))}</p>
-            <Button type="button" onClick={() => void visitationsQuery.refetch()}>Try again</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="rounded-none border border-border bg-card shadow-none">
-          <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
-            <CardTitle className="text-lg font-semibold">Visitation Log</CardTitle>
-            <Button type="button" size="sm" className="rounded-none" onClick={openCreateVisit}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              {t("actions.newVisit")}
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {visitationsQuery.isLoading ? (
-              <div className="space-y-2 p-4">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse bg-muted" />)}</div>
-            ) : visitations.length === 0 ? (
-              <div className="border-t border-border p-8 text-center text-sm text-muted-foreground">{t("table.noRecords")}</div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("table.visitDate")}</TableHead>
-                        <TableHead>{t("table.resident")}</TableHead>
-                        <TableHead>{t("table.socialWorker")}</TableHead>
-                        <TableHead>{t("table.visitType")}</TableHead>
-                        <TableHead>{t("table.cooperation")}</TableHead>
-                        <TableHead>{t("table.safetyConcerns")}</TableHead>
-                        <TableHead>{t("table.outcome")}</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedVisitations.map((visit) => (
-                        <TableRow key={visit.visitationId} className="cursor-pointer" onClick={() => void openViewVisit(visit)}>
-                          <TableCell className="whitespace-nowrap text-sm">{formatDate(visit.visitDate)}</TableCell>
-                          <TableCell className="text-sm font-medium">{visit.residentDisplayName}</TableCell>
-                          <TableCell className="text-sm">{visit.socialWorker}</TableCell>
-                          <TableCell className="text-sm">{visit.visitType}</TableCell>
-                          <TableCell className="text-sm">{visit.familyCooperationLevel}</TableCell>
-                          <TableCell>
-                            {visit.safetyConcernsNoted ? (
-                              <Badge variant="outline" className="rounded-none border-0 bg-destructive/10 text-destructive text-xs">Yes</Badge>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={cn("rounded-none text-xs", getOutcomeBadgeClass(visit.visitOutcome))}>
-                              {visit.visitOutcome}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                aria-label="Edit home visitation"
-                                onClick={() => openEdit(visit)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                aria-label="Delete home visitation"
-                                onClick={() => setDeleteId(visit.visitationId)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {visitTotalPages > 1 && (
-                  <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
-                    <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === 1} onClick={() => setVisitPage((p) => p - 1)}>Previous</Button>
-                    <span className="text-sm text-muted-foreground">Page {visitPage} of {visitTotalPages}</span>
-                    <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === visitTotalPages} onClick={() => setVisitPage((p) => p + 1)}>Next</Button>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 2 — Intervention Plans
+          SECTION 1 — Intervention Plans
       ══════════════════════════════════════════════════════════════════════ */}
 
       {/* Plan Filters */}
@@ -737,7 +534,7 @@ const HomeVisitation = () => {
                 <SelectTrigger className="rounded-none">
                   <SelectValue placeholder="All Residents" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" avoidCollisions={false} className="max-h-80">
                   <div className="p-2">
                     <Input
                       placeholder="Search residents..."
@@ -776,6 +573,7 @@ const HomeVisitation = () => {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </CardContent>
       </Card>
@@ -909,6 +707,238 @@ const HomeVisitation = () => {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════
+          SECTION 2 — Home Visits
+      ══════════════════════════════════════════════════════════════════════ */}
+
+      {/* Visit Filters */}
+      <Card className="rounded-none border border-border bg-card shadow-none">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Search
+              </Label>
+              <Input
+                placeholder="Search by resident, social worker, type..."
+                className="rounded-none w-full sm:w-[280px]"
+                value={visitSearch}
+                onChange={(e) => { setVisitSearch(e.target.value); setVisitPage(1); }}
+              />
+            </div>
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                {t("filters.resident")}
+              </Label>
+              <Select
+                value={residentFilter}
+                onValueChange={(value) => {
+                  setResidentFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label={t("filters.resident")}>
+                  <SelectValue placeholder={t("filters.allResidents")} />
+                </SelectTrigger>
+                <SelectContent side="bottom">
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search residents..."
+                      className="rounded-none h-8 text-sm"
+                      value={filterResidentSearch}
+                      onChange={(e) => setFilterResidentSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <SelectItem value="all">{t("filters.allResidents")}</SelectItem>
+                  {(residentsQuery.data ?? [])
+                    .filter((r) => {
+                      if (!filterResidentSearch) return true;
+                      const q = filterResidentSearch.toLowerCase();
+                      const name = r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.toLowerCase() : "";
+                      return name.includes(q) || r.internalCode.toLowerCase().includes(q) || r.caseControlNo.toLowerCase().includes(q);
+                    })
+                    .map((r) => (
+                      <SelectItem key={r.residentId} value={String(r.residentId)}>
+                        {r.firstName ? `${r.firstName} ${r.lastName ?? ""}`.trim() : `${r.internalCode} — ${r.caseControlNo}`}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                {t("filters.visitType")}
+              </Label>
+              <Select
+                value={visitTypeFilter}
+                onValueChange={(value) => {
+                  setVisitTypeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label={t("filters.visitType")}>
+                  <SelectValue placeholder={t("filters.allTypes")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.allTypes")}</SelectItem>
+                  {VISIT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Outcome
+              </Label>
+              <Select
+                value={outcomeFilter}
+                onValueChange={(value) => {
+                  setOutcomeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="rounded-none" aria-label="Outcome">
+                  <SelectValue placeholder="All Outcomes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Outcomes</SelectItem>
+                  {OUTCOMES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Safety Concerns
+              </Label>
+              <div className="flex h-10 rounded-none border border-input overflow-hidden">
+                {(["all", "flagged", "clear"] as const).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => { setVisitSafetyConcernsFilter(val); setVisitPage(1); }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                      visitSafetyConcernsFilter === val
+                        ? val === "flagged"
+                          ? "bg-destructive/70 text-destructive-foreground"
+                          : "bg-primary/70 text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {val === "all" ? "All" : val === "flagged" ? "Flagged" : "Clear"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Visit Table */}
+      {visitationsQuery.isError ? (
+        <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
+          <CardContent className="flex flex-col items-start gap-4 p-8">
+            <div className="border-l-4 border-destructive pl-3 text-destructive"><CircleAlert className="h-5 w-5" /></div>
+            <p className="text-sm text-muted-foreground">{getErrorMessage(visitationsQuery.error, t("errors.loadFailed"))}</p>
+            <Button type="button" onClick={() => void visitationsQuery.refetch()}>Try again</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="rounded-none border border-border bg-card shadow-none">
+          <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
+            <CardTitle className="text-lg font-semibold">Visitation Log</CardTitle>
+            <Button type="button" size="sm" className="rounded-none" onClick={openCreateVisit}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              {t("actions.newVisit")}
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {visitationsQuery.isLoading ? (
+              <div className="space-y-2 p-4">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse bg-muted" />)}</div>
+            ) : visitations.length === 0 ? (
+              <div className="border-t border-border p-8 text-center text-sm text-muted-foreground">{t("table.noRecords")}</div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("table.visitDate")}</TableHead>
+                        <TableHead>{t("table.resident")}</TableHead>
+                        <TableHead>{t("table.socialWorker")}</TableHead>
+                        <TableHead>{t("table.visitType")}</TableHead>
+                        <TableHead>{t("table.cooperation")}</TableHead>
+                        <TableHead>{t("table.safetyConcerns")}</TableHead>
+                        <TableHead>{t("table.outcome")}</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedVisitations.map((visit) => (
+                        <TableRow key={visit.visitationId} className="cursor-pointer" onClick={() => void openViewVisit(visit)}>
+                          <TableCell className="whitespace-nowrap text-sm">{formatDate(visit.visitDate)}</TableCell>
+                          <TableCell className="text-sm font-medium">{visit.residentDisplayName}</TableCell>
+                          <TableCell className="text-sm">{visit.socialWorker}</TableCell>
+                          <TableCell className="text-sm">{visit.visitType}</TableCell>
+                          <TableCell className="text-sm">{visit.familyCooperationLevel}</TableCell>
+                          <TableCell>
+                            {visit.safetyConcernsNoted ? (
+                              <Badge variant="outline" className="rounded-none border-0 bg-destructive/10 text-destructive text-xs">Yes</Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn("rounded-none text-xs", getOutcomeBadgeClass(visit.visitOutcome))}>
+                              {visit.visitOutcome}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                aria-label="Edit home visitation"
+                                onClick={() => openEdit(visit)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                aria-label="Delete home visitation"
+                                onClick={() => setDeleteId(visit.visitationId)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {visitTotalPages > 1 && (
+                  <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
+                    <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === 1} onClick={() => setVisitPage((p) => p - 1)}>Previous</Button>
+                    <span className="text-sm text-muted-foreground">Page {visitPage} of {visitTotalPages}</span>
+                    <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === visitTotalPages} onClick={() => setVisitPage((p) => p + 1)}>Next</Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
           DIALOGS — Home Visits
       ══════════════════════════════════════════════════════════════════════ */}
 
@@ -1010,13 +1040,21 @@ const HomeVisitation = () => {
                   <SelectContent>{OUTCOMES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="safetyConcernsNoted" checked={visitForm.safetyConcernsNoted} onChange={(e) => setVisitForm((f) => ({ ...f, safetyConcernsNoted: e.target.checked }))} className="h-4 w-4" />
-                <Label htmlFor="safetyConcernsNoted">{t("dialog.safetyConcernsNoted")}</Label>
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="safetyConcernsNoted"
+                  checked={visitForm.safetyConcernsNoted}
+                  onCheckedChange={(checked) => setVisitForm((f) => ({ ...f, safetyConcernsNoted: checked }))}
+                />
+                <Label htmlFor="safetyConcernsNoted" className="cursor-pointer">{t("dialog.safetyConcernsNoted")}</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="followUpNeeded" checked={visitForm.followUpNeeded} onChange={(e) => setVisitForm((f) => ({ ...f, followUpNeeded: e.target.checked }))} className="h-4 w-4" />
-                <Label htmlFor="followUpNeeded">{t("dialog.followUpNeeded")}</Label>
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="followUpNeeded"
+                  checked={visitForm.followUpNeeded}
+                  onCheckedChange={(checked) => setVisitForm((f) => ({ ...f, followUpNeeded: checked }))}
+                />
+                <Label htmlFor="followUpNeeded" className="cursor-pointer">{t("dialog.followUpNeeded")}</Label>
               </div>
               {visitForm.followUpNeeded && (
                 <div className="sm:col-span-2">

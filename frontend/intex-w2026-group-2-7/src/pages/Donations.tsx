@@ -699,44 +699,30 @@ const Donations = () => {
                     )}
                   </TableBody>
                 </Table>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
-                    <Select value={pageSize} onValueChange={setPageSize}>
-                      <SelectTrigger
-                        className="h-8 w-[90px] rounded-none"
-                        aria-label={t("donorsContributions.pagination.rowsPerPage")}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage <= 1 || isLoading}
-                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    >
-                      {t("donorsContributions.pagination.previous")}
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {t("donorsContributions.pagination.pageOf", { page: currentPage, total: totalPages })}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage >= totalPages || isLoading}
-                      onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    >
-                      {t("donorsContributions.pagination.next")}
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-none"
+                    disabled={currentPage <= 1 || isLoading}
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-none"
+                    disabled={currentPage >= totalPages || isLoading}
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  >
+                    Next
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -841,49 +827,32 @@ const Donations = () => {
                   )}
                 </TableBody>
               </Table>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{t("donorsContributions.pagination.rowsPerPage")}</span>
-                  <Select value={contributionsPageSize} onValueChange={setContributionsPageSize}>
-                    <SelectTrigger
-                      className="h-8 w-[90px] rounded-none"
-                      aria-label={t("donorsContributions.pagination.rowsPerPage")}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={contributionsPage <= 1 || isLoading}
-                    onClick={() => setContributionsPage((page) => Math.max(1, page - 1))}
-                  >
-                    {t("donorsContributions.pagination.previous")}
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    {t("donorsContributions.pagination.pageOf", {
-                      page: contributionsPage,
-                      total: contributionPages,
-                    })}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={contributionsPage >= contributionPages || isLoading}
-                    onClick={() =>
-                      setContributionsPage((page) => Math.min(contributionPages, page + 1))
-                    }
-                  >
-                    {t("donorsContributions.pagination.next")}
-                  </Button>
-                </div>
+              <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-none"
+                  disabled={contributionsPage <= 1 || isLoading}
+                  onClick={() => setContributionsPage((page) => Math.max(1, page - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {contributionsPage} of {contributionPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-none"
+                  disabled={contributionsPage >= contributionPages || isLoading}
+                  onClick={() =>
+                    setContributionsPage((page) => Math.min(contributionPages, page + 1))
+                  }
+                >
+                  Next
+                </Button>
               </div>
             </CardContent>
           </Card>

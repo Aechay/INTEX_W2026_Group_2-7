@@ -175,6 +175,8 @@ const ProcessRecording = () => {
   const [residentSearch, setResidentSearch] = useState("");
   const [filterResidentSearch, setFilterResidentSearch] = useState("");
   const [tableSearch, setTableSearch] = useState("");
+  const [concernsFilter, setConcernsFilter] = useState<"all" | "flagged" | "clear">("all");
+  const [progressFilter, setProgressFilter] = useState<"all" | "yes" | "no">("all");
   const [upcomingPage, setUpcomingPage] = useState(1);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
@@ -331,16 +333,21 @@ const ProcessRecording = () => {
 
   const recordings = recordingsQuery.data ?? [];
   const today = new Date().toISOString().slice(0, 10);
-  const searchedRecordings = tableSearch
-    ? recordings.filter((r) => {
-        const q = tableSearch.toLowerCase();
-        return (
-          r.residentDisplayName.toLowerCase().includes(q) ||
-          r.socialWorker.toLowerCase().includes(q) ||
-          r.sessionType.toLowerCase().includes(q)
-        );
-      })
-    : recordings;
+  const searchedRecordings = recordings.filter((r) => {
+    if (tableSearch) {
+      const q = tableSearch.toLowerCase();
+      if (
+        !r.residentDisplayName.toLowerCase().includes(q) &&
+        !r.socialWorker.toLowerCase().includes(q) &&
+        !r.sessionType.toLowerCase().includes(q)
+      ) return false;
+    }
+    if (concernsFilter === "flagged" && !r.concernsFlagged) return false;
+    if (concernsFilter === "clear" && r.concernsFlagged) return false;
+    if (progressFilter === "yes" && !r.progressNoted) return false;
+    if (progressFilter === "no" && r.progressNoted) return false;
+    return true;
+  });
   const upcomingSessions = searchedRecordings
     .filter((r) => r.sessionDate.slice(0, 10) > today)
     .sort((a, b) => a.sessionDate.localeCompare(b.sessionDate));
@@ -466,6 +473,50 @@ const ProcessRecording = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Concerns
+              </Label>
+              <div className="flex h-10 rounded-none border border-input overflow-hidden">
+                {(["all", "flagged", "clear"] as const).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => { setConcernsFilter(val); setCurrentPage(1); setUpcomingPage(1); }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                      concernsFilter === val
+                        ? val === "flagged"
+                          ? "bg-destructive/70 text-destructive-foreground"
+                          : "bg-primary/70 text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {val === "all" ? "All" : val === "flagged" ? "Flagged" : "Clear"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="min-w-[180px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Progress
+              </Label>
+              <div className="flex h-10 rounded-none border border-input overflow-hidden">
+                {(["all", "yes", "no"] as const).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => { setProgressFilter(val); setCurrentPage(1); setUpcomingPage(1); }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                      progressFilter === val
+                        ? "bg-primary/70 text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {val === "all" ? "All" : val === "yes" ? "Yes" : "No"}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -577,7 +628,7 @@ const ProcessRecording = () => {
       {recordingsQuery.isError ? (
         <Card className="rounded-none border border-destructive/20 bg-card shadow-none">
           <CardContent className="flex flex-col items-start gap-4 p-8">
-            <div className="border-l-4 border-destructive pl-3 text-destructive">
+            <div className="border-l-4 border-destructive/50 pl-3 text-destructive/70">
               <CircleAlert className="h-5 w-5" />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -690,7 +741,7 @@ const ProcessRecording = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                  <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
                     <Button
                       type="button"
                       variant="outline"
@@ -699,10 +750,10 @@ const ProcessRecording = () => {
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => p - 1)}
                     >
-                      {t("pagination.previous")}
+                      Previous
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      {t("pagination.pageOf", { page: currentPage, total: totalPages })}
+                      Page {currentPage} of {totalPages}
                     </span>
                     <Button
                       type="button"
@@ -712,7 +763,7 @@ const ProcessRecording = () => {
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage((p) => p + 1)}
                     >
-                      {t("pagination.next")}
+                      Next
                     </Button>
                   </div>
                 )}
@@ -1071,7 +1122,7 @@ const ProcessRecording = () => {
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-none">{t("deleteDialog.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-none bg-destructive/75 text-destructive-foreground hover:bg-destructive/60"
               onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
               disabled={deleteMutation.isPending}
             >
