@@ -776,7 +776,7 @@ const Donations = () => {
             </Card>
           </div>
 
-          <Card className="rounded-none border border-border bg-card shadow-none">
+          <Card className="self-start rounded-none border border-border bg-card shadow-none">
             <CardHeader className="border-b border-border">
               <CardTitle className="text-base font-semibold text-foreground">
                 {t("donorsContributions.contributions.title")}

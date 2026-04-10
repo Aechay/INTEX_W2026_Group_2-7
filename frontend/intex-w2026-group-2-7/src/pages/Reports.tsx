@@ -242,9 +242,10 @@ const Reports = () => {
               </Label>
               <Input
                 type="date"
-                className="rounded-none w-full sm:w-[180px]"
+                className="rounded-none w-full sm:w-[150px] cursor-pointer"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
               />
             </div>
             <div className="space-y-1.5">
@@ -253,9 +254,10 @@ const Reports = () => {
               </Label>
               <Input
                 type="date"
-                className="rounded-none w-full sm:w-[180px]"
+                className="rounded-none w-full sm:w-[150px] cursor-pointer"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
               />
             </div>
             <div className="flex items-end col-span-1 self-stretch">
@@ -559,7 +561,7 @@ const Reports = () => {
                   <p className="mb-2 text-sm font-medium text-foreground">{t("serviceActivity.incidentsByType")}</p>
                   <ChartContainer
                     className="h-[220px] w-full"
-                    config={{ count: { label: "Incidents", color: "hsl(var(--destructive) / 0.70)" } }}
+                    config={{ count: { label: "Incidents", color: "hsl(0 65% 65%)" } }}
                   >
                     <BarChart data={incidentTypeData} layout="vertical">
                       <CartesianGrid horizontal={false} strokeDasharray="3 3" />

@@ -950,7 +950,7 @@ export const resources = {
           education: "Education",
         },
         safehouses: {
-          lighthouse: "Lighthouse Safehouse",
+          lighthouse: "Hope Shelter Safehouse",
         },
         channels: {
           manual: "Manual",

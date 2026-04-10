@@ -222,6 +222,7 @@ const HomeVisitation = () => {
   const [signOutPending, setSignOutPending] = useState(false);
 
   // Visit state
+  const [visitSearch, setVisitSearch] = useState("");
   const [residentFilter, setResidentFilter] = useState("all");
   const [filterResidentSearch, setFilterResidentSearch] = useState("");
   const [visitTypeFilter, setVisitTypeFilter] = useState("all");
@@ -236,6 +237,7 @@ const HomeVisitation = () => {
   const [viewVisitDialogOpen, setViewVisitDialogOpen] = useState(false);
 
   // Plan state
+  const [planSearch, setPlanSearch] = useState("");
   const [planResidentFilter, setPlanResidentFilter] = useState("all");
   const [planResidentSearch, setPlanResidentSearch] = useState("");
   const [planStatusFilter, setPlanStatusFilter] = useState("all");
@@ -446,14 +448,33 @@ const HomeVisitation = () => {
 
   // ─── Derived data ──────────────────────────────────────────────────────────
 
-  const visitations = (visitationsQuery.data ?? []).filter(
-    (v) => outcomeFilter === "all" || v.visitOutcome === outcomeFilter,
-  );
+  const visitations = (visitationsQuery.data ?? []).filter((v) => {
+    if (outcomeFilter !== "all" && v.visitOutcome !== outcomeFilter) return false;
+    if (visitSearch) {
+      const q = visitSearch.toLowerCase();
+      if (
+        !v.residentDisplayName.toLowerCase().includes(q) &&
+        !v.socialWorker.toLowerCase().includes(q) &&
+        !v.visitType.toLowerCase().includes(q)
+      ) return false;
+    }
+    return true;
+  });
   const visitTotalPages = Math.max(1, Math.ceil(visitations.length / ITEMS_PER_PAGE));
   const paginatedVisitations = visitations.slice((visitPage - 1) * ITEMS_PER_PAGE, visitPage * ITEMS_PER_PAGE);
 
   const allPlans = plansQuery.data ?? [];
-  const upcomingPlans = allPlans
+  const searchedPlans = planSearch
+    ? allPlans.filter((p) => {
+        const q = planSearch.toLowerCase();
+        return (
+          p.residentDisplayName.toLowerCase().includes(q) ||
+          p.status.toLowerCase().includes(q) ||
+          p.planCategory.toLowerCase().includes(q)
+        );
+      })
+    : allPlans;
+  const upcomingPlans = searchedPlans
     .filter((p) => !p.caseConferenceDate || p.caseConferenceDate.slice(0, 10) >= today)
     .sort((a, b) => {
       const dateA = a.caseConferenceDate ? new Date(a.caseConferenceDate).getTime() : Infinity;
@@ -461,7 +482,7 @@ const HomeVisitation = () => {
       return dateA - dateB;
     })
     .slice(0, 10);
-  const pastPlans = allPlans.filter((p) => p.caseConferenceDate && p.caseConferenceDate.slice(0, 10) < today);
+  const pastPlans = searchedPlans.filter((p) => p.caseConferenceDate && p.caseConferenceDate.slice(0, 10) < today);
   const planTotalPages = Math.max(1, Math.ceil(pastPlans.length / ITEMS_PER_PAGE));
   const paginatedPastPlans = pastPlans.slice((planPage - 1) * ITEMS_PER_PAGE, planPage * ITEMS_PER_PAGE);
 
@@ -493,6 +514,17 @@ const HomeVisitation = () => {
       <Card className="rounded-none border border-border bg-card shadow-none">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Search
+              </Label>
+              <Input
+                placeholder="Search by resident, social worker, type..."
+                className="rounded-none w-full sm:w-[280px]"
+                value={visitSearch}
+                onChange={(e) => { setVisitSearch(e.target.value); setVisitPage(1); }}
+              />
+            </div>
             <div className="min-w-[220px] space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {t("filters.resident")}
@@ -670,7 +702,7 @@ const HomeVisitation = () => {
                   </Table>
                 </div>
                 {visitTotalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                  <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
                     <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === 1} onClick={() => setVisitPage((p) => p - 1)}>Previous</Button>
                     <span className="text-sm text-muted-foreground">Page {visitPage} of {visitTotalPages}</span>
                     <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={visitPage === visitTotalPages} onClick={() => setVisitPage((p) => p + 1)}>Next</Button>
@@ -690,6 +722,15 @@ const HomeVisitation = () => {
       <Card className="rounded-none border border-border bg-card shadow-none">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Search</Label>
+              <Input
+                placeholder="Search by resident, status, category..."
+                className="rounded-none w-full sm:w-[280px]"
+                value={planSearch}
+                onChange={(e) => { setPlanSearch(e.target.value); setPlanPage(1); }}
+              />
+            </div>
             <div className="min-w-[220px] space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Resident</Label>
               <Select value={planResidentFilter} onValueChange={(v) => { setPlanResidentFilter(v); setPlanPage(1); }}>
@@ -854,7 +895,7 @@ const HomeVisitation = () => {
                     </Table>
                   </div>
                   {planTotalPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                    <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
                       <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={planPage === 1} onClick={() => setPlanPage((p) => p - 1)}>Previous</Button>
                       <span className="text-sm text-muted-foreground">Page {planPage} of {planTotalPages}</span>
                       <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={planPage === planTotalPages} onClick={() => setPlanPage((p) => p + 1)}>Next</Button>

@@ -174,6 +174,7 @@ const ProcessRecording = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [residentSearch, setResidentSearch] = useState("");
   const [filterResidentSearch, setFilterResidentSearch] = useState("");
+  const [tableSearch, setTableSearch] = useState("");
   const [upcomingPage, setUpcomingPage] = useState(1);
 
   const dashboardPath = withPathLanguage("/dashboard", i18n.resolvedLanguage);
@@ -330,7 +331,17 @@ const ProcessRecording = () => {
 
   const recordings = recordingsQuery.data ?? [];
   const today = new Date().toISOString().slice(0, 10);
-  const upcomingSessions = recordings
+  const searchedRecordings = tableSearch
+    ? recordings.filter((r) => {
+        const q = tableSearch.toLowerCase();
+        return (
+          r.residentDisplayName.toLowerCase().includes(q) ||
+          r.socialWorker.toLowerCase().includes(q) ||
+          r.sessionType.toLowerCase().includes(q)
+        );
+      })
+    : recordings;
+  const upcomingSessions = searchedRecordings
     .filter((r) => r.sessionDate.slice(0, 10) > today)
     .sort((a, b) => a.sessionDate.localeCompare(b.sessionDate));
   const upcomingTotalPages = Math.max(1, Math.ceil(upcomingSessions.length / ITEMS_PER_PAGE));
@@ -338,7 +349,7 @@ const ProcessRecording = () => {
     (upcomingPage - 1) * ITEMS_PER_PAGE,
     upcomingPage * ITEMS_PER_PAGE,
   );
-  const pastRecordings = recordings.filter((r) => r.sessionDate.slice(0, 10) <= today);
+  const pastRecordings = searchedRecordings.filter((r) => r.sessionDate.slice(0, 10) <= today);
   const totalPages = Math.max(1, Math.ceil(pastRecordings.length / ITEMS_PER_PAGE));
   const paginatedRecordings = pastRecordings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -380,6 +391,17 @@ const ProcessRecording = () => {
       <Card className="rounded-none border border-border bg-card shadow-none">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Search
+              </Label>
+              <Input
+                placeholder="Search by resident, social worker, type..."
+                className="rounded-none w-full sm:w-[280px]"
+                value={tableSearch}
+                onChange={(e) => { setTableSearch(e.target.value); setCurrentPage(1); setUpcomingPage(1); }}
+              />
+            </div>
             <div className="min-w-[220px] space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {t("filters.resident")}
@@ -542,30 +564,10 @@ const ProcessRecording = () => {
             </div>
           )}
           {upcomingTotalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-border px-4 py-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-none"
-                disabled={upcomingPage === 1}
-                onClick={() => setUpcomingPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {upcomingPage} of {upcomingTotalPages}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-none"
-                disabled={upcomingPage === upcomingTotalPages}
-                onClick={() => setUpcomingPage((p) => p + 1)}
-              >
-                Next
-              </Button>
+            <div className="flex items-center justify-end gap-4 border-t border-border px-4 py-3">
+              <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={upcomingPage === 1} onClick={() => setUpcomingPage((p) => p - 1)}>Previous</Button>
+              <span className="text-sm text-muted-foreground">Page {upcomingPage} of {upcomingTotalPages}</span>
+              <Button type="button" variant="outline" size="sm" className="rounded-none" disabled={upcomingPage === upcomingTotalPages} onClick={() => setUpcomingPage((p) => p + 1)}>Next</Button>
             </div>
           )}
         </CardContent>
